@@ -96,7 +96,11 @@ class SupabaseService: ObservableObject {
         }
         let user = session.user
 
-        // 3) Profile nur updaten (wurde durch DB-Trigger erstellt)
+        // 3) Wait a moment for the database trigger to complete
+        print("⏳ Waiting for database trigger to complete...")
+        try await Task.sleep(nanoseconds: 1_000_000_000) // 1 second delay
+        
+        // 4) Profile nur updaten (wurde durch DB-Trigger erstellt)
         let df = DateFormatter()
         df.calendar = Calendar(identifier: .iso8601)
         df.locale = Locale(identifier: "en_US_POSIX")
@@ -106,17 +110,38 @@ class SupabaseService: ObservableObject {
         let birth = df.string(from: birthDate)
         let zodiac = ZodiacSign.calculate(from: birthDate).rawValue
 
-        try await client
-            .from("profiles")
-            .update([
-                "name": name,
-                "zodiac_sign": zodiac,
-                "birth_date": birth
-            ])
-            .eq("id", value: user.id.uuidString)
-            .execute()
-
-        print("✅ Profile updated for user \(user.id)")
+        // Retry logic for profile update (in case trigger is still running)
+        var retryCount = 0
+        let maxRetries = 3
+        
+        while retryCount < maxRetries {
+            do {
+                try await client
+                    .from("profiles")
+                    .update([
+                        "name": name,
+                        "zodiac_sign": zodiac,
+                        "birth_date": birth
+                    ])
+                    .eq("id", value: user.id.uuidString)
+                    .execute()
+                
+                print("✅ Profile updated for user \(user.id)")
+                break
+                
+            } catch {
+                retryCount += 1
+                print("⚠️ Profile update attempt \(retryCount) failed: \(error)")
+                
+                if retryCount < maxRetries {
+                    print("⏳ Retrying in 500ms...")
+                    try await Task.sleep(nanoseconds: 500_000_000) // 0.5 second delay
+                } else {
+                    print("❌ All profile update attempts failed")
+                    throw error
+                }
+            }
+        }
 
         return SupabaseUser(id: user.id.uuidString, email: user.email ?? "", createdAt: user.createdAt)
     }
