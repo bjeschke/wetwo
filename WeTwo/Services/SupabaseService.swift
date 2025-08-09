@@ -28,10 +28,10 @@ class SupabaseService: ObservableObject {
         )
         print("✅ Supabase client initialized with URL: \(supabaseURL)")
         
-        // Test connection
-        Task {
-            await testConnection()
-        }
+        // Test connection - commented out to avoid RLS issues before login
+        // Task {
+        //     await testConnection()
+        // }
     }
     
     // MARK: - Helper Functions
@@ -163,38 +163,17 @@ class SupabaseService: ObservableObject {
     }
     
     // MARK: - Profile Management
-    func createProfile(userId: String, name: String, birthDate: Date) async throws {
-        print("🔧 Creating profile for user: \(userId)")
-        print("   Name: \(name)")
-        print("   Birth Date: \(birthDate)")
-        
-        let calculatedZodiac = ZodiacSign.calculate(from: birthDate)
-        let profile = Profile(
-            id: userId,
-            name: name,
-            zodiacSign: calculatedZodiac.rawValue,
-            birthDate: birthDate,
-            profilePhotoURL: nil,
-            relationshipStatus: nil,
-            hasChildren: nil,
-            childrenCount: nil,
-            createdAt: Date(),
-            updatedAt: Date()
-        )
-        
-        try await client
-            .from("profiles")
-            .insert(profile)
-            .execute()
-        
-        print("✅ Profile created successfully for user: \(userId)")
-    }
+    // Note: Profiles are now created automatically by database trigger
+    // This method is kept for backward compatibility but should not be used for new profiles
     
     func updateProfile(userId: String, name: String, birthDate: Date) async throws {
         print("🔧 Updating profile for user: \(userId)")
         
         let calculatedZodiac = ZodiacSign.calculate(from: birthDate)
         let df = DateFormatter()
+        df.calendar = Calendar(identifier: .iso8601)
+        df.locale = Locale(identifier: "en_US_POSIX")
+        df.timeZone = TimeZone(secondsFromGMT: 0)
         df.dateFormat = "yyyy-MM-dd"
         
         try await client
@@ -234,8 +213,8 @@ class SupabaseService: ObservableObject {
             .from("profiles")
             .update([
                 "relationship_status": relationshipStatus,
-                "has_children": hasChildren ? "true" : "false",
-                "children_count": String(childrenCount),
+                "has_children": hasChildren ? "true" : "false",      // Bool als String
+                "children_count": String(childrenCount),              // Int als String
                 "updated_at": ISO8601DateFormatter().string(from: Date())
             ])
             .eq("id", value: userId)
@@ -351,7 +330,7 @@ class SupabaseService: ObservableObject {
                 "location": memory.location,
                 "mood_level": String(memory.moodLevel.rawValue),
                 "tags": memory.tags.joined(separator: ","),
-                "is_shared": memory.isShared ? "true" : "false",
+                "is_shared": memory.isShared,  // Bool, kein "true"/"false"
                 "updated_at": ISO8601DateFormatter().string(from: Date())
             ])
             .eq("id", value: memory.id.uuidString)

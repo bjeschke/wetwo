@@ -328,24 +328,24 @@ struct OnboardingView: View {
                 return 
             }
             
-            print("🔧 Creating profile for user: \(userId)")
+            print("🔧 Updating profile for user: \(userId)")
             print("   Name: \(userName)")
             print("   Birth Date: \(birthDate)")
             
-            // Create profile in database
-            try await SupabaseService.shared.createProfile(
+            // Update profile in database (created automatically by trigger)
+            try await SupabaseService.shared.updateProfile(
                 userId: userId.uuidString,
                 name: userName,
                 birthDate: birthDate
             )
             
-            print("✅ Profile created successfully!")
+            print("✅ Profile updated successfully!")
             
             // Save relationship data
             await saveRelationshipData()
             
         } catch {
-            print("❌ Error creating profile: \(error)")
+            print("❌ Error updating profile: \(error)")
         }
     }
     

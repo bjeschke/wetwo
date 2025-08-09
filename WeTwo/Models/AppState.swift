@@ -108,14 +108,14 @@ class AppState: ObservableObject {
                 try? securityService.secureStore(email, forKey: "userEmail")
                 try? securityService.secureStore(password, forKey: "userPassword")
                 
-                // Create the profile with Apple ID
-                try await supabaseService.createProfile(
+                // Update the profile with Apple ID (created automatically by trigger)
+                try await supabaseService.updateProfile(
                     userId: userId, 
                     name: user.name, 
                     birthDate: user.birthDate
                 )
                 
-                print("✅ User profile created with Apple ID successfully")
+                print("✅ User profile updated with Apple ID successfully")
                 print("📧 Email: \(email)")
                 print("🍎 Apple ID: \(appleUserID)")
                 
