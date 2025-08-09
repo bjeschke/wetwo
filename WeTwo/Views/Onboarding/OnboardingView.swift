@@ -10,15 +10,9 @@ import SwiftUI
 struct OnboardingView: View {
     @EnvironmentObject var appState: AppState
     @EnvironmentObject var partnerManager: PartnerManager
+    @StateObject private var viewModel = OnboardingViewModel()
     @State private var currentStep = 0
-    @State private var userName = ""
-    @State private var birthDate = Date()
     @State private var showingPartnerConnection = false
-    
-    // Relationship fields
-    @State private var relationshipStatus: RelationshipStatus = .inRelationship
-    @State private var hasChildren = false
-    @State private var childrenCount = 0
     
     private let totalSteps = 3
     
@@ -114,7 +108,7 @@ struct OnboardingView: View {
                         .font(.headline)
                         .foregroundColor(.white)
                     
-                    TextField(NSLocalizedString("onboarding_name_placeholder", comment: "Name placeholder"), text: $userName)
+                    TextField(NSLocalizedString("onboarding_name_placeholder", comment: "Name placeholder"), text: $viewModel.name)
                         .textFieldStyle(RoundedBorderTextFieldStyle())
                 }
                 
@@ -126,7 +120,7 @@ struct OnboardingView: View {
                     
                     DatePicker(
                         NSLocalizedString("onboarding_birthdate_placeholder", comment: "Birthdate placeholder"),
-                        selection: $birthDate,
+                        selection: $viewModel.birthDate,
                         displayedComponents: .date
                     )
                     .datePickerStyle(WheelDatePickerStyle())
@@ -135,8 +129,8 @@ struct OnboardingView: View {
                     .accentColor(.white)
                     
                     // Show calculated zodiac sign
-                    if !userName.isEmpty {
-                        let zodiacSign = ZodiacSign.calculate(from: birthDate)
+                    if !viewModel.name.isEmpty {
+                        let zodiacSign = ZodiacSign.calculate(from: viewModel.birthDate)
                         HStack {
                             Text(NSLocalizedString("onboarding_zodiac_label", comment: "Zodiac label"))
                                 .font(.caption)
@@ -172,7 +166,7 @@ struct OnboardingView: View {
                     LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: 12) {
                         ForEach(RelationshipStatus.allCases, id: \.self) { status in
                             Button(action: {
-                                relationshipStatus = status
+                                viewModel.relationshipStatus = status
                             }) {
                                 HStack {
                                     Text(status.emoji)
@@ -181,12 +175,12 @@ struct OnboardingView: View {
                                         .font(.body)
                                         .fontWeight(.medium)
                                 }
-                                .foregroundColor(relationshipStatus == status ? .white : ColorTheme.primaryText)
+                                .foregroundColor(viewModel.relationshipStatus == status ? .white : ColorTheme.primaryText)
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 12)
                                 .background(
                                     RoundedRectangle(cornerRadius: 12)
-                                        .fill(relationshipStatus == status ? ColorTheme.accentPink : ColorTheme.cardBackgroundSecondary)
+                                        .fill(viewModel.relationshipStatus == status ? ColorTheme.accentPink : ColorTheme.cardBackgroundSecondary)
                                 )
                             }
                             .buttonStyle(PlainButtonStyle())
@@ -209,49 +203,49 @@ struct OnboardingView: View {
                             
                             Spacer()
                             
-                            Toggle("", isOn: $hasChildren)
+                            Toggle("", isOn: $viewModel.hasChildren)
                                 .toggleStyle(SwitchToggleStyle(tint: ColorTheme.accentPink))
                         }
                         
                         // Children count (if has children)
-                        if hasChildren {
+                        if viewModel.hasChildren {
                             VStack(alignment: .leading, spacing: 8) {
                                 Text(NSLocalizedString("onboarding_children_count_label", comment: "Children count label"))
                                     .font(.subheadline)
                                     .foregroundColor(ColorTheme.secondaryText)
                                 
                                 HStack {
-                                    Button(action: {
-                                        if childrenCount > 0 {
-                                            childrenCount -= 1
-                                        }
-                                    }) {
+                                                                Button(action: {
+                                if viewModel.childrenCount > 0 {
+                                    viewModel.childrenCount -= 1
+                                }
+                            }) {
                                         Image(systemName: "minus.circle.fill")
                                             .font(.title2)
                                             .foregroundColor(ColorTheme.accentPink)
                                     }
-                                    .disabled(childrenCount == 0)
+                                    .disabled(viewModel.childrenCount == 0)
                                     
-                                    Text("\(childrenCount)")
+                                    Text("\(viewModel.childrenCount)")
                                         .font(.title2)
                                         .fontWeight(.bold)
                                         .foregroundColor(ColorTheme.primaryText)
                                         .frame(minWidth: 50)
                                     
-                                    Button(action: {
-                                        if childrenCount < 10 {
-                                            childrenCount += 1
-                                        }
-                                    }) {
+                                                                Button(action: {
+                                if viewModel.childrenCount < 10 {
+                                    viewModel.childrenCount += 1
+                                }
+                            }) {
                                         Image(systemName: "plus.circle.fill")
                                             .font(.title2)
                                             .foregroundColor(ColorTheme.accentPink)
                                     }
-                                    .disabled(childrenCount == 10)
+                                    .disabled(viewModel.childrenCount == 10)
                                     
                                     Spacer()
                                     
-                                    Text(childrenCount == 1 ? NSLocalizedString("child", comment: "child") : NSLocalizedString("children", comment: "children"))
+                                    Text(viewModel.childrenCount == 1 ? NSLocalizedString("child", comment: "child") : NSLocalizedString("children", comment: "children"))
                                         .font(.body)
                                         .foregroundColor(ColorTheme.secondaryText)
                                 }
@@ -300,7 +294,7 @@ struct OnboardingView: View {
                 .padding(.vertical, 12)
                 .background(ColorTheme.accentPink)
                 .cornerRadius(25)
-                .disabled(userName.isEmpty)
+                .disabled(viewModel.name.isEmpty)
             }
         }
         .padding(.horizontal)
@@ -309,7 +303,7 @@ struct OnboardingView: View {
     // MARK: - Actions
     
     private func completeOnboarding() {
-        let user = User(name: userName, birthDate: birthDate)
+        let user = User(name: viewModel.name, birthDate: viewModel.birthDate)
         appState.completeOnboarding(user: user)
         
         // Create profile and save relationship data
@@ -329,14 +323,14 @@ struct OnboardingView: View {
             }
             
             print("🔧 Updating profile for user: \(userId)")
-            print("   Name: \(userName)")
-            print("   Birth Date: \(birthDate)")
+            print("   Name: \(viewModel.name)")
+            print("   Birth Date: \(viewModel.birthDate)")
             
-            // Update profile in database (created automatically by trigger)
+            // Profile wird automatisch durch Trigger erstellt, nur Update nötig
             try await SupabaseService.shared.updateProfile(
                 userId: userId.uuidString,
-                name: userName,
-                birthDate: birthDate
+                name: viewModel.name,
+                birthDate: viewModel.birthDate
             )
             
             print("✅ Profile updated successfully!")
@@ -357,22 +351,72 @@ struct OnboardingView: View {
             }
             
             print("🔧 Saving relationship data for user: \(userId)")
-            print("   Status: \(relationshipStatus.rawValue)")
-            print("   Has Children: \(hasChildren)")
-            print("   Children Count: \(childrenCount)")
+            print("   Status: \(viewModel.relationshipStatus.rawValue)")
+            print("   Has Children: \(viewModel.hasChildren)")
+            print("   Children Count: \(viewModel.childrenCount)")
             
             // Save relationship data to database
             try await SupabaseService.shared.updateRelationshipData(
                 userId: userId.uuidString,
-                relationshipStatus: relationshipStatus.rawValue,
-                hasChildren: hasChildren,
-                childrenCount: childrenCount
+                relationshipStatus: viewModel.relationshipStatus.rawValue,
+                hasChildren: viewModel.hasChildren ? "true" : "false",
+                childrenCount: String(viewModel.childrenCount)
             )
             
             print("✅ Relationship data saved successfully!")
             
         } catch {
             print("❌ Error saving relationship data: \(error)")
+        }
+    }
+}
+
+// MARK: - Onboarding ViewModel
+
+@MainActor
+final class OnboardingViewModel: ObservableObject {
+    @Published var name = ""
+    @Published var birthDate = Date()
+    @Published var email = ""
+    @Published var password = ""
+    @Published var relationshipStatus: RelationshipStatus = .single
+    @Published var hasChildren = false
+    @Published var childrenCount = 0
+    @Published var isLoading = false
+    @Published var errorMessage: String?
+    
+
+    
+    func finish() async {
+        guard !name.isEmpty, !email.isEmpty, !password.isEmpty else {
+            errorMessage = "Bitte alle Felder ausfüllen."
+            return
+        }
+        isLoading = true
+        defer { isLoading = false }
+
+        do {
+            let user = try await SupabaseService.shared.completeOnboarding(
+                email: email,
+                password: password,
+                name: name,
+                birthDate: birthDate
+            )
+            print("🎉 Onboarding fertig, User: \(user.id)")
+            
+            // Save relationship data if user is connected
+            if let userId = UUID(uuidString: user.id) {
+                try await SupabaseService.shared.updateRelationshipData(
+                    userId: user.id,
+                    relationshipStatus: relationshipStatus.rawValue,
+                    hasChildren: hasChildren ? "true" : "false",
+                    childrenCount: String(childrenCount)
+                )
+                print("✅ Relationship data saved successfully!")
+            }
+            
+        } catch {
+            errorMessage = error.localizedDescription
         }
     }
 }
@@ -671,7 +715,7 @@ struct CodeEntryView: View {
                         .multilineTextAlignment(.center)
                         .keyboardType(.numberPad)
                         .textFieldStyle(RoundedBorderTextFieldStyle())
-                        .onChange(of: enteredCode) { newValue in
+                        .onChange(of: enteredCode) { oldValue, newValue in
                             // Limit to 6 digits
                             if newValue.count > 6 {
                                 enteredCode = String(newValue.prefix(6))

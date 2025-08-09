@@ -21,6 +21,7 @@ struct MemoryEntry: Codable, Identifiable {
     let tags: [String]
     let isShared: Bool
     let createdAt: Date
+    let updatedAt: Date
     
     init(userId: UUID, title: String, description: String? = nil, photoData: Data? = nil, location: String? = nil, moodLevel: MoodLevel = .happy, tags: [String] = [], partnerId: UUID? = nil) {
         self.userId = userId
@@ -34,6 +35,31 @@ struct MemoryEntry: Codable, Identifiable {
         self.tags = tags
         self.isShared = partnerId != nil
         self.createdAt = Date()
+        self.updatedAt = Date()
+    }
+    
+    // Custom initializer for creating from database data
+    init(fromDatabase id: UUID?, userId: UUID, partnerId: UUID?, dateString: String, title: String, description: String?, photoData: Data?, location: String?, moodLevel: MoodLevel, tags: [String], isShared: Bool, createdAt: Date?, updatedAt: Date?) {
+        if let id = id {
+            self.id = id
+        }
+        self.userId = userId
+        self.partnerId = partnerId
+        
+        // Parse date from YYYY-MM-DD string
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        self.date = formatter.date(from: dateString) ?? Date()
+        
+        self.title = title
+        self.description = description
+        self.photoData = photoData
+        self.location = location
+        self.moodLevel = moodLevel
+        self.tags = tags
+        self.isShared = isShared
+        self.createdAt = createdAt ?? Date()
+        self.updatedAt = updatedAt ?? Date()
     }
 }
 

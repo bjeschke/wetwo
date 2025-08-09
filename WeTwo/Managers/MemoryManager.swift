@@ -49,7 +49,24 @@ class MemoryManager: ObservableObject {
     func addMemory(_ memory: MemoryEntry) {
         Task {
             do {
-                try await supabaseService.createMemory(memory)
+                // Convert MemoryEntry to Memory
+                let memoryData = Memory(
+                    id: memory.id,
+                    user_id: memory.userId,
+                    partner_id: memory.partnerId,
+                    date: memory.date.ISO8601String().prefix(10).description, // YYYY-MM-DD format
+                    title: memory.title,
+                    description: memory.description,
+                    photo_data: memory.photoData?.base64EncodedString(),
+                    location: memory.location,
+                    mood_level: memory.moodLevel.rawValue.description,
+                    tags: memory.tags.joined(separator: ","),
+                    is_shared: memory.isShared ? "true" : "false",
+                    created_at: memory.createdAt,
+                    updated_at: memory.updatedAt
+                )
+                
+                try await supabaseService.createMemory(memoryData)
                 await loadMemories()
                 
                 // Sync with partner if shared
@@ -66,7 +83,24 @@ class MemoryManager: ObservableObject {
     func updateMemory(_ memory: MemoryEntry) {
         Task {
             do {
-                try await supabaseService.updateMemory(memory)
+                // Convert MemoryEntry to Memory
+                let memoryData = Memory(
+                    id: memory.id,
+                    user_id: memory.userId,
+                    partner_id: memory.partnerId,
+                    date: memory.date.ISO8601String().prefix(10).description, // YYYY-MM-DD format
+                    title: memory.title,
+                    description: memory.description,
+                    photo_data: memory.photoData?.base64EncodedString(),
+                    location: memory.location,
+                    mood_level: memory.moodLevel.rawValue.description,
+                    tags: memory.tags.joined(separator: ","),
+                    is_shared: memory.isShared ? "true" : "false",
+                    created_at: memory.createdAt,
+                    updated_at: memory.updatedAt
+                )
+                
+                try await supabaseService.updateMemory(memoryData)
                 await loadMemories()
             } catch {
                 print("Error updating memory: \(error)")
@@ -78,7 +112,7 @@ class MemoryManager: ObservableObject {
     func deleteMemory(_ memory: MemoryEntry) {
         Task {
             do {
-                try await supabaseService.deleteMemory(memory.id.uuidString)
+                try await supabaseService.deleteMemory(memory.id)
                 await loadMemories()
             } catch {
                 print("Error deleting memory: \(error)")
@@ -125,35 +159,69 @@ class MemoryManager: ObservableObject {
     
     @MainActor
     private func loadCurrentUser() async {
-        do {
-            if let user = await supabaseService.getCurrentUser() {
-                currentUserId = user.id
-            }
-        } catch {
-            print("Error loading current user: \(error)")
+        if let userId = supabaseService.currentUserId {
+            currentUserId = userId.uuidString
         }
     }
     
     @MainActor
     private func loadMemories() async {
-        guard let userId = currentUserId else { return }
+        guard let userId = currentUserId,
+              let userUUID = UUID(uuidString: userId) else { return }
         
         isLoading = true
         do {
-            let loadedMemories = try await supabaseService.getMemories(userId: userId)
-            // Filter out any invalid memories
-            memories = loadedMemories.filter { memory in
-                // Ensure memory has valid data
-                !memory.title.isEmpty &&
-                memory.moodLevel.rawValue >= 1 && memory.moodLevel.rawValue <= 5 &&
-                (memory.photoData == nil || !memory.photoData!.isEmpty)
+            let loadedMemories = try await supabaseService.memories(userId: userUUID)
+            
+            // Convert Memory to MemoryEntry and filter out any invalid memories
+            var convertedMemories: [MemoryEntry] = []
+            
+            for memory in loadedMemories {
+                // Convert Memory to MemoryEntry
+                let moodLevel = MoodLevel(rawValue: Int(memory.mood_level) ?? 3) ?? .neutral
+                let tags = memory.tags?.components(separatedBy: ",").filter { !$0.isEmpty } ?? []
+                let isShared = memory.is_shared == "true"
+                
+                // Parse photo data
+                var photoData: Data? = nil
+                if let photoDataString = memory.photo_data {
+                    photoData = Data(base64Encoded: photoDataString)
+                }
+                
+                // Parse date
+                let dateFormatter = DateFormatter()
+                dateFormatter.dateFormat = "yyyy-MM-dd"
+                let date = dateFormatter.date(from: memory.date) ?? Date()
+                
+                // Parse timestamps
+                let createdAt = memory.created_at ?? Date()
+                let updatedAt = memory.updated_at ?? Date()
+                
+                // Create MemoryEntry with available data
+                let memoryEntry = MemoryEntry(
+                    fromDatabase: memory.id,
+                    userId: memory.user_id,
+                    partnerId: memory.partner_id,
+                    dateString: memory.date,
+                    title: memory.title,
+                    description: memory.description,
+                    photoData: photoData,
+                    location: memory.location,
+                    moodLevel: moodLevel,
+                    tags: tags,
+                    isShared: isShared,
+                    createdAt: createdAt,
+                    updatedAt: updatedAt
+                )
+                
+                convertedMemories.append(memoryEntry)
             }
-            updateTimeline()
+            
+            self.memories = convertedMemories
         } catch {
             print("Error loading memories: \(error)")
-            memories = []
-            updateTimeline()
         }
+        
         isLoading = false
     }
     

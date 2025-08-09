@@ -58,10 +58,9 @@ class LoveMessageManager: ObservableObject {
         )
         
         // Save to Supabase
-        try await supabaseService.saveLoveMessage(
-            senderId: currentUserId.uuidString,
-            receiverId: partnerId.uuidString,
-            message: message
+        try await supabaseService.sendLoveMessage(
+            to: partnerId,
+            text: message
         )
         
         // TODO: Send push notification to receiver
@@ -77,7 +76,8 @@ class LoveMessageManager: ObservableObject {
     }
     
     func markAsRead(_ messageId: String) async throws {
-        try await supabaseService.markLoveMessageAsRead(messageId: messageId)
+        guard let messageUUID = UUID(uuidString: messageId) else { return }
+        try await supabaseService.markMessageRead(messageUUID)
         
         await MainActor.run {
             if let index = receivedMessages.firstIndex(where: { $0.id == messageId }) {
@@ -98,7 +98,7 @@ class LoveMessageManager: ObservableObject {
         Task {
             do {
                 guard let currentUserId = getCurrentUserId() else { return }
-                let messages = try await supabaseService.getLoveMessages(userId: currentUserId.uuidString)
+                let messages = try await supabaseService.conversation(with: currentUserId)
                 await MainActor.run {
                     self.receivedMessages = messages.filter { $0.receiverId == currentUserId }
                     self.sentMessages = messages.filter { $0.senderId == currentUserId }

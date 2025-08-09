@@ -25,7 +25,8 @@ enum PartnerError: Error, LocalizedError {
     }
 }
 
-class PartnerManager: ObservableObject {
+@MainActor
+class PartnerManager: ObservableObject, Sendable {
     @Published var partner: User?
     @Published var isConnected: Bool = false
     @Published var connectionCode: String = ""
@@ -81,8 +82,11 @@ class PartnerManager: ObservableObject {
         }
         
         // Create partnership
-        let currentUserId = UserDefaults.standard.string(forKey: "currentUserId") ?? ""
-        try await supabaseService.createPartnership(
+        guard let currentUserIdString = UserDefaults.standard.string(forKey: "currentUserId"),
+              let currentUserId = UUID(uuidString: currentUserIdString) else {
+            throw PartnerError.networkError
+        }
+        let _ = try await supabaseService.createPartnership(
             userId: currentUserId,
             partnerId: partnerProfile.id,
             connectionCode: code
@@ -92,7 +96,7 @@ class PartnerManager: ObservableObject {
         await MainActor.run {
             self.isConnected = true
             self.partnerProfile = partnerProfile
-            self.partnershipStatus = .connected(partnerName: partnerProfile.name, partnerId: partnerProfile.id)
+            self.partnershipStatus = .connected(partnerName: partnerProfile.name, partnerId: partnerProfile.id.uuidString)
             self.savePartnerData()
         }
         
@@ -104,12 +108,15 @@ class PartnerManager: ObservableObject {
         }
         
         // Load partner profile photo
-        await loadPartnerProfilePhoto(partnerId: partnerProfile.id)
+        await loadPartnerProfilePhoto(partnerId: partnerProfile.id.uuidString)
     }
     
     func disconnectPartner() async {
         do {
-            let currentUserId = UserDefaults.standard.string(forKey: "currentUserId") ?? ""
+            guard let currentUserIdString = UserDefaults.standard.string(forKey: "currentUserId"),
+                  let currentUserId = UUID(uuidString: currentUserIdString) else {
+                throw PartnerError.networkError
+            }
             try await supabaseService.disconnectPartner(userId: currentUserId)
             
             await MainActor.run {
@@ -185,12 +192,17 @@ class PartnerManager: ObservableObject {
     // MARK: - Profile Synchronization
     func syncProfileWithPartner(name: String, zodiacSign: String, birthDate: Date) async {
         do {
-            let currentUserId = UserDefaults.standard.string(forKey: "currentUserId") ?? ""
+            guard let currentUserIdString = UserDefaults.standard.string(forKey: "currentUserId"),
+                  let currentUserId = UUID(uuidString: currentUserIdString) else {
+                throw PartnerError.networkError
+            }
             try await supabaseService.updateSharedProfile(
                 userId: currentUserId,
-                name: name,
-                zodiacSign: zodiacSign,
-                birthDate: birthDate
+                updates: [
+                    "name": name,
+                    "zodiac_sign": zodiacSign,
+                    "birth_date": birthDate.ISO8601String()
+                ]
             )
             
             print("✅ Profile synchronized with partner")
@@ -201,16 +213,19 @@ class PartnerManager: ObservableObject {
     
     func loadPartnershipStatus() async {
         do {
-            let currentUserId = UserDefaults.standard.string(forKey: "currentUserId") ?? ""
+            guard let currentUserIdString = UserDefaults.standard.string(forKey: "currentUserId"),
+                  let currentUserId = UUID(uuidString: currentUserIdString) else {
+                throw PartnerError.networkError
+            }
             let status = try await supabaseService.getPartnershipStatus(userId: currentUserId)
             
             await MainActor.run {
-                self.partnershipStatus = PartnershipStatus.fromString(status)
-                self.isConnected = status == "active"
+                self.partnershipStatus = status
+                self.isConnected = status != .notConnected
             }
             
             // If connected, load partner profile
-            if status == "active" {
+            if case .connected = status {
                 let partnerProfile = try await supabaseService.getPartnerProfile(userId: currentUserId)
                 await MainActor.run {
                     self.partnerProfile = partnerProfile
@@ -245,7 +260,8 @@ class PartnerManager: ObservableObject {
     private func loadPartnerProfilePhoto(partnerId: String) async {
         do {
             // Load partner profile photo from Supabase
-            if let photoData = try await supabaseService.downloadProfilePhoto(userId: partnerId),
+            guard let partnerUUID = UUID(uuidString: partnerId) else { return }
+            if let photoData = try await supabaseService.downloadProfilePhoto(userId: partnerUUID),
                let image = UIImage(data: photoData) {
                 await MainActor.run {
                     self.partnerProfilePhoto = image

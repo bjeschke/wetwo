@@ -704,15 +704,14 @@ struct TodayView: View {
     }
     
     private func sendLoveMessage() {
-        guard let partnerId = partnerManager.partnerProfile?.id,
-              let uuid = UUID(uuidString: partnerId) else {
+        guard let partnerId = partnerManager.partnerProfile?.id else {
             print("❌ Partner not found")
             return
         }
         
         Task {
             do {
-                try await loveMessageManager.sendLoveMessage(to: uuid, message: customLoveMessage)
+                try await loveMessageManager.sendLoveMessage(to: partnerId, message: customLoveMessage)
                 
                 await MainActor.run {
                     showingLoveMessageEditor = false
@@ -768,7 +767,7 @@ struct TodayView: View {
             do {
                 if let imageData = photo.jpegData(compressionQuality: 0.8) {
                     // Upload to Supabase Storage
-                    _ = try await supabaseService.uploadProfilePhoto(userId: userId.uuidString, imageData: imageData)
+                    _ = try await supabaseService.uploadProfilePhoto(userId: userId, imageData: imageData)
                     
                     // Also save locally for offline access
                     UserDefaults.standard.set(imageData, forKey: "userProfilePhoto")
@@ -792,7 +791,7 @@ struct TodayView: View {
         Task {
             do {
                 // Try to load from Supabase first
-                if let photoData = try await supabaseService.downloadProfilePhoto(userId: userId.uuidString),
+                if let photoData = try await supabaseService.downloadProfilePhoto(userId: userId),
                    let image = UIImage(data: photoData) {
                     await MainActor.run {
                         profilePhoto = image

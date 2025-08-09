@@ -190,40 +190,32 @@ struct AddCalendarEntryView: View {
         isSaving = true
         
         Task {
-            do {
-                // Combine date and time
-                let calendar = Calendar.current
-                let combinedDate = calendar.date(
-                    bySettingHour: calendar.component(.hour, from: selectedTime),
-                    minute: calendar.component(.minute, from: selectedTime),
-                    second: 0,
-                    of: selectedDate
-                ) ?? selectedDate
-                
-                // Create calendar entry
-                let entry = CalendarEntry(
-                    id: UUID().uuidString,
-                    userId: appState.currentUser?.id ?? UUID(),
-                    title: title,
-                    description: description,
-                    date: combinedDate,
-                    isAllDay: isAllDay,
-                    createdAt: Date()
-                )
-                
-                // Save to Supabase (this would be implemented)
-                print("✅ Calendar entry to save: \(entry)")
-                
-                await MainActor.run {
-                    isSaving = false
-                    dismiss()
-                }
-                
-            } catch {
-                print("❌ Error saving calendar entry: \(error)")
-                await MainActor.run {
-                    isSaving = false
-                }
+            // Combine date and time
+            let calendar = Calendar.current
+            let combinedDate = calendar.date(
+                bySettingHour: calendar.component(.hour, from: selectedTime),
+                minute: calendar.component(.minute, from: selectedTime),
+                second: 0,
+                of: selectedDate
+            ) ?? selectedDate
+            
+            // Create calendar entry
+            let entry = CalendarEntry(
+                id: UUID().uuidString,
+                userId: appState.currentUser?.id ?? UUID(),
+                title: title,
+                description: description,
+                date: combinedDate,
+                isAllDay: isAllDay,
+                createdAt: Date()
+            )
+            
+            // Save to Supabase (this would be implemented)
+            print("✅ Calendar entry to save: \(entry)")
+            
+            await MainActor.run {
+                isSaving = false
+                dismiss()
             }
         }
     }
