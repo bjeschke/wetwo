@@ -11,7 +11,8 @@ import SwiftUI
 struct WeTwoApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            MainAppView()
+                .environment(\.locale, Locale.current)
         }
     }
 }

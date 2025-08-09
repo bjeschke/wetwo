@@ -1,0 +1,18 @@
+"/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/SourcePackages/checkouts/supabase-swift/Sources/Realtime/Deprecated/RealtimeMessage.swift":
+  object: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/Supabase.build/Debug-iphonesimulator/Realtime.build/Objects-normal/arm64/RealtimeMessage.o"
+  swift-dependencies: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/Supabase.build/Debug-iphonesimulator/Realtime.build/Objects-normal/arm64/RealtimeMessage.swiftdeps"
+  const-values: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/Supabase.build/Debug-iphonesimulator/Realtime.build/Objects-normal/arm64/RealtimeMessage.swiftconstvalues"
+  diagnostics: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/Supabase.build/Debug-iphonesimulator/Realtime.build/Objects-normal/arm64/RealtimeMessage.dia"
+  dependencies: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/Supabase.build/Debug-iphonesimulator/Realtime.build/Objects-normal/arm64/RealtimeMessage.d"
+"/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/SourcePackages/checkouts/supabase-swift/Sources/Realtime/Deprecated/TimeoutTimer.swift":
+  object: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/Supabase.build/Debug-iphonesimulator/Realtime.build/Objects-normal/arm64/TimeoutTimer.o"
+  const-values: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/Supabase.build/Debug-iphonesimulator/Realtime.build/Objects-normal/arm64/TimeoutTimer.swiftconstvalues"
+  swift-dependencies: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/Supabase.build/Debug-iphonesimulator/Realtime.build/Objects-normal/arm64/TimeoutTimer.swiftdeps"
+  dependencies: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/Supabase.build/Debug-iphonesimulator/Realtime.build/Objects-normal/arm64/TimeoutTimer.d"
+  diagnostics: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/Supabase.build/Debug-iphonesimulator/Realtime.build/Objects-normal/arm64/TimeoutTimer.dia"
+"/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/SourcePackages/checkouts/supabase-swift/Sources/Realtime/Deprecated/RealtimeClient.swift":
+  const-values: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/Supabase.build/Debug-iphonesimulator/Realtime.build/Objects-normal/arm64/RealtimeClient.swiftconstvalues"
+  dependencies: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/Supabase.build/Debug-iphonesimulator/Realtime.build/Objects-normal/arm64/RealtimeClient.d"
+  swift-dependencies: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/Supabase.build/Debug-iphonesimulator/Realtime.build/Objects-normal/arm64/RealtimeClient.swiftdeps"
+  object: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/Supabase.build/Debug-iphonesimulator/Realtime.build/Objects-normal/arm64/RealtimeClient.o"
+  diagnostics: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/Supabase.build/Debug-iphonesimulator/Realtime.build/Objects-normal/arm64/RealtimeClient.dia"

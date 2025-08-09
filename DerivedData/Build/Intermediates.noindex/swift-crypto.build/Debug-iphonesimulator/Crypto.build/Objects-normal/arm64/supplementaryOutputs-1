@@ -1,0 +1,42 @@
+"/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/Crypto.build/DerivedSources/resource_bundle_accessor.swift":
+  dependencies: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/Crypto.build/Objects-normal/arm64/resource_bundle_accessor.d"
+  swift-dependencies: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/Crypto.build/Objects-normal/arm64/resource_bundle_accessor.swiftdeps"
+  object: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/Crypto.build/Objects-normal/arm64/resource_bundle_accessor.o"
+  const-values: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/Crypto.build/Objects-normal/arm64/resource_bundle_accessor.swiftconstvalues"
+  diagnostics: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/Crypto.build/Objects-normal/arm64/resource_bundle_accessor.dia"
+"/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/SourcePackages/checkouts/swift-crypto/Sources/Crypto/AEADs/AES/GCM/BoringSSL/AES-GCM_boring.swift":
+  dependencies: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/Crypto.build/Objects-normal/arm64/AES-GCM_boring.d"
+  object: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/Crypto.build/Objects-normal/arm64/AES-GCM_boring.o"
+  swift-dependencies: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/Crypto.build/Objects-normal/arm64/AES-GCM_boring.swiftdeps"
+  diagnostics: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/Crypto.build/Objects-normal/arm64/AES-GCM_boring.dia"
+  const-values: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/Crypto.build/Objects-normal/arm64/AES-GCM_boring.swiftconstvalues"
+"/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/SourcePackages/checkouts/swift-crypto/Sources/Crypto/AEADs/ChachaPoly/BoringSSL/ChaChaPoly_boring.swift":
+  object: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/Crypto.build/Objects-normal/arm64/ChaChaPoly_boring.o"
+  diagnostics: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/Crypto.build/Objects-normal/arm64/ChaChaPoly_boring.dia"
+  const-values: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/Crypto.build/Objects-normal/arm64/ChaChaPoly_boring.swiftconstvalues"
+  swift-dependencies: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/Crypto.build/Objects-normal/arm64/ChaChaPoly_boring.swiftdeps"
+  dependencies: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/Crypto.build/Objects-normal/arm64/ChaChaPoly_boring.d"
+"/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/SourcePackages/checkouts/swift-crypto/Sources/Crypto/AEADs/Cipher.swift":
+  swift-dependencies: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/Crypto.build/Objects-normal/arm64/Cipher.swiftdeps"
+  diagnostics: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/Crypto.build/Objects-normal/arm64/Cipher.dia"
+  object: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/Crypto.build/Objects-normal/arm64/Cipher.o"
+  dependencies: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/Crypto.build/Objects-normal/arm64/Cipher.d"
+  const-values: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/Crypto.build/Objects-normal/arm64/Cipher.swiftconstvalues"
+"/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/SourcePackages/checkouts/swift-crypto/Sources/Crypto/AEADs/ChachaPoly/ChaChaPoly.swift":
+  object: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/Crypto.build/Objects-normal/arm64/ChaChaPoly.o"
+  const-values: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/Crypto.build/Objects-normal/arm64/ChaChaPoly.swiftconstvalues"
+  diagnostics: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/Crypto.build/Objects-normal/arm64/ChaChaPoly.dia"
+  swift-dependencies: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/Crypto.build/Objects-normal/arm64/ChaChaPoly.swiftdeps"
+  dependencies: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/Crypto.build/Objects-normal/arm64/ChaChaPoly.d"
+"/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/SourcePackages/checkouts/swift-crypto/Sources/Crypto/AEADs/AES/GCM/AES-GCM.swift":
+  swift-dependencies: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/Crypto.build/Objects-normal/arm64/AES-GCM.swiftdeps"
+  dependencies: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/Crypto.build/Objects-normal/arm64/AES-GCM.d"
+  diagnostics: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/Crypto.build/Objects-normal/arm64/AES-GCM.dia"
+  const-values: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/Crypto.build/Objects-normal/arm64/AES-GCM.swiftconstvalues"
+  object: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/Crypto.build/Objects-normal/arm64/AES-GCM.o"
+"/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/SourcePackages/checkouts/swift-crypto/Sources/Crypto/AEADs/Nonces.swift":
+  object: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/Crypto.build/Objects-normal/arm64/Nonces.o"
+  swift-dependencies: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/Crypto.build/Objects-normal/arm64/Nonces.swiftdeps"
+  const-values: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/Crypto.build/Objects-normal/arm64/Nonces.swiftconstvalues"
+  dependencies: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/Crypto.build/Objects-normal/arm64/Nonces.d"
+  diagnostics: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/Crypto.build/Objects-normal/arm64/Nonces.dia"

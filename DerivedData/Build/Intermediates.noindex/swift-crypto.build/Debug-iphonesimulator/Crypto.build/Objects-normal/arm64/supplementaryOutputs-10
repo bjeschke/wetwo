@@ -1,0 +1,36 @@
+"/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/SourcePackages/checkouts/swift-crypto/Sources/Crypto/Message Authentication Codes/MessageAuthenticationCode.swift":
+  object: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/Crypto.build/Objects-normal/arm64/MessageAuthenticationCode.o"
+  dependencies: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/Crypto.build/Objects-normal/arm64/MessageAuthenticationCode.d"
+  const-values: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/Crypto.build/Objects-normal/arm64/MessageAuthenticationCode.swiftconstvalues"
+  swift-dependencies: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/Crypto.build/Objects-normal/arm64/MessageAuthenticationCode.swiftdeps"
+  diagnostics: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/Crypto.build/Objects-normal/arm64/MessageAuthenticationCode.dia"
+"/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/SourcePackages/checkouts/swift-crypto/Sources/Crypto/Message Authentication Codes/HMAC/HMAC.swift":
+  dependencies: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/Crypto.build/Objects-normal/arm64/HMAC.d"
+  swift-dependencies: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/Crypto.build/Objects-normal/arm64/HMAC.swiftdeps"
+  diagnostics: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/Crypto.build/Objects-normal/arm64/HMAC.dia"
+  const-values: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/Crypto.build/Objects-normal/arm64/HMAC.swiftconstvalues"
+  object: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/Crypto.build/Objects-normal/arm64/HMAC.o"
+"/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/SourcePackages/checkouts/swift-crypto/Sources/Crypto/Signatures/BoringSSL/ECDSASignature_boring.swift":
+  const-values: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/Crypto.build/Objects-normal/arm64/ECDSASignature_boring.swiftconstvalues"
+  swift-dependencies: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/Crypto.build/Objects-normal/arm64/ECDSASignature_boring.swiftdeps"
+  dependencies: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/Crypto.build/Objects-normal/arm64/ECDSASignature_boring.d"
+  object: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/Crypto.build/Objects-normal/arm64/ECDSASignature_boring.o"
+  diagnostics: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/Crypto.build/Objects-normal/arm64/ECDSASignature_boring.dia"
+"/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/SourcePackages/checkouts/swift-crypto/Sources/Crypto/Signatures/BoringSSL/ECDSA_boring.swift":
+  const-values: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/Crypto.build/Objects-normal/arm64/ECDSA_boring.swiftconstvalues"
+  diagnostics: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/Crypto.build/Objects-normal/arm64/ECDSA_boring.dia"
+  swift-dependencies: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/Crypto.build/Objects-normal/arm64/ECDSA_boring.swiftdeps"
+  dependencies: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/Crypto.build/Objects-normal/arm64/ECDSA_boring.d"
+  object: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/Crypto.build/Objects-normal/arm64/ECDSA_boring.o"
+"/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/SourcePackages/checkouts/swift-crypto/Sources/Crypto/Message Authentication Codes/MACFunctions.swift":
+  const-values: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/Crypto.build/Objects-normal/arm64/MACFunctions.swiftconstvalues"
+  dependencies: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/Crypto.build/Objects-normal/arm64/MACFunctions.d"
+  object: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/Crypto.build/Objects-normal/arm64/MACFunctions.o"
+  diagnostics: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/Crypto.build/Objects-normal/arm64/MACFunctions.dia"
+  swift-dependencies: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/Crypto.build/Objects-normal/arm64/MACFunctions.swiftdeps"
+"/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/SourcePackages/checkouts/swift-crypto/Sources/Crypto/PRF/AES.swift":
+  const-values: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/Crypto.build/Objects-normal/arm64/AES.swiftconstvalues"
+  dependencies: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/Crypto.build/Objects-normal/arm64/AES.d"
+  swift-dependencies: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/Crypto.build/Objects-normal/arm64/AES.swiftdeps"
+  diagnostics: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/Crypto.build/Objects-normal/arm64/AES.dia"
+  object: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/Crypto.build/Objects-normal/arm64/AES.o"

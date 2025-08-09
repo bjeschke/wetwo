@@ -1,0 +1,42 @@
+"/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/SourcePackages/checkouts/swift-crypto/Sources/Crypto/HPKE/Ciphersuite/KEM/Conformances/HPKE-NIST-EC-KEMs.swift":
+  swift-dependencies: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/Crypto.build/Objects-normal/arm64/HPKE-NIST-EC-KEMs.swiftdeps"
+  diagnostics: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/Crypto.build/Objects-normal/arm64/HPKE-NIST-EC-KEMs.dia"
+  object: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/Crypto.build/Objects-normal/arm64/HPKE-NIST-EC-KEMs.o"
+  dependencies: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/Crypto.build/Objects-normal/arm64/HPKE-NIST-EC-KEMs.d"
+  const-values: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/Crypto.build/Objects-normal/arm64/HPKE-NIST-EC-KEMs.swiftconstvalues"
+"/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/SourcePackages/checkouts/swift-crypto/Sources/Crypto/HPKE/HPKE-Errors.swift":
+  dependencies: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/Crypto.build/Objects-normal/arm64/HPKE-Errors.d"
+  diagnostics: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/Crypto.build/Objects-normal/arm64/HPKE-Errors.dia"
+  const-values: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/Crypto.build/Objects-normal/arm64/HPKE-Errors.swiftconstvalues"
+  swift-dependencies: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/Crypto.build/Objects-normal/arm64/HPKE-Errors.swiftdeps"
+  object: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/Crypto.build/Objects-normal/arm64/HPKE-Errors.o"
+"/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/SourcePackages/checkouts/swift-crypto/Sources/Crypto/HPKE/Ciphersuite/KEM/HPKE-KEM.swift":
+  dependencies: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/Crypto.build/Objects-normal/arm64/HPKE-KEM.d"
+  object: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/Crypto.build/Objects-normal/arm64/HPKE-KEM.o"
+  diagnostics: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/Crypto.build/Objects-normal/arm64/HPKE-KEM.dia"
+  const-values: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/Crypto.build/Objects-normal/arm64/HPKE-KEM.swiftconstvalues"
+  swift-dependencies: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/Crypto.build/Objects-normal/arm64/HPKE-KEM.swiftdeps"
+"/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/SourcePackages/checkouts/swift-crypto/Sources/Crypto/HPKE/Ciphersuite/HPKE-LabeledExtract.swift":
+  swift-dependencies: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/Crypto.build/Objects-normal/arm64/HPKE-LabeledExtract.swiftdeps"
+  dependencies: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/Crypto.build/Objects-normal/arm64/HPKE-LabeledExtract.d"
+  object: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/Crypto.build/Objects-normal/arm64/HPKE-LabeledExtract.o"
+  diagnostics: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/Crypto.build/Objects-normal/arm64/HPKE-LabeledExtract.dia"
+  const-values: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/Crypto.build/Objects-normal/arm64/HPKE-LabeledExtract.swiftconstvalues"
+"/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/SourcePackages/checkouts/swift-crypto/Sources/Crypto/HPKE/Ciphersuite/KEM/Conformances/HPKE-KEM-Curve25519.swift":
+  dependencies: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/Crypto.build/Objects-normal/arm64/HPKE-KEM-Curve25519.d"
+  object: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/Crypto.build/Objects-normal/arm64/HPKE-KEM-Curve25519.o"
+  const-values: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/Crypto.build/Objects-normal/arm64/HPKE-KEM-Curve25519.swiftconstvalues"
+  diagnostics: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/Crypto.build/Objects-normal/arm64/HPKE-KEM-Curve25519.dia"
+  swift-dependencies: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/Crypto.build/Objects-normal/arm64/HPKE-KEM-Curve25519.swiftdeps"
+"/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/SourcePackages/checkouts/swift-crypto/Sources/Crypto/HPKE/Ciphersuite/HPKE-Utils.swift":
+  const-values: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/Crypto.build/Objects-normal/arm64/HPKE-Utils.swiftconstvalues"
+  object: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/Crypto.build/Objects-normal/arm64/HPKE-Utils.o"
+  dependencies: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/Crypto.build/Objects-normal/arm64/HPKE-Utils.d"
+  swift-dependencies: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/Crypto.build/Objects-normal/arm64/HPKE-Utils.swiftdeps"
+  diagnostics: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/Crypto.build/Objects-normal/arm64/HPKE-Utils.dia"
+"/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/SourcePackages/checkouts/swift-crypto/Sources/Crypto/HPKE/Ciphersuite/KEM/Conformances/DHKEM.swift":
+  swift-dependencies: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/Crypto.build/Objects-normal/arm64/DHKEM.swiftdeps"
+  dependencies: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/Crypto.build/Objects-normal/arm64/DHKEM.d"
+  const-values: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/Crypto.build/Objects-normal/arm64/DHKEM.swiftconstvalues"
+  diagnostics: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/Crypto.build/Objects-normal/arm64/DHKEM.dia"
+  object: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/Crypto.build/Objects-normal/arm64/DHKEM.o"

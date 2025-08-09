@@ -1,0 +1,888 @@
+//
+//  SupabaseService.swift
+//  WeTwo
+//
+//  Created by Benjamin Jeschke on 04.08.25.
+//
+
+import Foundation
+import Supabase
+
+class SupabaseService: ObservableObject {
+    static let shared = SupabaseService()
+    
+    private let client: SupabaseClient
+    
+    // MARK: - Configuration
+    private let supabaseURL = SupabaseConfig.supabaseURL
+    private let supabaseAnonKey = SupabaseConfig.supabaseAnonKey
+    
+    private init() {
+        print("🔧 Initializing Supabase client...")
+        print("   URL: \(supabaseURL)")
+        print("   Key: \(String(supabaseAnonKey.prefix(20)))...")
+        
+        self.client = SupabaseClient(
+            supabaseURL: URL(string: supabaseURL)!,
+            supabaseKey: supabaseAnonKey
+        )
+        print("✅ Supabase client initialized with URL: \(supabaseURL)")
+        
+        // Test connection
+        Task {
+            await testConnection()
+        }
+    }
+    
+    // MARK: - Helper Functions
+    private func isoDate(_ d: Date) -> String {
+        let df = DateFormatter()
+        df.calendar = Calendar(identifier: .iso8601)
+        df.locale = Locale(identifier: "en_US_POSIX")
+        df.timeZone = TimeZone(secondsFromGMT: 0)
+        df.dateFormat = "yyyy-MM-dd"
+        return df.string(from: d)
+    }
+    
+    // MARK: - Connection Test
+    private func testConnection() async {
+        do {
+            print("🔍 Testing Supabase connection...")
+            let response: [String] = try await client
+                .from("profiles")
+                .select("id")
+                .limit(1)
+                .execute()
+                .value
+            
+            print("✅ Supabase connection successful! Found \(response.count) profiles")
+        } catch {
+            print("❌ Supabase connection failed: \(error)")
+        }
+    }
+    
+    // MARK: - User Management
+    func signUp(email: String, password: String) async throws -> SupabaseUser {
+        print("🔧 Attempting to sign up user: \(email)")
+        
+        let authResponse = try await client.auth.signUp(
+            email: email,
+            password: password
+        )
+        
+        let user = authResponse.user
+        print("✅ User signed up successfully: \(user.id)")
+        
+        return SupabaseUser(
+            id: user.id.uuidString,
+            email: user.email ?? "",
+            createdAt: user.createdAt
+        )
+    }
+    
+    func signUpWithProfile(email: String, password: String, name: String, birthDate: Date) async throws -> SupabaseUser {
+        print("🔧 Attempting to sign up user with profile: \(email)")
+
+        // 1) Sign up
+        let authRes = try await client.auth.signUp(email: email, password: password)
+
+        // 2) Falls keine Session (z. B. Email Confirm ON) → signIn
+        if (try? await client.auth.session) == nil {
+            _ = try await client.auth.signIn(email: email, password: password)
+        }
+
+        guard let session = try? await client.auth.session else {
+            throw SupabaseError.invalidResponse
+        }
+        let user = session.user
+
+        // 3) Profile nur updaten (wurde durch DB-Trigger erstellt)
+        let df = DateFormatter()
+        df.calendar = Calendar(identifier: .iso8601)
+        df.locale = Locale(identifier: "en_US_POSIX")
+        df.timeZone = TimeZone(secondsFromGMT: 0)
+        df.dateFormat = "yyyy-MM-dd" // WICHTIG: DATE in DB
+
+        let birth = df.string(from: birthDate)
+        let zodiac = ZodiacSign.calculate(from: birthDate).rawValue
+
+        try await client
+            .from("profiles")
+            .update([
+                "name": name,
+                "zodiac_sign": zodiac,
+                "birth_date": birth
+            ])
+            .eq("id", value: user.id.uuidString)
+            .execute()
+
+        print("✅ Profile updated for user \(user.id)")
+
+        return SupabaseUser(id: user.id.uuidString, email: user.email ?? "", createdAt: user.createdAt)
+    }
+    }
+    
+    func signIn(email: String, password: String) async throws -> SupabaseUser {
+        print("🔧 Attempting to sign in user: \(email)")
+        
+        let authResponse = try await client.auth.signIn(
+            email: email,
+            password: password
+        )
+        
+        let user = authResponse.user
+        print("✅ User signed in successfully: \(user.id)")
+        
+        return SupabaseUser(
+            id: user.id.uuidString,
+            email: user.email ?? "",
+            createdAt: user.createdAt
+        )
+    }
+    
+    func signOut() async throws {
+        try await client.auth.signOut()
+    }
+    
+    func getCurrentUser() async throws -> SupabaseUser? {
+        do {
+            let session = try await client.auth.session
+            let user = session.user
+            
+            return SupabaseUser(
+                id: user.id.uuidString,
+                email: user.email ?? "",
+                createdAt: user.createdAt
+            )
+        } catch {
+            print("⚠️ No active session found: \(error)")
+            return nil
+        }
+    }
+    
+
+    
+    // MARK: - Profile Management
+    func createProfileWithAppleID(userId: String, name: String, birthDate: Date, appleUserID: String) async throws {
+        let calculatedZodiac = ZodiacSign.calculate(from: birthDate)
+        let profile = ProfileWithAppleID(
+            id: userId,
+            name: name,
+            zodiacSign: calculatedZodiac.rawValue,
+            birthDate: birthDate,
+            appleUserID: appleUserID,
+            createdAt: Date(),
+            updatedAt: Date()
+        )
+        
+        try await client
+            .from("profiles")
+            .insert(profile)
+            .execute()
+    }
+    
+    func updateProfileWithAppleID(userId: String, name: String, birthDate: Date, appleUserID: String) async throws {
+        let calculatedZodiac = ZodiacSign.calculate(from: birthDate)
+        
+        try await client
+            .from("profiles")
+            .update([
+                "name": name,
+                "zodiac_sign": calculatedZodiac.rawValue,
+                "birth_date": ISO8601DateFormatter().string(from: birthDate),
+                "apple_user_id": appleUserID,
+                "updated_at": ISO8601DateFormatter().string(from: Date())
+            ])
+            .eq("id", value: userId)
+            .execute()
+    }
+    
+    func createProfile(userId: String, name: String, birthDate: Date) async throws {
+        let calculatedZodiac = ZodiacSign.calculate(from: birthDate)
+        
+        let profile = Profile(
+            id: userId,
+            name: name,
+            zodiacSign: calculatedZodiac.rawValue,
+            birthDate: birthDate,
+            profilePhotoURL: nil,
+            relationshipStatus: nil,
+            hasChildren: nil,
+            childrenCount: nil,
+            createdAt: Date(),
+            updatedAt: Date()
+        )
+        
+        try await client
+            .from("profiles")
+            .insert(profile)
+            .execute()
+        
+        print("✅ Profile created successfully for user: \(userId)")
+    }
+    
+    func getProfile(userId: String) async throws -> Profile? {
+        let response: [Profile] = try await client
+            .from("profiles")
+            .select()
+            .eq("id", value: userId)
+            .execute()
+            .value
+        
+        return response.first
+    }
+    
+    func updateProfile(userId: String, name: String, birthDate: Date) async throws {
+        let calculatedZodiac = ZodiacSign.calculate(from: birthDate)
+        try await client
+            .from("profiles")
+            .update([
+                "name": name,
+                "zodiac_sign": calculatedZodiac.rawValue,
+                "birth_date": ISO8601DateFormatter().string(from: birthDate),
+                "updated_at": ISO8601DateFormatter().string(from: Date())
+            ])
+            .eq("id", value: userId)
+            .execute()
+    }
+    
+    func updateRelationshipData(userId: String, relationshipStatus: String, hasChildren: Bool, childrenCount: Int) async throws {
+        print("🔧 Updating relationship data for user: \(userId)")
+        print("   Status: \(relationshipStatus)")
+        print("   Has Children: \(hasChildren)")
+        print("   Children Count: \(childrenCount)")
+        
+        try await client
+            .from("profiles")
+            .update([
+                "relationship_status": relationshipStatus,
+                "has_children": hasChildren,
+                "children_count": childrenCount,
+                "updated_at": ISO8601DateFormatter().string(from: Date())
+            ])
+            .eq("id", value: userId)
+            .execute()
+        
+        print("✅ Relationship data updated successfully!")
+    }
+    
+    // MARK: - Memory Management
+    func createMemory(_ memory: MemoryEntry) async throws {
+        print("🔧 Creating memory: \(memory.title)")
+        guard let session = try? await client.auth.session else { throw SupabaseError.userNotFound }
+        let userId = session.user.id.uuidString
+
+        let payload: [String: Any?] = [
+            // id: DB generiert (gen_random_uuid) → NICHT mitsenden ist ok
+            "user_id": userId,                                  // RLS!
+            "partner_id": memory.partnerId?.uuidString,
+            "date": isoDate(memory.date),
+            "title": memory.title,
+            "description": memory.description,
+            "photo_data": memory.photoData?.base64EncodedString(), // TEXT-Spalte → Base64 wenn du willst
+            "location": memory.location,
+            "mood_level": String(memory.moodLevel.rawValue),
+            "tags": memory.tags.joined(separator: ","),
+            "is_shared": memory.isShared
+            // created_at/updated_at von DB
+        ]
+
+        try await client.from("memories").insert(payload).execute()
+        print("✅ Memory created successfully: \(memory.title)")
+    }
+    
+    func getMemories(userId: String) async throws -> [MemoryEntry] {
+        let response: [DatabaseMemory] = try await client
+            .from("memories")
+            .select()
+            .eq("user_id", value: userId)
+            .order("created_at", ascending: false)
+            .execute()
+            .value
+        
+        return response.compactMap { dbMemory -> MemoryEntry? in
+            guard let _ = UUID(uuidString: dbMemory.id),
+                  let userId = UUID(uuidString: dbMemory.userId),
+                  let moodLevelInt = Int(dbMemory.moodLevel), let moodLevel = MoodLevel(rawValue: moodLevelInt) else {
+                return nil
+            }
+            
+            let partnerId = dbMemory.partnerId.flatMap { UUID(uuidString: $0) }
+            
+            return MemoryEntry(
+                
+                userId: userId,
+                
+                
+                title: dbMemory.title,
+                description: dbMemory.description,
+                photoData: dbMemory.photoData,
+                location: dbMemory.location,
+                moodLevel: moodLevel,
+                tags: dbMemory.tags.isEmpty ? [] : dbMemory.tags.components(separatedBy: ","), partnerId: partnerId,
+                
+                
+            )
+        }
+    }
+    
+    func getSharedMemories(userId: String, partnerId: String) async throws -> [MemoryEntry] {
+        let response: [DatabaseMemory] = try await client
+            .from("memories")
+            .select()
+            .or("user_id.eq.\(userId),user_id.eq.\(partnerId)")
+            .eq("is_shared", value: true)
+            .order("created_at", ascending: false)
+            .execute()
+            .value
+        
+        return response.compactMap { dbMemory -> MemoryEntry? in
+            guard let _ = UUID(uuidString: dbMemory.id),
+                  let userId = UUID(uuidString: dbMemory.userId),
+                  let moodLevelInt = Int(dbMemory.moodLevel), let moodLevel = MoodLevel(rawValue: moodLevelInt) else {
+                return nil
+            }
+            
+            let partnerId = dbMemory.partnerId.flatMap { UUID(uuidString: $0) }
+            
+            return MemoryEntry(
+                
+                userId: userId,
+                
+                
+                title: dbMemory.title,
+                description: dbMemory.description,
+                photoData: dbMemory.photoData,
+                location: dbMemory.location,
+                moodLevel: moodLevel,
+                tags: dbMemory.tags.isEmpty ? [] : dbMemory.tags.components(separatedBy: ","), partnerId: partnerId,
+                
+                
+            )
+        }
+    }
+    
+    func updateMemory(_ memory: MemoryEntry) async throws {
+        try await client
+            .from("memories")
+            .update([
+                "title": memory.title,
+                "description": memory.description ?? "",
+                "photo_data": memory.photoData?.base64EncodedString() ?? "",
+                "location": memory.location ?? "",
+                "mood_level": String(memory.moodLevel.rawValue),
+                "tags": memory.tags.joined(separator: ","),
+                "is_shared": memory.isShared ? "true" : "false",
+                "updated_at": ISO8601DateFormatter().string(from: Date())
+            ])
+            .eq("id", value: memory.id.uuidString)
+            .execute()
+    }
+    
+    func deleteMemory(_ memory: MemoryEntry) async throws {
+        try await client
+            .from("memories")
+            .delete()
+            .eq("id", value: memory.id.uuidString)
+            .execute()
+    }
+    
+    // MARK: - Photo Storage
+    func uploadMemoryPhoto(memoryId: String, photoData: Data) async throws -> String {
+        let fileName = "\(memoryId)_\(Date().timeIntervalSince1970).jpg"
+        
+        try await client.storage
+            .from("memory-photos")
+            .upload(
+                fileName,
+                data: photoData,
+                options: FileOptions(contentType: "image/jpeg")
+            )
+        
+        return fileName
+    }
+    
+    func getMemoryPhotoURL(fileName: String) -> URL? {
+        return try? client.storage
+            .from("memory-photos")
+            .getPublicURL(path: fileName)
+    }
+    
+    func deleteMemoryPhoto(fileName: String) async throws {
+        try await client.storage
+            .from("memory-photos")
+            .remove(paths: [fileName])
+    }
+    
+    // MARK: - Profile Photo Storage
+    func uploadProfilePhoto(userId: String, photoData: Data) async throws -> String {
+        let fileName = "\(userId).jpg"
+        
+        try await client.storage
+            .from("profile-photos")
+            .upload(
+                fileName,
+                data: photoData,
+                options: FileOptions(contentType: "image/jpeg")
+            )
+        
+        // Update profile with photo URL
+        let photoURL = try client.storage
+            .from("profile-photos")
+            .getPublicURL(path: fileName)
+        
+        try await client
+            .from("profiles")
+            .update(["profile_photo_url": photoURL.absoluteString])
+            .eq("id", value: userId)
+            .execute()
+        
+        return fileName
+    }
+    
+    func getProfilePhotoURL(userId: String) async throws -> URL? {
+        // First get the profile to check if photo URL exists
+        let profile: [Profile] = try await client
+            .from("profiles")
+            .select("profile_photo_url")
+            .eq("id", value: userId)
+            .execute()
+            .value
+        
+        guard let photoURLString = profile.first?.profilePhotoURL else { return nil }
+        
+        return URL(string: photoURLString)
+    }
+    
+    func downloadProfilePhoto(userId: String) async throws -> Data? {
+        guard let photoURL = try await getProfilePhotoURL(userId: userId) else {
+            return nil
+        }
+        
+        let (data, _) = try await URLSession.shared.data(from: photoURL)
+        return data
+    }
+    
+    func deleteProfilePhoto(userId: String) async throws {
+        let fileName = "\(userId).jpg"
+        
+        try await client.storage
+            .from("profile-photos")
+            .remove(paths: [fileName])
+        
+        // Remove photo URL from profile
+        try await client
+            .from("profiles")
+            .update(["profile_photo_url": ""])
+            .eq("id", value: userId)
+            .execute()
+    }
+    
+    // MARK: - Partnership Management
+    func createPartnership(userId: String, partnerId: String, connectionCode: String) async throws {
+        let partnership = Partnership(
+            id: UUID().uuidString,
+            userId: userId,
+            partnerId: partnerId,
+            connectionCode: connectionCode,
+            status: "active",
+            createdAt: Date(),
+            updatedAt: Date()
+        )
+        
+        try await client
+            .from("partnerships")
+            .insert(partnership)
+            .execute()
+    }
+    
+    func getPartnership(userId: String) async throws -> Partnership? {
+        let response: [Partnership] = try await client
+            .from("partnerships")
+            .select()
+            .or("user_id.eq.\(userId),partner_id.eq.\(userId)")
+            .eq("status", value: "active")
+            .execute()
+            .value
+        
+        return response.first
+    }
+    
+    func findPartnerByCode(connectionCode: String) async throws -> Profile? {
+        let response: [Partnership] = try await client
+            .from("partnerships")
+            .select()
+            .eq("connection_code", value: connectionCode)
+            .eq("status", value: "active")
+            .execute()
+            .value
+        
+        guard let partnership = response.first else { return nil }
+        
+        // Get the partner's profile
+        let partnerId = partnership.userId
+        return try await getProfile(userId: partnerId)
+    }
+    
+    // MARK: - Partner Profile Synchronization
+    func getPartnerProfile(userId: String) async throws -> Profile? {
+        guard let partnership = try await getPartnership(userId: userId) else {
+            return nil
+        }
+        
+        let partnerId = partnership.userId == userId ? partnership.partnerId : partnership.userId
+        return try await getProfile(userId: partnerId)
+    }
+    
+    func syncProfileWithPartner(userId: String, updates: [String: Any]) async throws {
+        guard let partnership = try await getPartnership(userId: userId) else {
+            throw SupabaseError.invalidResponse
+        }
+        
+        let partnerId = partnership.userId == userId ? partnership.partnerId : partnership.userId
+        
+        // Update shared profile data
+        try await updateSharedProfile(userId: partnerId, updates: updates)
+    }
+    
+    func getSharedProfileData(userId: String) async throws -> [String: Any]? {
+        // TODO: Implement when Supabase API supports dynamic selects
+        print("Dynamic profile data retrieval not yet implemented")
+        return nil
+    }
+    
+    func updateSharedProfile(userId: String, updates: [String: Any]) async throws {
+        // TODO: Implement when Supabase API supports dynamic updates
+        print("Dynamic profile updates not yet implemented")
+    }
+    
+    func updateRelationshipData(data: [String: Any]) async throws {
+        print("🔧 Updating relationship data...")
+        
+        guard let currentUser = try await getCurrentUser() else {
+            throw SupabaseError.userNotFound
+        }
+        
+        // For now, we'll use a simple approach with string conversion
+        var stringData: [String: String] = [:]
+        for (key, value) in data {
+            if let date = value as? Date {
+                stringData[key] = ISO8601DateFormatter().string(from: date)
+            } else {
+                stringData[key] = "\(value)"
+            }
+        }
+        
+        try await client
+            .from("profiles")
+            .update(stringData)
+            .eq("id", value: currentUser.id)
+            .execute()
+        
+        print("✅ Relationship data updated successfully")
+    }
+    
+    func disconnectPartner(userId: String) async throws {
+        try await client
+            .from("partnerships")
+            .update([
+                "status": "inactive",
+                "updated_at": ISO8601DateFormatter().string(from: Date())
+            ])
+            .or("user_id.eq.\(userId),partner_id.eq.\(userId)")
+            .eq("status", value: "active")
+            .execute()
+    }
+    
+    func getPartnershipStatus(userId: String) async throws -> PartnershipStatus {
+        guard let partnership = try await getPartnership(userId: userId) else {
+            return .notConnected
+        }
+        
+        let partnerId = partnership.userId == userId ? partnership.partnerId : partnership.userId
+        guard let partnerProfile = try await getProfile(userId: partnerId) else {
+            return .notConnected
+        }
+        
+        return .connected(partnerName: partnerProfile.name, partnerId: partnerId)
+    }
+    
+    func subscribeToPartnerUpdates(userId: String, onUpdate: @escaping (Profile) -> Void) async throws {
+        // TODO: Implement realtime subscription when Supabase Realtime is properly configured
+        print("Realtime subscription not yet implemented")
+    }
+    
+    func unsubscribeFromPartnerUpdates(userId: String) async throws {
+        // TODO: Implement realtime unsubscription when Supabase Realtime is properly configured
+        print("Realtime unsubscription not yet implemented")
+    }
+    
+    // MARK: - Love Messages
+    func saveLoveMessage(_ message: LoveMessage) async throws {
+        let insertData = LoveMessageInsert(
+            id: message.id,
+            senderId: message.senderId.uuidString,
+            receiverId: message.receiverId.uuidString,
+            message: message.message,
+            timestamp: ISO8601DateFormatter().string(from: message.timestamp),
+            isRead: message.isRead
+        )
+        
+        try await client
+            .from("love_messages")
+            .insert(insertData)
+            .execute()
+    }
+    
+    func getLoveMessages() async throws -> [LoveMessage] {
+        let response: [DatabaseLoveMessage] = try await client
+            .from("love_messages")
+            .select()
+            .order("timestamp", ascending: false)
+            .execute()
+            .value
+        
+        return response.compactMap { dbMessage -> LoveMessage? in
+            guard let senderId = UUID(uuidString: dbMessage.senderId),
+                  let receiverId = UUID(uuidString: dbMessage.receiverId),
+                  let timestamp = ISO8601DateFormatter().date(from: dbMessage.timestamp) else {
+                return nil
+            }
+            
+            return LoveMessage(
+                id: dbMessage.id,
+                senderId: senderId,
+                receiverId: receiverId,
+                message: dbMessage.message,
+                timestamp: timestamp,
+                isRead: dbMessage.isRead
+            )
+        }
+    }
+    
+    func markLoveMessageAsRead(_ messageId: String) async throws {
+        try await client
+            .from("love_messages")
+            .update(["is_read": true])
+            .eq("id", value: messageId)
+            .execute()
+    }
+    
+    func sendPushNotification(to userId: UUID, title: String, body: String, data: [String: String]) async throws {
+        // In a real app, this would use Supabase Edge Functions or a push notification service
+        // For now, we'll simulate the push notification
+        print("📱 Push notification sent to \(userId):")
+        print("   Title: \(title)")
+        print("   Body: \(body)")
+        print("   Data: \(data)")
+        
+        // TODO: Implement actual push notification sending
+        // This could be done through:
+        // 1. Supabase Edge Functions
+        // 2. Firebase Cloud Messaging
+        // 3. Apple Push Notification Service (APNs)
+    }
+
+// MARK: - Data Models
+struct SupabaseUser: Codable {
+    let id: String
+    let email: String
+    let createdAt: Date
+}
+
+struct Profile: Codable {
+    let id: String
+    let name: String
+    let zodiacSign: String
+    let birthDate: Date
+    let profilePhotoURL: String?
+    let relationshipStatus: String?
+    let hasChildren: Bool?
+    let childrenCount: Int?
+    let createdAt: Date
+    let updatedAt: Date
+    
+    enum CodingKeys: String, CodingKey {
+        case id
+        case name
+        case zodiacSign = "zodiac_sign"
+        case birthDate = "birth_date"
+        case profilePhotoURL = "profile_photo_url"
+        case relationshipStatus = "relationship_status"
+        case hasChildren = "has_children"
+        case childrenCount = "children_count"
+        case createdAt = "created_at"
+        case updatedAt = "updated_at"
+    }
+}
+
+struct ProfileWithAppleID: Codable {
+    let id: String
+    let name: String
+    let zodiacSign: String
+    let birthDate: Date
+    let appleUserID: String
+    let createdAt: Date
+    let updatedAt: Date
+    
+    enum CodingKeys: String, CodingKey {
+        case id
+        case name
+        case zodiacSign = "zodiac_sign"
+        case birthDate = "birth_date"
+        case appleUserID = "apple_user_id"
+        case createdAt = "created_at"
+        case updatedAt = "updated_at"
+    }
+}
+
+struct LoveMessageInsert: Codable {
+    let id: String
+    let senderId: String
+    let receiverId: String
+    let message: String
+    let timestamp: String
+    let isRead: Bool
+    
+    enum CodingKeys: String, CodingKey {
+        case id
+        case senderId = "sender_id"
+        case receiverId = "receiver_id"
+        case message
+        case timestamp
+        case isRead = "is_read"
+    }
+}
+
+struct DatabaseLoveMessage: Codable {
+    let id: String
+    let senderId: String
+    let receiverId: String
+    let message: String
+    let timestamp: String
+    let isRead: Bool
+    
+    enum CodingKeys: String, CodingKey {
+        case id
+        case senderId = "sender_id"
+        case receiverId = "receiver_id"
+        case message
+        case timestamp
+        case isRead = "is_read"
+    }
+}
+
+struct DatabaseMemory: Codable {
+    let id: String
+    let userId: String
+    let partnerId: String?
+    let date: Date
+    let title: String
+    let description: String?
+    let photoData: Data?
+    let location: String?
+    let moodLevel: String
+    let tags: String
+    let isShared: Bool
+    let createdAt: Date
+    let updatedAt: Date
+    
+    enum CodingKeys: String, CodingKey {
+        case id
+        case userId = "user_id"
+        case partnerId = "partner_id"
+        case date
+        case title
+        case description
+        case photoData = "photo_data"
+        case location
+        case moodLevel = "mood_level"
+        case tags
+        case isShared = "is_shared"
+        case createdAt = "created_at"
+        case updatedAt = "updated_at"
+    }
+}
+
+struct Partnership: Codable {
+    let id: String
+    let userId: String
+    let partnerId: String
+    let connectionCode: String
+    let status: String
+    let createdAt: Date
+    let updatedAt: Date
+    
+    enum CodingKeys: String, CodingKey {
+        case id
+        case userId = "user_id"
+        case partnerId = "partner_id"
+        case connectionCode = "connection_code"
+        case status
+        case createdAt = "created_at"
+        case updatedAt = "updated_at"
+    }
+}
+
+enum PartnershipStatus {
+    case notConnected
+    case connected(partnerName: String, partnerId: String)
+    
+    var isConnected: Bool {
+        switch self {
+        case .notConnected: return false
+        case .connected: return true
+        }
+    }
+    
+    var partnerName: String? {
+        switch self {
+        case .notConnected: return nil
+        case .connected(let name, _): return name
+        }
+    }
+    
+    var partnerId: String? {
+        switch self {
+        case .notConnected: return nil
+        case .connected(_, let id): return id
+        }
+    }
+}
+
+// MARK: - Errors
+enum SupabaseError: Error, LocalizedError {
+    case userNotFound
+    case invalidResponse
+    case uploadFailed
+    case downloadFailed
+    case notImplemented
+    
+    var errorDescription: String? {
+        switch self {
+        case .userNotFound:
+            return "Benutzer nicht gefunden"
+        case .invalidResponse:
+            return "Ungültige Antwort vom Server"
+        case .uploadFailed:
+            return "Upload fehlgeschlagen"
+        case .downloadFailed:
+            return "Download fehlgeschlagen"
+        case .notImplemented:
+            return "Funktion noch nicht implementiert"
+        }
+    }
+}
+
+// MARK: - Extensions
+extension Array {
+    func asyncCompactMap<T>(_ transform: (Element) async throws -> T?) async rethrows -> [T] {
+        var results: [T] = []
+        for element in self {
+            if let transformed = try await transform(element) {
+                results.append(transformed)
+            }
+        }
+        return results
+    }
+} 

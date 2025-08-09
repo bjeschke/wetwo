@@ -1,0 +1,18 @@
+"/Users/benjaminjeschke/Documents/apps/WeTwo/WeTwo/Views/Today/TodayView.swift":
+  const-values: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/WeTwo.build/Debug-iphonesimulator/WeTwo.build/Objects-normal/arm64/TodayView.swiftconstvalues"
+  dependencies: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/WeTwo.build/Debug-iphonesimulator/WeTwo.build/Objects-normal/arm64/TodayView.d"
+  diagnostics: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/WeTwo.build/Debug-iphonesimulator/WeTwo.build/Objects-normal/arm64/TodayView.dia"
+  swift-dependencies: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/WeTwo.build/Debug-iphonesimulator/WeTwo.build/Objects-normal/arm64/TodayView.swiftdeps"
+  object: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/WeTwo.build/Debug-iphonesimulator/WeTwo.build/Objects-normal/arm64/TodayView.o"
+"/Users/benjaminjeschke/Documents/apps/WeTwo/WeTwo/WeTwoApp.swift":
+  const-values: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/WeTwo.build/Debug-iphonesimulator/WeTwo.build/Objects-normal/arm64/WeTwoApp.swiftconstvalues"
+  object: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/WeTwo.build/Debug-iphonesimulator/WeTwo.build/Objects-normal/arm64/WeTwoApp.o"
+  diagnostics: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/WeTwo.build/Debug-iphonesimulator/WeTwo.build/Objects-normal/arm64/WeTwoApp.dia"
+  swift-dependencies: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/WeTwo.build/Debug-iphonesimulator/WeTwo.build/Objects-normal/arm64/WeTwoApp.swiftdeps"
+  dependencies: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/WeTwo.build/Debug-iphonesimulator/WeTwo.build/Objects-normal/arm64/WeTwoApp.d"
+"/Users/benjaminjeschke/Documents/apps/WeTwo/WeTwo/Views/Timeline/MemoryCard.swift":
+  diagnostics: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/WeTwo.build/Debug-iphonesimulator/WeTwo.build/Objects-normal/arm64/MemoryCard.dia"
+  const-values: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/WeTwo.build/Debug-iphonesimulator/WeTwo.build/Objects-normal/arm64/MemoryCard.swiftconstvalues"
+  swift-dependencies: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/WeTwo.build/Debug-iphonesimulator/WeTwo.build/Objects-normal/arm64/MemoryCard.swiftdeps"
+  dependencies: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/WeTwo.build/Debug-iphonesimulator/WeTwo.build/Objects-normal/arm64/MemoryCard.d"
+  object: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/WeTwo.build/Debug-iphonesimulator/WeTwo.build/Objects-normal/arm64/MemoryCard.o"

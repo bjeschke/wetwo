@@ -1,0 +1,18 @@
+"/Users/benjaminjeschke/Documents/apps/WeTwo/WeTwo/Views/Partner/PartnerConnectionView.swift":
+  swift-dependencies: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/WeTwo.build/Debug-iphonesimulator/WeTwo.build/Objects-normal/arm64/PartnerConnectionView.swiftdeps"
+  object: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/WeTwo.build/Debug-iphonesimulator/WeTwo.build/Objects-normal/arm64/PartnerConnectionView.o"
+  const-values: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/WeTwo.build/Debug-iphonesimulator/WeTwo.build/Objects-normal/arm64/PartnerConnectionView.swiftconstvalues"
+  diagnostics: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/WeTwo.build/Debug-iphonesimulator/WeTwo.build/Objects-normal/arm64/PartnerConnectionView.dia"
+  dependencies: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/WeTwo.build/Debug-iphonesimulator/WeTwo.build/Objects-normal/arm64/PartnerConnectionView.d"
+"/Users/benjaminjeschke/Documents/apps/WeTwo/WeTwo/Views/Calendar/WeekSummaryView.swift":
+  object: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/WeTwo.build/Debug-iphonesimulator/WeTwo.build/Objects-normal/arm64/WeekSummaryView.o"
+  diagnostics: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/WeTwo.build/Debug-iphonesimulator/WeTwo.build/Objects-normal/arm64/WeekSummaryView.dia"
+  swift-dependencies: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/WeTwo.build/Debug-iphonesimulator/WeTwo.build/Objects-normal/arm64/WeekSummaryView.swiftdeps"
+  const-values: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/WeTwo.build/Debug-iphonesimulator/WeTwo.build/Objects-normal/arm64/WeekSummaryView.swiftconstvalues"
+  dependencies: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/WeTwo.build/Debug-iphonesimulator/WeTwo.build/Objects-normal/arm64/WeekSummaryView.d"
+"/Users/benjaminjeschke/Documents/apps/WeTwo/WeTwo/Views/Onboarding/OnboardingView.swift":
+  object: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/WeTwo.build/Debug-iphonesimulator/WeTwo.build/Objects-normal/arm64/OnboardingView.o"
+  const-values: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/WeTwo.build/Debug-iphonesimulator/WeTwo.build/Objects-normal/arm64/OnboardingView.swiftconstvalues"
+  dependencies: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/WeTwo.build/Debug-iphonesimulator/WeTwo.build/Objects-normal/arm64/OnboardingView.d"
+  swift-dependencies: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/WeTwo.build/Debug-iphonesimulator/WeTwo.build/Objects-normal/arm64/OnboardingView.swiftdeps"
+  diagnostics: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/WeTwo.build/Debug-iphonesimulator/WeTwo.build/Objects-normal/arm64/OnboardingView.dia"

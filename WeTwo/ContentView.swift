@@ -7,15 +7,13 @@
 
 import SwiftUI
 
+// This file is no longer used as we have a proper app structure
+// with MainTabView and OnboardingView handling the main navigation
+
 struct ContentView: View {
     var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
-        }
-        .padding()
+        Text("This view is deprecated. Use MainTabView or OnboardingView instead.")
+            .padding()
     }
 }
 

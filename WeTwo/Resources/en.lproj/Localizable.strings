@@ -1,0 +1,353 @@
+/* 
+  Localizable.strings (English)
+  WeTwo
+  
+  Created by Benjamin Jeschke on 04.08.25.
+*/
+
+// MARK: - General
+"app_name" = "Amavo";
+"ok" = "OK";
+"cancel" = "Cancel";
+"save" = "Save";
+"delete" = "Delete";
+"edit" = "Edit";
+"close" = "Close";
+"done" = "Done";
+"next" = "Next";
+"back" = "Back";
+"yes" = "Yes";
+"no" = "No";
+"loading" = "Loading...";
+"error" = "Error";
+"success" = "Success";
+
+// MARK: - Onboarding
+"onboarding_welcome_title" = "Welcome to Amavo";
+"onboarding_welcome_subtitle" = "Strengthen your relationship through daily micro-interactions";
+"onboarding_feature_mood" = "Daily Mood Tracking";
+"onboarding_feature_calendar" = "Weekly Love Calendar";
+"onboarding_feature_memories" = "Shared Memories";
+"onboarding_feature_partner" = "Partner Connection";
+"onboarding_signin_title" = "Sign In";
+"onboarding_signin_subtitle" = "Choose your preferred sign-in method";
+"onboarding_or" = "or";
+"onboarding_manual_signup" = "Sign up with Email";
+"onboarding_quick_start" = "Quick Start (No Account)";
+"onboarding_profile_title" = "Create Profile";
+"onboarding_name_label" = "Name";
+"onboarding_name_placeholder" = "Your name";
+"onboarding_birthdate_label" = "Birth Date";
+"onboarding_birthdate_placeholder" = "When were you born?";
+"onboarding_zodiac_label" = "Your zodiac sign:";
+"onboarding_back" = "Back";
+"onboarding_next" = "Next";
+"onboarding_complete" = "Complete";
+"onboarding_manual_title" = "Create Account";
+"onboarding_create_account" = "Create Account";
+"onboarding_manual_nav_title" = "Registration";
+"onboarding_cancel" = "Cancel";
+
+// MARK: - Tab Navigation
+"tab_today" = "Today";
+"tab_timeline" = "Timeline";
+"tab_calendar" = "Calendar";
+"tab_partner" = "Partner";
+"tab_profile" = "Profile";
+
+// MARK: - Today View
+"today_title" = "How are you feeling today?";
+"today_mood_happy" = "Happy";
+"today_mood_neutral" = "Neutral";
+"today_mood_sad" = "Sad";
+"today_mood_very_happy" = "Very Happy";
+"today_mood_very_sad" = "Very Sad";
+"today_add_event" = "Add Event";
+"today_add_photo" = "Add Photo";
+"today_generate_insight" = "Generate Insight";
+"today_generate_love_message" = "Love Message";
+"today_partner_mood" = "Partner's Mood";
+"today_compatibility_score" = "Compatibility";
+"today_no_insight" = "No insight for today yet";
+"today_no_love_message" = "No love message yet";
+"today_save_mood" = "Save My Mood";
+"today_daily_insight" = "Daily Insight";
+"today_generating_insight" = "Generating insight...";
+"today_partner_no_mood" = "Partner hasn't shared their mood yet";
+"today_insights_remaining" = "left";
+
+// MARK: - Timeline View
+"timeline_title" = "Our Memories";
+"timeline_subtitle" = "Share special moments with your partner";
+"timeline_add_memory" = "New Memory";
+"timeline_no_memories" = "No memories yet";
+"timeline_no_memories_subtitle" = "Add your first memory and share it with your partner!";
+"timeline_add_first_memory" = "Add First Memory";
+"timeline_stats_total" = "Total";
+"timeline_stats_shared" = "Shared";
+"timeline_stats_average" = "Average";
+"timeline_filter_all" = "All";
+"timeline_filter_shared" = "Shared";
+"timeline_filter_personal" = "Personal";
+"timeline_filter_favorites" = "Favorites";
+
+// MARK: - Memory Creation
+"memory_new_title" = "Create New Memory";
+"memory_new_subtitle" = "Share a special moment with your partner";
+"memory_photo_title" = "Photo";
+"memory_photo_add" = "Add Photo";
+"memory_photo_change" = "Change Photo";
+"memory_photo_optional" = "Optional - but photos make memories come alive!";
+"memory_details_title" = "Details";
+"memory_title_label" = "Title";
+"memory_title_placeholder" = "e.g. Our first vacation together";
+"memory_description_label" = "Description (optional)";
+"memory_description_placeholder" = "Tell us more about this moment...";
+"memory_location_label" = "Location";
+"memory_location_placeholder" = "e.g. Mallorca, Spain";
+"memory_mood_title" = "How were you feeling?";
+"memory_tags_title" = "Tags";
+"memory_tags_add" = "Add Tag";
+"memory_tags_placeholder" = "Add tags to categorize your memory";
+"memory_share_with_partner" = "Share with Partner";
+"memory_share_description" = "This memory will be automatically shared with your partner";
+
+// MARK: - Memory Detail
+"memory_detail_title" = "Memory";
+"memory_detail_description" = "Description";
+"memory_detail_location" = "Location";
+"memory_detail_mood" = "Mood";
+"memory_detail_mood_description" = "How you were feeling";
+"memory_detail_shared" = "Shared with Partner";
+"memory_detail_shared_description" = "This memory is shared with your partner";
+"memory_detail_shared_subtitle" = "Both can see and edit it";
+"memory_detail_tags" = "Tags";
+"memory_detail_edit" = "Edit Memory";
+"memory_detail_delete" = "Delete Memory";
+"memory_detail_delete_alert" = "Delete Memory";
+"memory_detail_delete_message" = "Do you really want to delete this memory? This action cannot be undone.";
+
+// MARK: - Calendar View
+"calendar_title" = "Week Overview";
+"calendar_week_summary" = "Week Summary";
+"calendar_view_details" = "View Details";
+"calendar_no_data" = "No data for this week yet";
+"calendar_week" = "Week";
+"calendar_trend" = "Trend";
+"calendar_days_tracked" = "Days Tracked";
+"calendar_partner_week" = "Partner's Week";
+"calendar_average" = "Average";
+"calendar_days_shared" = "Days Shared";
+
+// MARK: - Partner View
+"partner_title" = "Partner";
+"partner_not_connected" = "Not Connected";
+"partner_not_connected_subtitle" = "Connect with your partner to share memories";
+"partner_connect_now" = "Connect Now";
+"partner_connected" = "Connected with";
+"partner_compatibility" = "Compatibility";
+"partner_show_code" = "Show Connection Code";
+"partner_disconnect" = "Disconnect";
+"partner_connection_code" = "Connection Code";
+"partner_enter_code" = "Enter Code";
+"partner_connect" = "Connect";
+"partner_code_placeholder" = "6-digit code";
+"partner_connected_status" = "Connected";
+"partner_not_connected_status" = "Not Connected";
+"partner_connected_message" = "You're connected with your partner!";
+"partner_not_connected_message" = "Connect with your partner to start sharing moods and insights";
+"partner_disconnect_alert" = "Disconnect Partner";
+"partner_disconnect_message" = "Are you sure you want to disconnect from your partner? You can reconnect anytime.";
+
+// MARK: - Profile View
+"profile_title" = "Profile";
+"profile_edit" = "Edit";
+"profile_days_active" = "Days Active";
+"profile_memories_created" = "Memories Created";
+"profile_upgrade_premium" = "Upgrade to Premium";
+"profile_settings" = "Settings";
+"profile_language" = "Language";
+"profile_notifications" = "Notifications";
+"profile_privacy" = "Privacy";
+"profile_about" = "About WeTwo";
+"profile_logout" = "Logout";
+"profile_premium_features" = "Premium Features";
+"profile_premium_insights" = "Daily Insights";
+"profile_premium_messages" = "Unlimited Love Messages";
+"profile_premium_photos" = "Unlimited Photos";
+"profile_premium_calendar" = "Full Calendar";
+
+// MARK: - Settings
+"settings_title" = "Settings";
+"settings_language" = "Language";
+"settings_language_device" = "Device Language";
+"settings_language_german" = "Deutsch";
+"settings_language_english" = "English";
+"settings_language_spanish" = "Español";
+"settings_notifications" = "Notifications";
+"settings_notifications_daily" = "Daily Reminder";
+"settings_notifications_mood" = "Mood Tracking";
+"settings_notifications_memory" = "New Memories";
+"settings_notifications_partner" = "Partner Updates";
+"settings_privacy" = "Privacy";
+"settings_privacy_data" = "Data Usage";
+"settings_privacy_analytics" = "Analytics";
+"settings_about" = "About";
+"settings_version" = "Version";
+"settings_terms" = "Terms of Service";
+"settings_privacy_policy" = "Privacy Policy";
+
+// MARK: - Premium
+"premium_title" = "Premium Upgrade";
+"premium_subtitle" = "Unleash the full power of WeTwo";
+"premium_monthly" = "Monthly";
+"premium_yearly" = "Yearly";
+"premium_lifetime" = "Lifetime";
+"premium_feature_insights" = "Daily GPT Insights";
+"premium_feature_messages" = "Unlimited Love Messages";
+"premium_feature_photos" = "Unlimited Photo Uploads";
+"premium_feature_calendar" = "Full Calendar";
+"premium_feature_analytics" = "Detailed Analytics";
+"premium_upgrade" = "Upgrade";
+"premium_restore" = "Restore Purchases";
+"premium_terms" = "Terms of Service";
+"premium_privacy" = "Privacy Policy";
+
+// MARK: - Zodiac Signs
+"zodiac_aries" = "Aries";
+"zodiac_taurus" = "Taurus";
+"zodiac_gemini" = "Gemini";
+"zodiac_cancer" = "Cancer";
+"zodiac_leo" = "Leo";
+"zodiac_virgo" = "Virgo";
+"zodiac_libra" = "Libra";
+"zodiac_scorpio" = "Scorpio";
+"zodiac_sagittarius" = "Sagittarius";
+"zodiac_capricorn" = "Capricorn";
+"zodiac_aquarius" = "Aquarius";
+"zodiac_pisces" = "Pisces";
+
+// MARK: - Errors
+"error_network" = "Network Error";
+"error_network_message" = "Please check your internet connection";
+"error_auth" = "Authentication Error";
+"error_auth_message" = "Please sign in again";
+"error_upload" = "Upload Error";
+"error_upload_message" = "The photo could not be uploaded";
+"error_sync" = "Sync Error";
+"error_sync_message" = "Data could not be synchronized";
+
+// MARK: - Partner Errors
+"partner_error_invalid_code" = "Invalid connection code";
+"partner_error_network" = "Network error occurred";
+"partner_error_already_connected" = "Already connected to a partner";
+"partner_error_unknown" = "An unknown error occurred";
+
+// MARK: - Love Messages
+"love_messages_title" = "Love Messages";
+"love_messages_received" = "Received Messages";
+"love_messages_sent" = "Sent Messages";
+"love_messages_unread" = "Unread";
+"love_messages_show_all" = "Show All";
+"love_messages_send_success" = "Love message sent!";
+"love_messages_send_error" = "Error sending message";
+"love_message_error_user_not_found" = "User not found";
+"love_message_error_partner_not_found" = "Partner not found";
+"love_message_error_network" = "Network error";
+
+// MARK: - Who Knows Better Game
+"game_who_knows_better" = "Who Knows Better?";
+"game_who_knows_better_desc" = "Test how well you know each other";
+
+// Game strings
+"player_1" = "Player 1";
+"player_2" = "Player 2";
+"player" = "Player";
+"turn" = "turn";
+"question" = "Question";
+"correct_answer" = "Correct!";
+"wrong_answer" = "Wrong answer";
+"correct_answer_was" = "Correct answer was";
+"point" = "point";
+"next_question" = "Next Question";
+"see_results" = "See Results";
+"game_complete" = "Game Complete!";
+"wins" = "wins";
+"tie_game" = "It's a tie! 🤝";
+"play_again" = "Play Again";
+"back_to_menu" = "Back to Menu";
+
+// Question strings
+"question_favorite_color" = "What is your partner's favorite color?";
+"question_favorite_food" = "What is your partner's favorite food?";
+"question_dream_vacation" = "Where would your partner like to go on vacation?";
+"question_favorite_music" = "What type of music does your partner prefer?";
+"question_pet_peeve" = "What is your partner's biggest pet peeve?";
+"question_favorite_season" = "What is your partner's favorite season?";
+"question_favorite_movie_genre" = "What is your partner's favorite movie genre?";
+"question_favorite_hobby" = "What is your partner's favorite hobby?";
+"question_favorite_drink" = "What is your partner's favorite drink?";
+"question_favorite_animal" = "What is your partner's favorite animal?";
+
+// Answer options
+"color_blue" = "Blue";
+"color_red" = "Red";
+"color_green" = "Green";
+"color_purple" = "Purple";
+"food_pizza" = "Pizza";
+"food_pasta" = "Pasta";
+"food_sushi" = "Sushi";
+"food_burger" = "Burger";
+"vacation_beach" = "Beach";
+"vacation_mountains" = "Mountains";
+"vacation_city" = "City";
+"vacation_countryside" = "Countryside";
+"music_pop" = "Pop";
+"music_rock" = "Rock";
+"music_classical" = "Classical";
+"music_jazz" = "Jazz";
+"pet_peeve_loud" = "Loud noises";
+"pet_peeve_messy" = "Messy spaces";
+"pet_peeve_late" = "Being late";
+"pet_peeve_interrupt" = "Being interrupted";
+"season_spring" = "Spring";
+"season_summer" = "Summer";
+"season_autumn" = "Autumn";
+"season_winter" = "Winter";
+"genre_action" = "Action";
+"genre_comedy" = "Comedy";
+"genre_romance" = "Romance";
+"genre_thriller" = "Thriller";
+"hobby_reading" = "Reading";
+"hobby_sports" = "Sports";
+"hobby_cooking" = "Cooking";
+"hobby_gaming" = "Gaming";
+"drink_coffee" = "Coffee";
+"drink_tea" = "Tea";
+"drink_water" = "Water";
+"drink_juice" = "Juice";
+"animal_dog" = "Dog";
+"animal_cat" = "Cat";
+"animal_bird" = "Bird";
+"animal_fish" = "Fish";
+
+// MARK: - Success Messages
+"success_memory_created" = "Memory created!";
+"success_memory_updated" = "Memory updated!";
+"success_memory_deleted" = "Memory deleted!";
+"success_photo_uploaded" = "Photo uploaded!";
+"success_partner_connected" = "Connected with partner!";
+"success_profile_updated" = "Profile updated!";
+
+// MARK: - Quick Tags
+"tag_vacation" = "Vacation";
+"tag_date_night" = "Date Night";
+"tag_birthday" = "Birthday";
+"tag_anniversary" = "Anniversary";
+"tag_travel" = "Travel";
+"tag_food" = "Food";
+"tag_concert" = "Concert";
+"tag_sports" = "Sports";
+"tag_family" = "Family";
+"tag_friends" = "Friends";
+"tag_favorite" = "favorite"; 

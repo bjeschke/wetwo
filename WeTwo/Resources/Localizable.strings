@@ -1,0 +1,297 @@
+/* 
+  Localizable.strings
+  WeTwo
+  
+  Created by Benjamin Jeschke on 04.08.25.
+*/
+
+// MARK: - General
+"app_name" = "Amavo";
+"ok" = "OK";
+"cancel" = "Abbrechen";
+"save" = "Speichern";
+"delete" = "Löschen";
+"edit" = "Bearbeiten";
+"close" = "Schließen";
+"done" = "Fertig";
+"next" = "Weiter";
+"back" = "Zurück";
+"yes" = "Ja";
+"no" = "Nein";
+"loading" = "Lädt...";
+"error" = "Fehler";
+"success" = "Erfolg";
+
+// MARK: - Onboarding
+"onboarding_welcome_title" = "Willkommen bei Amavo";
+"onboarding_welcome_subtitle" = "Stärke deine Beziehung durch tägliche Mikro-Interaktionen";
+"onboarding_feature_mood" = "Tägliche Stimmungs-Tracking";
+"onboarding_feature_calendar" = "Wöchentlicher Liebes-Kalender";
+"onboarding_feature_memories" = "Gemeinsame Erinnerungen";
+"onboarding_feature_partner" = "Partner-Verbindung";
+"onboarding_signin_title" = "Anmelden";
+"onboarding_signin_subtitle" = "Wähle deine bevorzugte Anmeldemethode";
+"onboarding_or" = "oder";
+"onboarding_manual_signup" = "Mit E-Mail registrieren";
+"onboarding_quick_start" = "Schnellstart (Ohne Konto)";
+"onboarding_profile_title" = "Profil erstellen";
+"onboarding_name_label" = "Name";
+"onboarding_name_placeholder" = "Dein Name";
+"onboarding_birthdate_label" = "Geburtsdatum";
+"onboarding_birthdate_placeholder" = "Wann wurdest du geboren?";
+"onboarding_zodiac_label" = "Dein Sternzeichen:";
+"onboarding_back" = "Zurück";
+"onboarding_next" = "Weiter";
+"onboarding_complete" = "Fertig";
+"onboarding_manual_title" = "Konto erstellen";
+"onboarding_create_account" = "Konto erstellen";
+"onboarding_manual_nav_title" = "Registrierung";
+"onboarding_cancel" = "Abbrechen";
+"onboarding_name_title" = "Wie heißt du?";
+"onboarding_name_placeholder" = "Dein Name";
+"onboarding_zodiac_title" = "Was ist dein Sternzeichen?";
+"onboarding_zodiac_subtitle" = "Wir nutzen es für personalisierte Insights";
+"onboarding_birthdate_title" = "Wann hast du Geburtstag?";
+"onboarding_birthdate_subtitle" = "Für genauere Astrologie-Insights";
+"onboarding_partner_title" = "Verbinde dich mit deinem Partner";
+"onboarding_partner_subtitle" = "Teile Erinnerungen und Momente";
+"onboarding_skip_partner" = "Später verbinden";
+"onboarding_connect_now" = "Jetzt verbinden";
+"onboarding_complete_title" = "Alles bereit!";
+"onboarding_complete_subtitle" = "Deine Reise beginnt jetzt";
+
+// MARK: - Tab Navigation
+"tab_today" = "Today";
+"tab_timeline" = "Timeline";
+"tab_calendar" = "Calendar";
+"tab_partner" = "Partner";
+"tab_profile" = "Profile";
+
+// MARK: - Today View
+"today_title" = "Wie fühlst du dich heute?";
+"today_mood_happy" = "Glücklich";
+"today_mood_neutral" = "Neutral";
+"today_mood_sad" = "Traurig";
+"today_mood_very_happy" = "Sehr glücklich";
+"today_mood_very_sad" = "Sehr traurig";
+"today_add_event" = "Event hinzufügen";
+"today_add_photo" = "Foto hinzufügen";
+"today_generate_insight" = "Insight generieren";
+"today_generate_love_message" = "Liebesnachricht";
+"today_partner_mood" = "Partner's Stimmung";
+"today_compatibility_score" = "Kompatibilität";
+"today_no_insight" = "Noch kein Insight für heute";
+"today_no_love_message" = "Noch keine Liebesnachricht";
+"today_save_mood" = "Meine Stimmung speichern";
+"today_daily_insight" = "Täglicher Insight";
+"today_generating_insight" = "Insight wird generiert...";
+"today_partner_no_mood" = "Partner hat noch keine Stimmung geteilt";
+"today_insights_remaining" = "verbleibend";
+
+// MARK: - Timeline View
+"timeline_title" = "Unsere Erinnerungen";
+"timeline_subtitle" = "Teile besondere Momente mit deinem Partner";
+"timeline_add_memory" = "Neue Erinnerung";
+"timeline_no_memories" = "Noch keine Erinnerungen";
+"timeline_no_memories_subtitle" = "Füge deine erste Erinnerung hinzu und teile sie mit deinem Partner!";
+"timeline_add_first_memory" = "Erste Erinnerung hinzufügen";
+"timeline_stats_total" = "Gesamt";
+"timeline_stats_shared" = "Geteilt";
+"timeline_stats_average" = "Durchschnitt";
+"timeline_filter_all" = "Alle";
+"timeline_filter_shared" = "Geteilt";
+"timeline_filter_personal" = "Persönlich";
+"timeline_filter_favorites" = "Favoriten";
+
+// MARK: - Memory Creation
+"memory_new_title" = "Neue Erinnerung erstellen";
+"memory_new_subtitle" = "Teile einen besonderen Moment mit deinem Partner";
+"memory_photo_title" = "Foto";
+"memory_photo_add" = "Foto hinzufügen";
+"memory_photo_change" = "Foto ändern";
+"memory_photo_optional" = "Optional - aber Fotos machen Erinnerungen lebendiger!";
+"memory_details_title" = "Details";
+"memory_title_label" = "Titel";
+"memory_title_placeholder" = "z.B. Unser erster Urlaub zusammen";
+"memory_description_label" = "Beschreibung (optional)";
+"memory_description_placeholder" = "Erzähle mehr über diesen Moment...";
+"memory_location_label" = "Ort";
+"memory_location_placeholder" = "z.B. Mallorca, Spanien";
+"memory_mood_title" = "Wie war deine Stimmung?";
+"memory_tags_title" = "Tags";
+"memory_tags_add" = "Tag hinzufügen";
+"memory_tags_placeholder" = "Füge Tags hinzu, um deine Erinnerung zu kategorisieren";
+"memory_share_with_partner" = "Mit Partner teilen";
+"memory_share_description" = "Diese Erinnerung wird automatisch mit deinem Partner geteilt";
+
+// MARK: - Memory Detail
+"memory_detail_title" = "Erinnerung";
+"memory_detail_description" = "Beschreibung";
+"memory_detail_location" = "Ort";
+"memory_detail_mood" = "Stimmung";
+"memory_detail_mood_description" = "Wie du dich gefühlt hast";
+"memory_detail_shared" = "Geteilt mit Partner";
+"memory_detail_shared_description" = "Diese Erinnerung ist mit deinem Partner geteilt";
+"memory_detail_shared_subtitle" = "Beide können sie sehen und bearbeiten";
+"memory_detail_tags" = "Tags";
+"memory_detail_edit" = "Erinnerung bearbeiten";
+"memory_detail_delete" = "Erinnerung löschen";
+"memory_detail_delete_alert" = "Erinnerung löschen";
+"memory_detail_delete_message" = "Möchtest du diese Erinnerung wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.";
+
+// MARK: - Calendar View
+"calendar_title" = "Wochenübersicht";
+"calendar_week_summary" = "Wochenzusammenfassung";
+"calendar_view_details" = "Details anzeigen";
+"calendar_no_data" = "Noch keine Daten für diese Woche";
+"calendar_week" = "Woche";
+"calendar_trend" = "Trend";
+"calendar_days_tracked" = "Tage getrackt";
+"calendar_partner_week" = "Partner's Woche";
+"calendar_average" = "Durchschnitt";
+"calendar_days_shared" = "Tage geteilt";
+
+// MARK: - Partner View
+"partner_title" = "Partner";
+"partner_not_connected" = "Nicht verbunden";
+"partner_not_connected_subtitle" = "Verbinde dich mit deinem Partner, um Erinnerungen zu teilen";
+"partner_connect_now" = "Jetzt verbinden";
+"partner_connected" = "Verbunden mit";
+"partner_compatibility" = "Kompatibilität";
+"partner_show_code" = "Verbindungscode anzeigen";
+"partner_disconnect" = "Trennen";
+"partner_connection_code" = "Verbindungscode";
+"partner_enter_code" = "Code eingeben";
+"partner_connect" = "Verbinden";
+"partner_code_placeholder" = "6-stelliger Code";
+"partner_connected_status" = "Verbunden";
+"partner_not_connected_status" = "Nicht verbunden";
+"partner_connected_message" = "Du bist mit deinem Partner verbunden!";
+"partner_not_connected_message" = "Verbinde dich mit deinem Partner, um Stimmungen und Insights zu teilen";
+"partner_disconnect_alert" = "Partner trennen";
+"partner_disconnect_message" = "Bist du sicher, dass du dich von deinem Partner trennen möchtest? Du kannst dich jederzeit wieder verbinden.";
+
+// MARK: - Profile View
+"profile_title" = "Profil";
+"profile_edit" = "Bearbeiten";
+"profile_days_active" = "Tage aktiv";
+"profile_memories_created" = "Erinnerungen erstellt";
+"profile_upgrade_premium" = "Zu Premium upgraden";
+"profile_settings" = "Einstellungen";
+"profile_language" = "Sprache";
+"profile_notifications" = "Benachrichtigungen";
+"profile_privacy" = "Datenschutz";
+"profile_about" = "Über WeTwo";
+"profile_logout" = "Abmelden";
+"profile_premium_features" = "Premium Features";
+"profile_premium_insights" = "Tägliche Insights";
+"profile_premium_messages" = "Unbegrenzte Liebesnachrichten";
+"profile_premium_photos" = "Unbegrenzte Fotos";
+"profile_premium_calendar" = "Vollständiger Kalender";
+"profile_days" = "Tage";
+"profile_moods" = "Stimmungen";
+"profile_insights" = "Insights";
+"profile_premium_member" = "Premium Mitglied";
+"profile_free_plan" = "Kostenloser Plan";
+"profile_active" = "Aktiv";
+"profile_premium_access" = "Du hast Zugang zu allen Premium-Features!";
+"profile_upgrade_message" = "Upgrade zu Premium für unbegrenzte Features";
+"profile_unlimited_insights" = "Unbegrenzte tägliche Insights";
+"profile_unlimited_photos" = "Unbegrenzte Foto-Missionen";
+"profile_custom_messages" = "Benutzerdefinierte Liebesnachrichten";
+"profile_advanced_analytics" = "Erweiterte Analytics";
+
+// MARK: - Settings
+"settings_title" = "Einstellungen";
+"settings_language" = "Sprache";
+"settings_language_device" = "Gerätesprache";
+"settings_language_german" = "Deutsch";
+"settings_language_english" = "English";
+"settings_language_spanish" = "Español";
+"settings_notifications" = "Benachrichtigungen";
+"settings_notifications_daily" = "Tägliche Erinnerung";
+"settings_notifications_mood" = "Stimmungs-Tracking";
+"settings_notifications_memory" = "Neue Erinnerungen";
+"settings_notifications_partner" = "Partner-Updates";
+"settings_privacy" = "Datenschutz";
+"settings_privacy_data" = "Datenverwendung";
+"settings_privacy_analytics" = "Analytics";
+"settings_about" = "Über";
+"settings_version" = "Version";
+"settings_terms" = "Nutzungsbedingungen";
+"settings_privacy_policy" = "Datenschutzerklärung";
+
+// MARK: - Premium
+"premium_title" = "Premium Upgrade";
+"premium_subtitle" = "Entfessle die volle Kraft von WeTwo";
+"premium_monthly" = "Monatlich";
+"premium_yearly" = "Jährlich";
+"premium_lifetime" = "Lebenslang";
+"premium_feature_insights" = "Tägliche GPT-Insights";
+"premium_feature_messages" = "Unbegrenzte Liebesnachrichten";
+"premium_feature_photos" = "Unbegrenzte Foto-Uploads";
+"premium_feature_calendar" = "Vollständiger Kalender";
+"premium_feature_analytics" = "Detaillierte Analytics";
+"premium_upgrade" = "Upgraden";
+"premium_restore" = "Käufe wiederherstellen";
+"premium_terms" = "Nutzungsbedingungen";
+"premium_privacy" = "Datenschutzerklärung";
+
+// MARK: - Zodiac Signs
+"zodiac_aries" = "Widder";
+"zodiac_taurus" = "Stier";
+"zodiac_gemini" = "Zwillinge";
+"zodiac_cancer" = "Krebs";
+"zodiac_leo" = "Löwe";
+"zodiac_virgo" = "Jungfrau";
+"zodiac_libra" = "Waage";
+"zodiac_scorpio" = "Skorpion";
+"zodiac_sagittarius" = "Schütze";
+"zodiac_capricorn" = "Steinbock";
+"zodiac_aquarius" = "Wassermann";
+"zodiac_pisces" = "Fische";
+
+// MARK: - Errors
+"error_network" = "Netzwerkfehler";
+"error_network_message" = "Bitte überprüfe deine Internetverbindung";
+"error_auth" = "Authentifizierungsfehler";
+"error_auth_message" = "Bitte melde dich erneut an";
+"error_upload" = "Upload-Fehler";
+"error_upload_message" = "Das Foto konnte nicht hochgeladen werden";
+"error_sync" = "Synchronisationsfehler";
+"error_sync_message" = "Daten konnten nicht synchronisiert werden";
+
+// MARK: - Success Messages
+"success_memory_created" = "Erinnerung erstellt!";
+"success_memory_updated" = "Erinnerung aktualisiert!";
+"success_memory_deleted" = "Erinnerung gelöscht!";
+"success_photo_uploaded" = "Foto hochgeladen!";
+"success_partner_connected" = "Mit Partner verbunden!";
+"success_profile_updated" = "Profil aktualisiert!";
+
+// MARK: - Quick Tags
+"tag_vacation" = "Urlaub";
+"tag_date_night" = "Date Night";
+"tag_birthday" = "Geburtstag";
+"tag_anniversary" = "Jahrestag";
+"tag_travel" = "Reise";
+"tag_food" = "Essen";
+"tag_concert" = "Konzert";
+"tag_sports" = "Sport";
+"tag_family" = "Familie";
+"tag_friends" = "Freunde";
+"tag_favorite" = "favorite";
+
+// MARK: - Partner Connection
+"partner_connection_title" = "Partner verbinden";
+"partner_connection_subtitle" = "Verbinde dich mit deinem Partner um Erinnerungen und Momente zu teilen";
+"partner_generate_code" = "Code generieren";
+"partner_or" = "oder";
+"partner_enter_code" = "Code eingeben";
+"partner_code_placeholder" = "6-stelligen Code eingeben";
+"partner_connect" = "Verbinden";
+"partner_close" = "Schließen";
+"partner_connection_nav_title" = "Partner verbinden";
+"partner_qr_title" = "QR Code";
+"partner_qr_subtitle" = "Lass deinen Partner diesen Code scannen oder gib ihn manuell ein";
+"partner_qr_nav_title" = "QR Code";

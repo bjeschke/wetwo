@@ -1,0 +1,18 @@
+"/Users/benjaminjeschke/Documents/apps/WeTwo/WeTwo/Views/Timeline/TimelineView.swift":
+  dependencies: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/WeTwo.build/Debug-iphonesimulator/WeTwo.build/Objects-normal/arm64/TimelineView.d"
+  swift-dependencies: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/WeTwo.build/Debug-iphonesimulator/WeTwo.build/Objects-normal/arm64/TimelineView.swiftdeps"
+  diagnostics: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/WeTwo.build/Debug-iphonesimulator/WeTwo.build/Objects-normal/arm64/TimelineView.dia"
+  const-values: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/WeTwo.build/Debug-iphonesimulator/WeTwo.build/Objects-normal/arm64/TimelineView.swiftconstvalues"
+  object: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/WeTwo.build/Debug-iphonesimulator/WeTwo.build/Objects-normal/arm64/TimelineView.o"
+"/Users/benjaminjeschke/Documents/apps/WeTwo/WeTwo/Managers/MemoryManager.swift":
+  object: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/WeTwo.build/Debug-iphonesimulator/WeTwo.build/Objects-normal/arm64/MemoryManager.o"
+  diagnostics: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/WeTwo.build/Debug-iphonesimulator/WeTwo.build/Objects-normal/arm64/MemoryManager.dia"
+  swift-dependencies: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/WeTwo.build/Debug-iphonesimulator/WeTwo.build/Objects-normal/arm64/MemoryManager.swiftdeps"
+  const-values: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/WeTwo.build/Debug-iphonesimulator/WeTwo.build/Objects-normal/arm64/MemoryManager.swiftconstvalues"
+  dependencies: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/WeTwo.build/Debug-iphonesimulator/WeTwo.build/Objects-normal/arm64/MemoryManager.d"
+"/Users/benjaminjeschke/Documents/apps/WeTwo/WeTwo/Views/Calendar/CalendarView.swift":
+  diagnostics: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/WeTwo.build/Debug-iphonesimulator/WeTwo.build/Objects-normal/arm64/CalendarView.dia"
+  dependencies: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/WeTwo.build/Debug-iphonesimulator/WeTwo.build/Objects-normal/arm64/CalendarView.d"
+  swift-dependencies: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/WeTwo.build/Debug-iphonesimulator/WeTwo.build/Objects-normal/arm64/CalendarView.swiftdeps"
+  object: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/WeTwo.build/Debug-iphonesimulator/WeTwo.build/Objects-normal/arm64/CalendarView.o"
+  const-values: "/Users/benjaminjeschke/Documents/apps/WeTwo/DerivedData/Build/Intermediates.noindex/WeTwo.build/Debug-iphonesimulator/WeTwo.build/Objects-normal/arm64/CalendarView.swiftconstvalues"

@@ -1,0 +1,24 @@
+{
+  "source": "/Users/benjaminjeschke/Documents/apps/WeTwo/WeTwo/Views/Timeline/TimelineView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "📸",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 70
+        }
+      },
+      {
+        "comment": "",
+        "key": "📸",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 157
+        }
+      }
+    ]
+  },
+  "version": 1
+}
