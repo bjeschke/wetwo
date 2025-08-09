@@ -16,24 +16,32 @@ struct SupabaseConfig {
         case production
         
         var supabaseURL: String {
+            // Prefer environment variables to avoid hardcoding secrets
+            if let envURL = ProcessInfo.processInfo.environment["SUPABASE_URL"], !envURL.isEmpty {
+                return envURL
+            }
             switch self {
             case .development:
-                return "https://yrzpfwatuxpnjsirjsma.supabase.co"
+                return ""
             case .staging:
-                return "https://yrzpfwatuxpnjsirjsma.supabase.co"
+                return ""
             case .production:
-                return "https://yrzpfwatuxpnjsirjsma.supabase.co"
+                return ""
             }
         }
         
         var supabaseAnonKey: String {
+            // Prefer environment variables to avoid hardcoding secrets
+            if let envKey = ProcessInfo.processInfo.environment["SUPABASE_ANON_KEY"], !envKey.isEmpty {
+                return envKey
+            }
             switch self {
             case .development:
-                return "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlyenBmd2F0dXhwbmpzaXJqc21hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ0MTQ0OTUsImV4cCI6MjA2OTk5MDQ5NX0.AH96-HIirPyiGxyMAbraVEFNEq02vVHWO0_S0loI5wY"
+                return ""
             case .staging:
-                return "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlyenBmd2F0dXhwbmpzaXJqc21hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ0MTQ0OTUsImV4cCI6MjA2OTk5MDQ5NX0.AH96-HIirPyiGxyMAbraVEFNEq02vVHWO0_S0loI5wY"
+                return ""
             case .production:
-                return "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlyenBmd2F0dXhwbmpzaXJqc21hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ0MTQ0OTUsImV4cCI6MjA2OTk5MDQ5NX0.AH96-HIirPyiGxyMAbraVEFNEq02vVHWO0_S0loI5wY"
+                return ""
             }
         }
     }
@@ -43,8 +51,6 @@ struct SupabaseConfig {
         #if DEBUG
         return .development
         #else
-        // In production, you might want to use a different method
-        // like reading from a configuration file or environment variable
         return .production
         #endif
     }()
@@ -78,9 +84,8 @@ struct SupabaseConfig {
     static func validateConfiguration() -> Bool {
         guard !supabaseURL.isEmpty,
               !supabaseAnonKey.isEmpty,
-              supabaseURL.hasPrefix("https://"),
-              supabaseAnonKey.hasPrefix("eyJ") else {
-            print("❌ Invalid Supabase configuration")
+              supabaseURL.hasPrefix("https://") else {
+            print("❌ Invalid Supabase configuration - Please set SUPABASE_URL and SUPABASE_ANON_KEY in environment variables")
             return false
         }
         
@@ -93,7 +98,8 @@ struct SupabaseConfig {
         print("🔧 Supabase Configuration:")
         print("   Environment: \(currentEnvironment)")
         print("   URL: \(supabaseURL)")
-        print("   Key: \(String(supabaseAnonKey.prefix(20)))...")
+        let maskedKey = supabaseAnonKey.isEmpty ? "<empty>" : String(supabaseAnonKey.prefix(4)) + String(repeating: "*", count: max(0, supabaseAnonKey.count - 8)) + String(supabaseAnonKey.suffix(4))
+        print("   Key: \(maskedKey)")
         print("   Real-time Sync: \(enableRealTimeSync)")
         print("   Offline Mode: \(enableOfflineMode)")
         print("   Photo Compression: \(enablePhotoCompression)")

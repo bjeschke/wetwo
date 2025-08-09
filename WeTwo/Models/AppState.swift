@@ -42,8 +42,12 @@ class AppState: ObservableObject {
                         let supabaseUser = try await supabaseService.signIn(email: email, password: password)
                         print("✅ Auto-sign in successful for user: \(supabaseUser.name)")
                         
-                        // Store the current user ID for other services
-                        try? securityService.secureStore(supabaseUser.id.uuidString, forKey: "currentUserId")
+                        // Store the current authenticated user ID for other services
+                        if let authUserId = supabaseService.getCurrentUserId()?.uuidString {
+                            try? securityService.secureStore(authUserId, forKey: "currentUserId")
+                        } else {
+                            print("⚠️ No authenticated user id available after sign-in")
+                        }
                         
                     } catch {
                         print("⚠️ Auto-sign in failed: \(error)")
@@ -116,8 +120,8 @@ class AppState: ObservableObject {
                 )
                 
                 print("✅ User profile updated with Apple ID successfully")
-                print("📧 Email: \(email)")
-                print("🍎 Apple ID: \(appleUserID)")
+                print("📧 Email: [REDACTED]")
+                print("🍎 Apple ID: [REDACTED]")
                 
             } catch {
                 print("❌ Error creating user profile with Apple ID: \(error)")
@@ -128,15 +132,18 @@ class AppState: ObservableObject {
                     do {
                         print("🔄 Attempting to sign in with existing credentials...")
                         let supabaseUser = try await supabaseService.signIn(email: existingEmail, password: existingPassword)
-                        let userId = supabaseUser.id
-                        try? securityService.secureStore(userId.uuidString, forKey: "currentUserId")
+                        if let authUserId = supabaseService.getCurrentUserId()?.uuidString {
+                            try? securityService.secureStore(authUserId, forKey: "currentUserId")
+                        }
                         
                         // Update the profile with Apple ID
-                        try await supabaseService.updateProfile(
-                            userId: userId.uuidString, 
-                            name: user.name, 
-                            birthDate: user.birthDate
-                        )
+                        if let authUserId = supabaseService.getCurrentUserId()?.uuidString {
+                            try await supabaseService.updateProfile(
+                                userId: authUserId,
+                                name: user.name,
+                                birthDate: user.birthDate
+                            )
+                        }
                         print("✅ User signed in and profile updated with Apple ID successfully")
                     } catch {
                         print("❌ Error signing in with existing credentials: \(error)")
@@ -180,8 +187,8 @@ class AppState: ObservableObject {
                 try? securityService.secureStore(password, forKey: "userPassword")
                 
                 print("✅ User profile created in Supabase successfully")
-                print("📧 Email: \(email)")
-                print("🔑 Password: \(password)")
+                print("📧 Email: [REDACTED]")
+                print("🔑 Password: [REDACTED]")
                 
             } catch {
                 print("❌ Error creating user profile in Supabase: \(error)")
@@ -192,11 +199,14 @@ class AppState: ObservableObject {
                     do {
                         print("🔄 Attempting to sign in with existing credentials...")
                         let supabaseUser = try await supabaseService.signIn(email: existingEmail, password: existingPassword)
-                        let userId = supabaseUser.id
-                        try? securityService.secureStore(userId.uuidString, forKey: "currentUserId")
+                        if let authUserId = supabaseService.getCurrentUserId()?.uuidString {
+                            try? securityService.secureStore(authUserId, forKey: "currentUserId")
+                        }
                         
                         // Update the profile
-                        try await supabaseService.updateProfile(userId: userId.uuidString, name: user.name, birthDate: user.birthDate)
+                        if let authUserId = supabaseService.getCurrentUserId()?.uuidString {
+                            try await supabaseService.updateProfile(userId: authUserId, name: user.name, birthDate: user.birthDate)
+                        }
                         print("✅ User signed in and profile updated successfully")
                     } catch {
                         print("❌ Error signing in with existing credentials: \(error)")
