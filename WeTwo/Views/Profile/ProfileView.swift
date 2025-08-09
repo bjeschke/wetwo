@@ -250,18 +250,18 @@ struct ProfileView: View {
             print("👤 Name: \(user.name)")
             print("🌟 Zodiac Sign: \(user.zodiacSign.emoji) \(user.zodiacSign.rawValue)")
             print("🎂 Birth Date: \(user.birthDate)")
-            print("🔑 Email: \(testEmail)")
-            print("🔐 Password: \(testPassword)")
+            print("🔑 Email: [REDACTED]")
+            print("🔐 Password: [REDACTED]")
             
             // Show success message and auto-login
             DispatchQueue.main.async {
                 print("🎉 User registration completed successfully!")
                 print("💡 You can now use these credentials to test the app:")
-                print("   📧 Email: \(testEmail)")
-                print("   🔐 Password: \(testPassword)")
+                print("   📧 Email: [REDACTED]")
+                print("   🔐 Password: [REDACTED]")
                 
                 // Show success alert
-                self.registrationMessage = "Benutzer erfolgreich in der Datenbank angelegt!\n\n📧 Email: \(testEmail)\n🔐 Passwort: \(testPassword)\n\nDer Benutzer wurde automatisch eingeloggt."
+                self.registrationMessage = "Benutzer erfolgreich in der Datenbank angelegt!\n\nDie Test-Zugangsdaten wurden sicher gespeichert und aus den Logs entfernt.\n\nDer Benutzer wurde automatisch eingeloggt."
                 self.showingRegistrationSuccess = true
                 
                 // Auto-login with the new user
@@ -270,16 +270,21 @@ struct ProfileView: View {
                         let supabaseUser = try await SupabaseService.shared.signIn(email: testEmail, password: testPassword)
                         print("🔐 Auto-login successful for: \(supabaseUser.name)")
                         
-                        // Store credentials securely
-                        if let securityService = try? SecurityService.shared {
-                            try? securityService.secureStore(testEmail, forKey: "userEmail")
-                            try? securityService.secureStore(testPassword, forKey: "userPassword")
-                            try? securityService.secureStore(supabaseUser.id.uuidString, forKey: "currentUserId")
+                        // Resolve authenticated Supabase user id from session
+                        guard let authUserId = SupabaseService.shared.getCurrentUserId()?.uuidString else {
+                            print("⚠️ Unable to resolve authenticated user id from session")
+                            return
                         }
+                        
+                        // Store credentials securely
+                        let securityService = SecurityService.shared
+                        try? securityService.secureStore(testEmail, forKey: "userEmail")
+                        try? securityService.secureStore(testPassword, forKey: "userPassword")
+                        try? securityService.secureStore(authUserId, forKey: "currentUserId")
                         
                         // Update the profile with the test user data
                         try await SupabaseService.shared.updateProfile(
-                            userId: supabaseUser.id.uuidString,
+                            userId: authUserId,
                             name: testName,
                             birthDate: testBirthDate
                         )
@@ -294,7 +299,7 @@ struct ProfileView: View {
                         
                         // Update relationship data with default values
                         try await SupabaseService.shared.updateRelationshipData(
-                            userId: supabaseUser.id.uuidString,
+                            userId: authUserId,
                             relationshipStatus: "in_relationship",
                             hasChildren: "false",
                             childrenCount: "0"
@@ -303,7 +308,7 @@ struct ProfileView: View {
                         
                         // Update the success message with more details
                         DispatchQueue.main.async {
-                            self.registrationMessage = "Benutzer erfolgreich in der Datenbank angelegt!\n\n📧 Email: \(testEmail)\n🔐 Passwort: \(testPassword)\n👤 Name: \(testName)\n🎂 Geburtsdatum: \(testBirthDate)\n🌟 Sternzeichen: \(ZodiacSign.calculate(from: testBirthDate).emoji) \(ZodiacSign.calculate(from: testBirthDate).rawValue)\n💕 Beziehungsstatus: In Beziehung\n👶 Kinder: Nein\n\nDer Benutzer wurde automatisch eingeloggt und alle Daten wurden aktualisiert."
+                            self.registrationMessage = "Benutzer erfolgreich in der Datenbank angelegt!\n\n👤 Name: \(testName)\n🎂 Geburtsdatum: \(testBirthDate)\n🌟 Sternzeichen: \(ZodiacSign.calculate(from: testBirthDate).emoji) \(ZodiacSign.calculate(from: testBirthDate).rawValue)\n💕 Beziehungsstatus: In Beziehung\n👶 Kinder: Nein\n\nDie Zugangsdaten wurden sicher gespeichert und nicht im UI angezeigt."
                         }
                         
                     } catch {

@@ -305,9 +305,16 @@ final class SupabaseService: @unchecked Sendable {
     }
     
     func updateProfile(userId: String, name: String, birthDate: Date?) async throws {
+        let birthDateString: String
+        if let birthDate = birthDate {
+            birthDateString = DateFormatter.yyyyMMdd.string(from: birthDate)
+        } else {
+            birthDateString = DateFormatter.yyyyMMdd.string(from: Date())
+        }
+
         let updates: [String: String] = [
             "name": name,
-            "birth_date": birthDate?.ISO8601String() ?? Date().ISO8601String(),
+            "birth_date": birthDateString,
             "updated_at": Date().ISO8601String()
         ]
         
