@@ -227,7 +227,7 @@ class SupabaseService: ObservableObject {
     func createMemory(_ memory: MemoryEntry) async throws {
         print("🔧 Creating memory: \(memory.title)")
         guard let session = try? await client.auth.session else { throw SupabaseError.userNotFound }
-        let userId = session.user.id.uuidString
+        let _ = session.user.id.uuidString
 
         let databaseMemory = DatabaseMemory(
             id: memory.id.uuidString,
@@ -261,7 +261,7 @@ class SupabaseService: ObservableObject {
             .value
         
         return response.compactMap { dbMemory -> MemoryEntry? in
-            guard let id = UUID(uuidString: dbMemory.id),
+            guard let _ = UUID(uuidString: dbMemory.id),
                   let userId = UUID(uuidString: dbMemory.userId),
                   let moodLevel = MoodLevel(rawValue: Int(dbMemory.moodLevel) ?? 0) else {
                 return nil
@@ -296,7 +296,7 @@ class SupabaseService: ObservableObject {
             .value
         
         return response.compactMap { dbMemory -> MemoryEntry? in
-            guard let id = UUID(uuidString: dbMemory.id),
+            guard let _ = UUID(uuidString: dbMemory.id),
                   let userId = UUID(uuidString: dbMemory.userId),
                   let moodLevel = MoodLevel(rawValue: Int(dbMemory.moodLevel) ?? 0) else {
                 return nil
@@ -330,7 +330,7 @@ class SupabaseService: ObservableObject {
                 "location": memory.location,
                 "mood_level": String(memory.moodLevel.rawValue),
                 "tags": memory.tags.joined(separator: ","),
-                "is_shared": memory.isShared,  // Bool, kein "true"/"false"
+                "is_shared": memory.isShared ? "true" : "false",  // Bool als String
                 "updated_at": ISO8601DateFormatter().string(from: Date())
             ])
             .eq("id", value: memory.id.uuidString)
@@ -563,7 +563,7 @@ class SupabaseService: ObservableObject {
         
         // First get the profile to find the photo URL
         guard let profile = try await getProfile(userId: userId),
-              let photoURL = profile.profilePhotoURL else {
+              let _ = profile.profilePhotoURL else {
             return nil
         }
         
