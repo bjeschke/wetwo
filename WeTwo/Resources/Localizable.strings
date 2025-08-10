@@ -66,27 +66,49 @@
 "tab_calendar" = "Calendar";
 "tab_partner" = "Partner";
 "tab_profile" = "Profile";
+"tab_activity" = "Aktivitäten";
 
 // MARK: - Today View
 "today_title" = "Wie fühlst du dich heute?";
+"today_greeting" = "Hallo!";
+"today_mood_question" = "Wie fühlst du dich heute?";
 "today_mood_happy" = "Glücklich";
-"today_mood_neutral" = "Neutral";
+"today_mood_good" = "Gut";
+"today_mood_okay" = "Okay";
 "today_mood_sad" = "Traurig";
+"today_mood_terrible" = "Schrecklich";
+"today_mood_neutral" = "Neutral";
 "today_mood_very_happy" = "Sehr glücklich";
 "today_mood_very_sad" = "Sehr traurig";
 "today_add_event" = "Event hinzufügen";
 "today_add_photo" = "Foto hinzufügen";
 "today_generate_insight" = "Insight generieren";
-"today_generate_love_message" = "Liebesnachricht";
-"today_partner_mood" = "Partner's Stimmung";
-"today_compatibility_score" = "Kompatibilität";
-"today_no_insight" = "Noch kein Insight für heute";
-"today_no_love_message" = "Noch keine Liebesnachricht";
+"today_love_message" = "Liebesnachricht";
+"today_send_love_message" = "Liebesnachricht senden";
+"today_generate_love_message" = "Liebesnachricht generieren";
+"today_love_message_placeholder" = "Schreibe deine Liebesnachricht hier...";
+"today_love_message_editor_title" = "Liebesnachrichten-Editor";
+"today_love_message_editor_subtitle" = "Erstelle eine besondere Nachricht für deinen Partner";
+"today_love_message_label" = "Liebesnachricht";
+"today_generate_new" = "Neu generieren";
+"today_copy_message" = "Nachricht kopieren";
+"today_send_confirmation_title" = "Nachricht senden?";
+"today_send_confirmation_message" = "Bist du sicher, dass du diese Liebesnachricht senden möchtest?";
+"today_send" = "Senden";
+"today_connect_partner" = "Mit Partner verbinden";
+"today_partner_connected" = "Verbunden mit";
+"today_disconnect" = "Trennen";
+"today_profile_photo" = "Profilfoto";
+"today_upload_photo" = "Foto hochladen";
 "today_save_mood" = "Meine Stimmung speichern";
 "today_daily_insight" = "Täglicher Insight";
 "today_generating_insight" = "Insight wird generiert...";
 "today_partner_no_mood" = "Partner hat noch keine Stimmung geteilt";
 "today_insights_remaining" = "verbleibend";
+"today_no_insight" = "Noch kein Insight für heute";
+"today_no_love_message" = "Noch keine Liebesnachricht";
+"today_compatibility_score" = "Kompatibilität";
+"today_partner_mood" = "Partner's Stimmung";
 
 // MARK: - Timeline View
 "timeline_title" = "Unsere Erinnerungen";
@@ -102,6 +124,11 @@
 "timeline_filter_shared" = "Geteilt";
 "timeline_filter_personal" = "Persönlich";
 "timeline_filter_favorites" = "Favoriten";
+"timeline_no_memories_description" = "Beginne damit, besondere Erinnerungen mit deinem Partner zu erstellen";
+"timeline_memory_title" = "Erinnerungstitel";
+"timeline_memory_description" = "Erinnerungsbeschreibung";
+"timeline_memory_date" = "Erinnerungsdatum";
+"timeline_memory_photo" = "Erinnerungsfoto";
 
 // MARK: - Memory Creation
 "memory_new_title" = "Neue Erinnerung erstellen";
@@ -141,8 +168,26 @@
 
 // MARK: - Calendar View
 "calendar_title" = "Wochenübersicht";
-"calendar_week_summary" = "Wochenzusammenfassung";
+"calendar_meeting_date" = "Kennenlerndatum";
+"calendar_relationship_duration" = "Beziehungsdauer";
+"calendar_weekly_summary" = "Wöchentliche Zusammenfassung";
 "calendar_view_details" = "Details anzeigen";
+"calendar_average_mood" = "Durchschnittliche Stimmung";
+"calendar_add_entry" = "Eintrag hinzufügen";
+"calendar_add_entry_title" = "Neuer Kalendereintrag";
+"calendar_add_entry_subtitle" = "Erstelle einen neuen Kalendereintrag mit Datum und Uhrzeit";
+"calendar_entry_title_label" = "Titel";
+"calendar_entry_title_placeholder" = "Titel eingeben";
+"calendar_entry_description_label" = "Beschreibung";
+"calendar_entry_description_placeholder" = "Beschreibung eingeben";
+"calendar_entry_datetime_label" = "Datum & Uhrzeit";
+"calendar_entry_date_label" = "Datum";
+"calendar_entry_date_placeholder" = "Datum auswählen";
+"calendar_entry_time_label" = "Uhrzeit";
+"calendar_entry_time_placeholder" = "Uhrzeit auswählen";
+"calendar_entry_allday_label" = "Ganztägig";
+"calendar_entry_allday_description" = "Als ganztägiges Event markieren";
+"calendar_week_summary" = "Wochenzusammenfassung";
 "calendar_no_data" = "Noch keine Daten für diese Woche";
 "calendar_week" = "Woche";
 "calendar_trend" = "Trend";
@@ -150,6 +195,11 @@
 "calendar_partner_week" = "Partner's Woche";
 "calendar_average" = "Durchschnitt";
 "calendar_days_shared" = "Tage geteilt";
+"calendar_meeting_date_label" = "Wir haben uns kennengelernt am";
+"calendar_relationship_status" = "Status";
+"calendar_unknown_duration" = "Unbekannte Dauer";
+"calendar_weekly_insights" = "Wöchentliche Insights";
+"calendar_mood_journey" = "Deine Stimmungsreise diese Woche";
 
 // MARK: - Partner View
 "partner_title" = "Partner";
@@ -295,3 +345,314 @@
 "partner_qr_title" = "QR Code";
 "partner_qr_subtitle" = "Lass deinen Partner diesen Code scannen oder gib ihn manuell ein";
 "partner_qr_nav_title" = "QR Code";
+"partner_connection_generate_code" = "Verbindungscode generieren";
+"partner_connection_enter_code" = "Code deines Partners eingeben";
+"partner_connection_code_placeholder" = "6-stelligen Code eingeben";
+"partner_connection_connect" = "Verbinden";
+"partner_connection_success" = "Verbindung erfolgreich!";
+"partner_connection_error" = "Verbindungsfehler";
+"partner_connection_invalid_code" = "Ungültiger Code";
+"partner_connection_network_error" = "Netzwerkfehler";
+"partner_connection_already_connected" = "Bereits verbunden";
+"partner_connection_unknown_error" = "Unbekannter Fehler";
+"generate_code_title" = "Verbindungscode generieren";
+"generate_code_subtitle" = "Teile diesen Code mit deinem Partner, um dich zu verbinden";
+"enter_code_title" = "Partnercode eingeben";
+"enter_code_subtitle" = "Gib den 6-stelligen Code ein, den dein Partner mit dir geteilt hat";
+"generate_connection_code" = "Verbindungscode generieren";
+"enter_partner_code" = "Partnercode eingeben";
+"skip_for_now" = "Später überspringen";
+"your_connection_code" = "Dein Verbindungscode";
+"copy_code" = "Code kopieren";
+"generate_code" = "Code generieren";
+"generating" = "Generiere...";
+"connection_code" = "Verbindungscode";
+"connect_with_partner" = "Mit Partner verbinden";
+"connecting" = "Verbinde...";
+"connection_successful" = "Verbindung erfolgreich";
+"connection_successful_message" = "Du bist jetzt mit deinem Partner verbunden!";
+"connection_error" = "Verbindungsfehler";
+"invalid_code_message" = "Ungültiger Verbindungscode. Bitte versuche es erneut.";
+"enter_valid_code" = "Bitte gib einen gültigen 6-stelligen Code ein";
+
+// MARK: - Love Messages
+"love_messages_title" = "Liebesnachrichten";
+"love_messages_received" = "Erhaltene Nachrichten";
+"love_messages_sent" = "Gesendete Nachrichten";
+"love_messages_unread" = "Ungelesen";
+"love_messages_show_all" = "Alle anzeigen";
+"love_messages_send_success" = "Liebesnachricht gesendet!";
+"love_messages_send_error" = "Fehler beim Senden der Nachricht";
+"love_messages_connect_required" = "Mit Partner verbinden";
+"love_messages_connect_description" = "Sende und empfange Liebesnachrichten";
+"love_messages_personalized" = "Personalisierte Nachrichten";
+"love_messages_ai_generated" = "KI-generierte Liebesnachrichten basierend auf deiner Stimmung";
+"love_message_error_user_not_found" = "Benutzer nicht gefunden";
+"love_message_error_partner_not_found" = "Partner nicht gefunden";
+"love_message_error_not_connected" = "Nicht mit Partner verbunden";
+"love_message_error_network" = "Netzwerkfehler";
+
+// MARK: - Who Knows Better Game
+"game_who_knows_better" = "Wer kennt sich besser?";
+"game_who_knows_better_desc" = "Teste, wie gut ihr euch kennt";
+
+// Game strings
+"player_1" = "Spieler 1";
+"player_2" = "Spieler 2";
+"player" = "Spieler";
+"turn" = "Zug";
+"question" = "Frage";
+"correct_answer" = "Richtig!";
+"wrong_answer" = "Falsche Antwort";
+"correct_answer_was" = "Die richtige Antwort war";
+"point" = "Punkt";
+"next_question" = "Nächste Frage";
+"see_results" = "Ergebnisse anzeigen";
+"game_complete" = "Spiel beendet!";
+"wins" = "gewinnt";
+"tie_game" = "Unentschieden! 🤝";
+"play_again" = "Nochmal spielen";
+"back_to_menu" = "Zurück zum Menü";
+
+// Question strings
+"question_favorite_color" = "Was ist die Lieblingsfarbe deines Partners?";
+"question_favorite_food" = "Was ist das Lieblingsessen deines Partners?";
+"question_dream_vacation" = "Wohin würde dein Partner gerne in den Urlaub fahren?";
+"question_favorite_music" = "Welche Art von Musik bevorzugt dein Partner?";
+"question_pet_peeve" = "Was ist die größte Nervensäge deines Partners?";
+"question_favorite_season" = "Was ist die Lieblingsjahreszeit deines Partners?";
+"question_favorite_movie_genre" = "Was ist das Lieblingsfilmgenre deines Partners?";
+"question_favorite_hobby" = "Was ist das Lieblingshobby deines Partners?";
+"question_favorite_drink" = "Was ist das Lieblingsgetränk deines Partners?";
+"question_favorite_animal" = "Was ist das Lieblingstier deines Partners?";
+
+// Answer options
+"color_blue" = "Blau";
+"color_red" = "Rot";
+"color_green" = "Grün";
+"color_purple" = "Lila";
+"food_pizza" = "Pizza";
+"food_pasta" = "Pasta";
+"food_sushi" = "Sushi";
+"food_burger" = "Burger";
+"vacation_beach" = "Strand";
+"vacation_mountains" = "Berge";
+"vacation_city" = "Stadt";
+"vacation_countryside" = "Land";
+"music_pop" = "Pop";
+"music_rock" = "Rock";
+"music_classical" = "Klassik";
+"music_jazz" = "Jazz";
+"pet_peeve_loud" = "Laute Geräusche";
+"pet_peeve_messy" = "Unordentliche Räume";
+"pet_peeve_late" = "Zu spät kommen";
+"pet_peeve_interrupt" = "Unterbrochen werden";
+"season_spring" = "Frühling";
+"season_summer" = "Sommer";
+"season_autumn" = "Herbst";
+"season_winter" = "Winter";
+"genre_action" = "Action";
+"genre_comedy" = "Komödie";
+"genre_romance" = "Romantik";
+"genre_thriller" = "Thriller";
+"hobby_reading" = "Lesen";
+"hobby_sports" = "Sport";
+"hobby_cooking" = "Kochen";
+"hobby_gaming" = "Gaming";
+"drink_coffee" = "Kaffee";
+"drink_tea" = "Tee";
+"drink_water" = "Wasser";
+"drink_juice" = "Saft";
+"animal_dog" = "Hund";
+"animal_cat" = "Katze";
+"animal_bird" = "Vogel";
+"animal_fish" = "Fisch";
+
+// MARK: - Memory Management
+"memory_add_title" = "Erinnerung hinzufügen";
+"memory_edit_title" = "Erinnerung bearbeiten";
+"memory_delete_title" = "Erinnerung löschen";
+"memory_delete_message" = "Bist du sicher, dass du diese Erinnerung löschen möchtest?";
+"memory_save_success" = "Erinnerung gespeichert";
+"memory_save_error" = "Fehler beim Speichern der Erinnerung";
+"memory_delete_success" = "Erinnerung gelöscht";
+"memory_delete_error" = "Fehler beim Löschen der Erinnerung";
+
+// MARK: - Mood Tracking
+"mood_track_title" = "Stimmungsverfolgung";
+"mood_track_success" = "Stimmung aufgezeichnet";
+"mood_track_error" = "Fehler beim Aufzeichnen der Stimmung";
+"mood_history" = "Stimmungsverlauf";
+"mood_average" = "Durchschnitt";
+"mood_trend" = "Trend";
+
+// MARK: - Photo Management
+"photo_select" = "Foto auswählen";
+"photo_take" = "Foto aufnehmen";
+"photo_upload" = "Foto hochladen";
+"photo_delete" = "Foto löschen";
+"photo_save_success" = "Foto gespeichert";
+"photo_save_error" = "Fehler beim Speichern des Fotos";
+"photo_upload_success" = "Foto hochgeladen";
+"photo_upload_error" = "Fehler beim Hochladen des Fotos";
+
+// MARK: - Loading States
+"loading_saving" = "Speichere...";
+"loading_uploading" = "Lade hoch...";
+"loading_connecting" = "Verbinde...";
+"loading_sending" = "Sende...";
+
+// MARK: - Date and Time
+"date_today" = "Heute";
+"date_yesterday" = "Gestern";
+"date_tomorrow" = "Morgen";
+"time_just_now" = "Gerade eben";
+"time_minutes_ago" = "vor %d Minuten";
+"time_hours_ago" = "vor %d Stunden";
+"time_days_ago" = "vor %d Tagen";
+"year" = "Jahr";
+"years" = "Jahre";
+"month" = "Monat";
+"months" = "Monate";
+"child" = "Kind";
+"children" = "Kinder";
+
+// MARK: - Navigation
+"nav_today" = "Heute";
+"nav_calendar" = "Kalender";
+"nav_timeline" = "Timeline";
+"nav_activity" = "Aktivitäten";
+"nav_profile" = "Profil";
+
+// MARK: - Activity View
+"activity_title" = "Aktivitäten";
+"activity_subtitle" = "Entdecke Quiz und lustige Spiele für euch beide";
+"activity_quizzes" = "Quiz";
+"activity_games" = "Spiele";
+"activity_quiz_love_language" = "Liebes-Sprache";
+"activity_quiz_compatibility" = "Kompatibilität";
+
+// Quiz Types
+"quiz_compatibility" = "Kompatibilitäts-Quiz";
+"quiz_compatibility_desc" = "Teste eure Kompatibilität";
+"quiz_relationship" = "Beziehungs-Quiz";
+"quiz_relationship_desc" = "Lerne mehr über eure Beziehung";
+"quiz_personality" = "Persönlichkeits-Quiz";
+"quiz_personality_desc" = "Entdecke eure Persönlichkeiten";
+"quiz_future" = "Zukunfts-Quiz";
+"quiz_future_desc" = "Plant eure Zukunft zusammen";
+
+// Game Types
+"game_truth_dare" = "Wahrheit oder Pflicht";
+"game_truth_dare_desc" = "Klassisches Wahrheit oder Pflicht";
+"game_would_rather" = "Was würdest du lieber?";
+"game_would_rather_desc" = "Triff schwierige Entscheidungen";
+"game_memory" = "Memory-Spiel";
+"game_memory_desc" = "Teste dein Gedächtnis";
+"game_trivia" = "Trivia";
+"game_trivia_desc" = "Lustige Trivia-Fragen";
+
+// MARK: - Login
+"login_title" = "Willkommen zurück";
+"login_subtitle" = "Melde dich in deinem Amavo-Konto an";
+"login_with_email" = "Mit E-Mail anmelden";
+"login_credentials_title" = "Anmelden";
+"login_sign_in" = "Anmelden";
+"login_has_account" = "Hast du bereits ein Konto? Anmelden";
+"signup_no_account" = "Hast du kein Konto? Registrieren";
+
+// MARK: - Signup
+"signup_title" = "Erstelle dein Konto";
+"signup_subtitle" = "Tritt Amavo bei, um deine Beziehung zu stärken";
+"signup_or" = "oder";
+"signup_with_email" = "Mit E-Mail registrieren";
+"signup_profile_title" = "Vervollständige dein Profil";
+"signup_profile_subtitle" = "Erzähle uns von dir";
+"signup_credentials_title" = "Erstelle dein Konto";
+"signup_name_title" = "Wie heißt du?";
+"signup_name_subtitle" = "Erzähle uns deinen Namen";
+"signup_birthdate_title" = "Wann wurdest du geboren?";
+"signup_birthdate_subtitle" = "Erzähle uns dein Geburtsdatum";
+"signup_email_label" = "E-Mail-Adresse";
+"signup_email_placeholder" = "Gib deine E-Mail ein";
+"signup_password_label" = "Passwort";
+"signup_password_placeholder" = "Erstelle ein Passwort";
+"signup_confirm_password_label" = "Passwort bestätigen";
+"signup_confirm_password_placeholder" = "Bestätige dein Passwort";
+"signup_name_label" = "Vollständiger Name";
+"signup_name_placeholder" = "Gib deinen vollständigen Namen ein";
+"signup_birthdate_label" = "Geburtsdatum";
+"signup_birthdate_placeholder" = "Wähle dein Geburtsdatum";
+"signup_zodiac_label" = "Dein Sternzeichen:";
+"signup_back" = "Zurück";
+"signup_next" = "Weiter";
+"signup_create_account" = "Konto erstellen";
+"signup_email_confirmation_required" = "Bitte überprüfe deine E-Mail und bestätige dein Konto, bevor du fortfährst";
+"signup_email_confirmation_title" = "Bestätige deine E-Mail";
+"signup_email_confirmation_subtitle" = "Wir haben eine Bestätigungs-E-Mail an gesendet";
+"signup_email_confirmation_instructions" = "Bitte überprüfe deine E-Mail und klicke auf den Bestätigungslink, dann kehre hierher zurück, um fortzufahren";
+"signup_email_confirmation_continue" = "Ich habe meine E-Mail bestätigt";
+"signup_email_confirmation_resend" = "Bestätigungs-E-Mail erneut senden";
+
+// MARK: - Email Confirmation
+"email_confirmation_title" = "Bestätige deine E-Mail";
+"email_confirmation_subtitle" = "Wir haben eine Bestätigungs-E-Mail an gesendet";
+"email_confirmation_instructions" = "Bitte überprüfe deine E-Mail und klicke auf den Bestätigungslink, dann kehre hierher zurück, um fortzufahren";
+"email_confirmation_continue" = "Ich habe meine E-Mail bestätigt";
+"email_confirmation_resend" = "Bestätigungs-E-Mail erneut senden";
+
+// MARK: - Onboarding Welcome
+"onboarding_welcome" = "Willkommen bei WeTwo!";
+"onboarding_welcome_subtitle" = "Die App für Paare, die zusammen wachsen wollen";
+
+// MARK: - Onboarding Relationship Step
+"onboarding_relationship_title" = "Deine Beziehung";
+"onboarding_meeting_date_placeholder" = "Datum auswählen";
+"onboarding_relationship_duration" = "Beziehungsdauer:";
+"onboarding_relationship_status_label" = "Status deiner Beziehung";
+"onboarding_children_label" = "Kinder";
+"onboarding_has_children" = "Habt ihr zusammen Kinder?";
+"onboarding_children_count_label" = "Anzahl der Kinder";
+"onboarding_birthdate_placeholder" = "Geburtsdatum auswählen";
+
+// MARK: - Relationship Status
+"relationship_status_single" = "Single";
+"relationship_status_in_relationship" = "In einer Beziehung";
+"relationship_status_engaged" = "Verlobt";
+"relationship_status_married" = "Verheiratet";
+"relationship_status_complicated" = "Es ist kompliziert";
+"relationship_status_dating" = "Dating";
+"relationship_status_long_term" = "Langzeitbeziehung";
+
+// MARK: - Errors
+"error_unknown" = "Unbekannter Fehler";
+"error_invalid_input" = "Ungültige Eingabe";
+"error_permission_denied" = "Berechtigung verweigert";
+"error_file_not_found" = "Datei nicht gefunden";
+"error_connection_failed" = "Verbindung fehlgeschlagen";
+"error_timeout" = "Zeitüberschreitung";
+
+// MARK: - Success Messages
+"success_saved" = "Erfolgreich gespeichert";
+"success_updated" = "Erfolgreich aktualisiert";
+"success_deleted" = "Erfolgreich gelöscht";
+"success_connected" = "Erfolgreich verbunden";
+"success_sent" = "Erfolgreich gesendet";
+
+// MARK: - Profile Additional
+"profile_relationship_status" = "Beziehungsstatus";
+"profile_premium_upgrade" = "Premium-Upgrade";
+"profile_about_amavo" = "Über Amavo";
+
+// MARK: - Settings Additional
+"settings_contact" = "Kontakt";
+"settings_feedback" = "Feedback";
+"settings_rate_app" = "App bewerten";
+"settings_share_app" = "App teilen";
+
+// MARK: - Premium Additional
+"premium_features" = "Premium-Features";
+"premium_feature_1" = "Unbegrenzte Liebesnachrichten";
+"premium_feature_2" = "Erweiterte Quiz";
+"premium_feature_3" = "Beziehungsanalyse";
+"premium_feature_4" = "Keine Werbung";

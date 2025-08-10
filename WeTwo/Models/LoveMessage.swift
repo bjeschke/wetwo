@@ -52,7 +52,7 @@ class LoveMessageManager: ObservableObject {
         }
         
         // Check if user is connected to a partner
-        guard PartnerManager.shared.isConnected else {
+        guard await PartnerManager.shared.isConnected else {
             throw LoveMessageError.notConnected
         }
         
@@ -142,8 +142,8 @@ class LoveMessageManager: ObservableObject {
     
     private func getCurrentUserId() -> UUID? {
         do {
-            if let userIdString = try SecurityService.shared.secureLoadString(forKey: "currentUserId"),
-               let userId = UUID(uuidString: userIdString) {
+            let userIdString = try SecurityService.shared.secureLoadString(forKey: "currentUserId")
+            if let userId = UUID(uuidString: userIdString) {
                 return userId
             }
         } catch {

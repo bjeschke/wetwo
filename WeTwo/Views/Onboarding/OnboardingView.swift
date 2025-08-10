@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import AuthenticationServices
 
 struct OnboardingView: View {
     @EnvironmentObject var appState: AppState
@@ -13,6 +14,7 @@ struct OnboardingView: View {
     @StateObject private var viewModel = OnboardingViewModel()
     @State private var currentStep = 0
     @State private var showingPartnerConnection = false
+    @State private var showingEmailConfirmation = false
     
     private let totalSteps = 4
     
@@ -39,11 +41,11 @@ struct OnboardingView: View {
                 case 0:
                     welcomeStep
                 case 1:
-                    signupStep
-                case 2:
                     profileStep
-                case 3:
+                case 2:
                     relationshipStep
+                case 3:
+                    registrationStep
                 default:
                     EmptyView()
                 }
@@ -59,19 +61,16 @@ struct OnboardingView: View {
             SimplePartnerConnectionView()
                 .environmentObject(partnerManager)
         }
+        .sheet(isPresented: $showingEmailConfirmation) {
+            EmailConfirmationView()
+                .environmentObject(appState)
+        }
+        .onAppear {
+            checkEmailConfirmationStatus()
+        }
     }
     
     // MARK: - Step Views
-    
-    private var signupStep: some View {
-        SignupView()
-            .environmentObject(appState)
-            .onReceive(NotificationCenter.default.publisher(for: .emailConfirmed)) { _ in
-                withAnimation {
-                    currentStep = 2 // Go to profile step after email confirmation
-                }
-            }
-    }
     
     private var welcomeStep: some View {
         VStack(spacing: 30) {
@@ -102,8 +101,6 @@ struct OnboardingView: View {
             }
         }
     }
-    
-
     
     private var profileStep: some View {
         VStack(spacing: 30) {
@@ -183,7 +180,7 @@ struct OnboardingView: View {
                                 HStack {
                                     Text(status.emoji)
                                         .font(.title2)
-                                                                                Text(status.localizedName)
+                                    Text(status.localizedName)
                                         .font(.body)
                                         .fontWeight(.medium)
                                 }
@@ -227,11 +224,11 @@ struct OnboardingView: View {
                                     .foregroundColor(ColorTheme.secondaryText)
                                 
                                 HStack {
-                                                                Button(action: {
-                                if viewModel.childrenCount > 0 {
-                                    viewModel.childrenCount -= 1
-                                }
-                            }) {
+                                    Button(action: {
+                                        if viewModel.childrenCount > 0 {
+                                            viewModel.childrenCount -= 1
+                                        }
+                                    }) {
                                         Image(systemName: "minus.circle.fill")
                                             .font(.title2)
                                             .foregroundColor(ColorTheme.accentPink)
@@ -244,11 +241,11 @@ struct OnboardingView: View {
                                         .foregroundColor(ColorTheme.primaryText)
                                         .frame(minWidth: 50)
                                     
-                                                                Button(action: {
-                                if viewModel.childrenCount < 10 {
-                                    viewModel.childrenCount += 1
-                                }
-                            }) {
+                                    Button(action: {
+                                        if viewModel.childrenCount < 10 {
+                                            viewModel.childrenCount += 1
+                                        }
+                                    }) {
                                         Image(systemName: "plus.circle.fill")
                                             .font(.title2)
                                             .foregroundColor(ColorTheme.accentPink)
@@ -275,6 +272,22 @@ struct OnboardingView: View {
         }
     }
     
+    private var registrationStep: some View {
+        RegistrationView(
+            name: viewModel.name,
+            birthDate: viewModel.birthDate,
+            relationshipStatus: viewModel.relationshipStatus,
+            hasChildren: viewModel.hasChildren,
+            childrenCount: viewModel.childrenCount
+        )
+        .environmentObject(appState)
+        .onReceive(NotificationCenter.default.publisher(for: .registrationCompleted)) { _ in
+            withAnimation {
+                completeOnboarding()
+            }
+        }
+    }
+    
     // MARK: - Navigation
     
     private var navigationButtons: some View {
@@ -297,17 +310,10 @@ struct OnboardingView: View {
                     }
                 }
                 .foregroundColor(ColorTheme.primaryText)
-                .disabled(currentStep == 1 && appState.currentUser == nil) // Disable if no user created yet (step 1 is signup)
+                .disabled(currentStep == 1 && viewModel.name.isEmpty) // Disable if no name entered
             } else {
-                Button(NSLocalizedString("onboarding_complete", comment: "Complete button")) {
-                    completeOnboarding()
-                }
-                .foregroundColor(.white)
-                .padding(.horizontal, 30)
-                .padding(.vertical, 12)
-                .background(ColorTheme.accentPink)
-                .cornerRadius(25)
-                .disabled(viewModel.name.isEmpty)
+                // Registration step - no next button needed
+                EmptyView()
             }
         }
         .padding(.horizontal)
@@ -382,6 +388,20 @@ struct OnboardingView: View {
             print("❌ Error saving relationship data: \(error)")
         }
     }
+    
+    private func checkEmailConfirmationStatus() {
+        // Check if user exists but email might not be confirmed
+        if appState.currentUser != nil {
+            // Check if we have email/password but no current user ID (indicating email not confirmed)
+            if let _ = try? SecurityService.shared.secureLoadString(forKey: "userEmail"),
+               let _ = try? SecurityService.shared.secureLoadString(forKey: "userPassword"),
+               try? SecurityService.shared.secureLoadString(forKey: "currentUserId") == nil {
+                
+                print("🔄 User exists but email not confirmed - showing email confirmation")
+                showingEmailConfirmation = true
+            }
+        }
+    }
 }
 
 // MARK: - Onboarding ViewModel
@@ -397,10 +417,6 @@ final class OnboardingViewModel: ObservableObject {
     @Published var childrenCount = 0
     @Published var isLoading = false
     @Published var errorMessage: String?
-    
-
-    
-
 }
 
 // MARK: - Supporting Views
@@ -431,7 +447,494 @@ struct OnboardingFeatureRow: View {
     }
 }
 
- 
+// MARK: - Registration View
+struct RegistrationView: View {
+    @EnvironmentObject var appState: AppState
+    @State private var showingEmailSignup = false
+    @State private var showingAppleSignIn = false
+    
+    let name: String
+    let birthDate: Date
+    let relationshipStatus: RelationshipStatus
+    let hasChildren: Bool
+    let childrenCount: Int
+    
+    var body: some View {
+        VStack(spacing: 30) {
+            // Header
+            VStack(spacing: 20) {
+                Image(systemName: "person.crop.circle.badge.plus")
+                    .font(.system(size: 80))
+                    .foregroundColor(ColorTheme.accentPink)
+                
+                Text(NSLocalizedString("onboarding_signin_title", comment: "Sign In Title"))
+                    .font(.title)
+                    .fontWeight(.bold)
+                    .multilineTextAlignment(.center)
+                    .foregroundColor(ColorTheme.primaryText)
+                
+                Text(NSLocalizedString("onboarding_signin_subtitle", comment: "Sign In Subtitle"))
+                    .font(.body)
+                    .multilineTextAlignment(.center)
+                    .foregroundColor(ColorTheme.secondaryText)
+            }
+            
+            // Registration options
+            VStack(spacing: 20) {
+                // Apple Sign In
+                Button(action: {
+                    showingAppleSignIn = true
+                }) {
+                    HStack {
+                        Image(systemName: "applelogo")
+                            .font(.title2)
+                        Text("Mit Apple anmelden")
+                            .font(.headline)
+                            .fontWeight(.semibold)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(Color.black)
+                    .foregroundColor(.white)
+                    .cornerRadius(25)
+                }
+                
+                // Divider
+                HStack {
+                    Rectangle()
+                        .frame(height: 1)
+                        .foregroundColor(ColorTheme.secondaryText.opacity(0.3))
+                    
+                    Text(NSLocalizedString("onboarding_or", comment: "Or separator"))
+                        .font(.caption)
+                        .foregroundColor(ColorTheme.secondaryText)
+                        .padding(.horizontal, 10)
+                    
+                    Rectangle()
+                        .frame(height: 1)
+                        .foregroundColor(ColorTheme.secondaryText.opacity(0.3))
+                }
+                
+                // Email registration
+                Button(action: {
+                    showingEmailSignup = true
+                }) {
+                    HStack {
+                        Image(systemName: "envelope")
+                            .font(.title2)
+                        Text("Mit E-Mail registrieren")
+                            .font(.headline)
+                            .fontWeight(.semibold)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(ColorTheme.accentPink)
+                    .foregroundColor(.white)
+                    .cornerRadius(25)
+                }
+            }
+            .padding(.horizontal)
+            
+            Spacer()
+        }
+        .sheet(isPresented: $showingEmailSignup) {
+            EmailSignupView(
+                name: name,
+                birthDate: birthDate,
+                relationshipStatus: relationshipStatus,
+                hasChildren: hasChildren,
+                childrenCount: childrenCount
+            )
+            .environmentObject(appState)
+        }
+        .sheet(isPresented: $showingAppleSignIn) {
+            AppleSignInView(
+                name: name,
+                birthDate: birthDate,
+                relationshipStatus: relationshipStatus,
+                hasChildren: hasChildren,
+                childrenCount: childrenCount
+            )
+            .environmentObject(appState)
+        }
+        .sheet(isPresented: $showingEmailConfirmation) {
+            EmailConfirmationView()
+                .environmentObject(appState)
+        }
+    }
+}
+
+// MARK: - Email Signup View
+struct EmailSignupView: View {
+    @EnvironmentObject var appState: AppState
+    @Environment(\.dismiss) private var dismiss
+    @State private var email = ""
+    @State private var password = ""
+    @State private var confirmPassword = ""
+    @State private var isLoading = false
+    @State private var showError = false
+    @State private var errorMessage = ""
+    @State private var showingEmailConfirmation = false
+    
+    let name: String
+    let birthDate: Date
+    let relationshipStatus: RelationshipStatus
+    let hasChildren: Bool
+    let childrenCount: Int
+    
+    var body: some View {
+        NavigationView {
+            ScrollView {
+                VStack(spacing: 24) {
+                    // Header
+                    VStack(spacing: 16) {
+                        Image(systemName: "envelope.circle")
+                            .font(.system(size: 60))
+                            .foregroundColor(ColorTheme.accentPink)
+                        
+                        Text("Account erstellen")
+                            .font(.system(size: 28, weight: .bold))
+                            .foregroundColor(ColorTheme.primaryText)
+                        
+                        Text("Erstelle dein Konto mit E-Mail")
+                            .font(.system(size: 16, weight: .regular))
+                            .foregroundColor(ColorTheme.secondaryText)
+                    }
+                    .padding(.top, 40)
+                    
+                    // Input Fields
+                    VStack(spacing: 20) {
+                        AppleStyleInputField(
+                            placeholder: "E-Mail",
+                            text: $email,
+                            keyboardType: .emailAddress,
+                            textContentType: .emailAddress,
+                            autocapitalization: .never
+                        )
+                        
+                        AppleStyleInputField(
+                            placeholder: "Passwort",
+                            text: $password,
+                            isSecure: true,
+                            textContentType: .newPassword
+                        )
+                        
+                        AppleStyleInputField(
+                            placeholder: "Passwort bestätigen",
+                            text: $confirmPassword,
+                            isSecure: true,
+                            textContentType: .newPassword
+                        )
+                    }
+                    .padding(.horizontal, 20)
+                    
+                    // Sign Up Button
+                    Button(action: handleSignup) {
+                        HStack {
+                            if isLoading {
+                                ProgressView()
+                                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                    .scaleEffect(0.8)
+                            } else {
+                                Text("Account erstellen")
+                                    .font(.system(size: 16, weight: .semibold))
+                            }
+                        }
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 50)
+                        .background(
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(ColorTheme.accentPink)
+                        )
+                        .opacity(isLoading ? 0.7 : 1.0)
+                    }
+                    .disabled(isLoading || !isFormValid)
+                    .padding(.horizontal, 20)
+                    
+                    // Error Message
+                    if showError {
+                        Text(errorMessage)
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(.red)
+                            .padding(.horizontal, 20)
+                    }
+                    
+                    // Terms and Privacy
+                    VStack(spacing: 8) {
+                        Text("Mit der Erstellung eines Kontos stimmst du unseren")
+                            .font(.system(size: 12, weight: .regular))
+                            .foregroundColor(ColorTheme.secondaryText)
+                        
+                        HStack(spacing: 4) {
+                            Button("Nutzungsbedingungen") {
+                                // Handle terms tap
+                            }
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundColor(ColorTheme.accentPink)
+                            
+                            Text("und")
+                                .font(.system(size: 12, weight: .regular))
+                                .foregroundColor(ColorTheme.secondaryText)
+                            
+                            Button("Datenschutzrichtlinie") {
+                                // Handle privacy tap
+                            }
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundColor(ColorTheme.accentPink)
+                        }
+                    }
+                    .padding(.top, 20)
+                    
+                    Spacer(minLength: 40)
+                }
+            }
+            .background(ColorTheme.cardBackground)
+            .navigationTitle("E-Mail Registrierung")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Abbrechen") {
+                        dismiss()
+                    }
+                }
+            }
+        }
+    }
+    
+    private var isFormValid: Bool {
+        !email.isEmpty && 
+        !password.isEmpty && 
+        !confirmPassword.isEmpty &&
+        password == confirmPassword &&
+        password.count >= 6 &&
+        email.contains("@")
+    }
+    
+    private func handleSignup() {
+        isLoading = true
+        showError = false
+        
+        // Validate passwords match
+        if password != confirmPassword {
+            showError = true
+            errorMessage = "Passwörter stimmen nicht überein"
+            isLoading = false
+            return
+        }
+        
+        // Validate password length
+        if password.count < 6 {
+            showError = true
+            errorMessage = "Passwort muss mindestens 6 Zeichen lang sein"
+            isLoading = false
+            return
+        }
+        
+        // Validate email format
+        if !email.contains("@") {
+            showError = true
+            errorMessage = "Bitte gib eine gültige E-Mail-Adresse ein"
+            isLoading = false
+            return
+        }
+        
+        // Store credentials securely for later use
+        Task {
+            do {
+                try SecurityService.shared.secureStore(email, forKey: "userEmail")
+                try SecurityService.shared.secureStore(password, forKey: "userPassword")
+                
+                // Try to complete onboarding with Supabase
+                do {
+                    let supabaseUser = try await SupabaseService.shared.completeOnboarding(
+                        email: email,
+                        password: password,
+                        name: name,
+                        birthDate: birthDate
+                    )
+                    
+                    // If we get here, email confirmation was not required
+                    // Create user and complete onboarding
+                    let user = User(name: name, birthDate: birthDate)
+                    appState.completeOnboarding(user: user)
+                    appState.completeOnboardingWithSupabase(user: user)
+                    
+                    // Save relationship data
+                    await saveRelationshipData()
+                    
+                    DispatchQueue.main.async {
+                        isLoading = false
+                        dismiss()
+                        NotificationCenter.default.post(name: .registrationCompleted, object: nil)
+                    }
+                    
+                } catch AuthError.validationError {
+                    // Email confirmation required
+                    DispatchQueue.main.async {
+                        isLoading = false
+                        showingEmailConfirmation = true
+                    }
+                } catch {
+                    DispatchQueue.main.async {
+                        isLoading = false
+                        showError = true
+                        errorMessage = "Fehler beim Erstellen des Kontos: \(error.localizedDescription)"
+                    }
+                }
+                
+            } catch {
+                DispatchQueue.main.async {
+                    isLoading = false
+                    showError = true
+                    errorMessage = "Fehler beim Speichern der Anmeldedaten: \(error.localizedDescription)"
+                }
+            }
+        }
+    }
+    
+    private func saveRelationshipData() async {
+        do {
+            guard let userId = appState.currentUser?.id else { return }
+            
+            try await SupabaseService.shared.updateRelationshipData(
+                userId: userId.uuidString,
+                relationshipStatus: relationshipStatus.rawValue,
+                hasChildren: hasChildren ? "true" : "false",
+                childrenCount: String(childrenCount)
+            )
+        } catch {
+            print("❌ Error saving relationship data: \(error)")
+        }
+    }
+}
+
+// MARK: - Apple Sign In View
+struct AppleSignInView: View {
+    @EnvironmentObject var appState: AppState
+    @Environment(\.dismiss) private var dismiss
+    @State private var isLoading = false
+    @State private var showError = false
+    @State private var errorMessage = ""
+    
+    let name: String
+    let birthDate: Date
+    let relationshipStatus: RelationshipStatus
+    let hasChildren: Bool
+    let childrenCount: Int
+    
+    var body: some View {
+        NavigationView {
+            VStack(spacing: 30) {
+                // Header
+                VStack(spacing: 20) {
+                    Image(systemName: "applelogo")
+                        .font(.system(size: 80))
+                        .foregroundColor(.black)
+                    
+                    Text("Mit Apple anmelden")
+                        .font(.title)
+                        .fontWeight(.bold)
+                        .multilineTextAlignment(.center)
+                        .foregroundColor(ColorTheme.primaryText)
+                    
+                    Text("Schnell und sicher mit deinem Apple ID anmelden")
+                        .font(.body)
+                        .multilineTextAlignment(.center)
+                        .foregroundColor(ColorTheme.secondaryText)
+                }
+                
+                // Apple Sign In Button
+                SignInWithAppleButton(
+                    onRequest: { request in
+                        request.requestedScopes = [.fullName, .email]
+                    },
+                    onCompletion: { result in
+                        handleAppleSignIn(result)
+                    }
+                )
+                .signInWithAppleButtonStyle(.black)
+                .frame(height: 50)
+                .cornerRadius(25)
+                .padding(.horizontal)
+                
+                if isLoading {
+                    ProgressView("Anmeldung läuft...")
+                        .progressViewStyle(CircularProgressViewStyle())
+                        .foregroundColor(ColorTheme.secondaryText)
+                }
+                
+                Spacer()
+            }
+            .padding()
+            .background(ColorTheme.cardBackground)
+            .navigationTitle("Apple Anmeldung")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Abbrechen") {
+                        dismiss()
+                    }
+                }
+            }
+            .alert("Anmeldefehler", isPresented: $showError) {
+                Button("OK") { }
+            } message: {
+                Text(errorMessage)
+            }
+        }
+    }
+    
+    private func handleAppleSignIn(_ result: Result<ASAuthorization, Error>) {
+        isLoading = true
+        
+        switch result {
+        case .success(let authorization):
+            if let appleIDCredential = authorization.credential as? ASAuthorizationAppleIDCredential {
+                let appleUserID = appleIDCredential.user
+                
+                // Create user and complete onboarding
+                let user = User(name: name, birthDate: birthDate)
+                appState.completeOnboardingWithAppleID(user: user, appleUserID: appleUserID)
+                
+                // Save relationship data
+                Task {
+                    await saveRelationshipData()
+                    
+                    DispatchQueue.main.async {
+                        isLoading = false
+                        dismiss()
+                        NotificationCenter.default.post(name: .registrationCompleted, object: nil)
+                    }
+                }
+            } else {
+                isLoading = false
+                showError = true
+                errorMessage = "Ungültige Anmeldedaten"
+            }
+            
+        case .failure(let error):
+            isLoading = false
+            showError = true
+            errorMessage = "Anmeldefehler: \(error.localizedDescription)"
+        }
+    }
+    
+    private func saveRelationshipData() async {
+        do {
+            guard let userId = appState.currentUser?.id else { return }
+            
+            try await SupabaseService.shared.updateRelationshipData(
+                userId: userId.uuidString,
+                relationshipStatus: relationshipStatus.rawValue,
+                hasChildren: hasChildren ? "true" : "false",
+                childrenCount: String(childrenCount)
+            )
+        } catch {
+            print("❌ Error saving relationship data: \(error)")
+        }
+    }
+}
 
 // MARK: - Simple Partner Connection View
 struct SimplePartnerConnectionView: View {
@@ -783,4 +1286,9 @@ struct CodeEntryView: View {
             }
         }
     }
+}
+
+// MARK: - Notification Extensions
+extension Notification.Name {
+    static let registrationCompleted = Notification.Name("registrationCompleted")
 } 

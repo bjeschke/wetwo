@@ -22,7 +22,7 @@ struct AppleStyleInputField: View {
                     ))
                     .keyboardType(keyboardType)
                     .textContentType(textContentType)
-                    .autocapitalization(autocapitalization)
+                    .textInputAutocapitalization(autocapitalization)
                     .disableAutocorrection(!autocorrection)
                     .onSubmit {
                         onCommit?()
@@ -35,7 +35,7 @@ struct AppleStyleInputField: View {
                     ))
                     .keyboardType(keyboardType)
                     .textContentType(textContentType)
-                    .autocapitalization(autocapitalization)
+                    .textInputAutocapitalization(autocapitalization)
                     .disableAutocorrection(!autocorrection)
                     .onSubmit {
                         onCommit?()
@@ -53,16 +53,15 @@ struct AppleTextFieldStyle: TextFieldStyle {
         VStack(alignment: .leading, spacing: 0) {
             // Floating label
             Text(placeholder)
-                .font(.system(size: isFocused || !configuration.text.isEmpty ? 12 : 16, weight: .medium))
+                .font(.system(size: isFocused ? 12 : 16, weight: .medium))
                 .foregroundColor(isFocused ? Color.accentColor : Color(.systemGray))
                 .animation(.easeInOut(duration: 0.2), value: isFocused)
-                .animation(.easeInOut(duration: 0.2), value: configuration.text.isEmpty)
             
             // Input field
             configuration
                 .font(.system(size: 16, weight: .regular))
                 .foregroundColor(Color(.label))
-                .padding(.top, isFocused || !configuration.text.isEmpty ? 4 : 0)
+                .padding(.top, isFocused ? 4 : 0)
                 .padding(.bottom, 12)
                 .onTapGesture {
                     withAnimation(.easeInOut(duration: 0.2)) {
@@ -208,7 +207,7 @@ struct AppleStyleInputField_Previews: PreviewProvider {
             
             TextEditor(text: .constant(""))
                 .frame(height: 100)
-                .appleStyle(placeholder: "Write your message...", text: .constant(""))
+                .modifier(AppleTextEditorStyle(placeholder: "Write your message...", text: .constant("")))
             
             AppleSearchField(
                 placeholder: "Search memories...",

@@ -30,10 +30,8 @@ class AppState: ObservableObject {
            let user = try? JSONDecoder().decode(User.self, from: userData) {
             print("✅ User found in secure storage: \(user.name)")
             self.currentUser = user
-            self.isOnboarding = false
-            print("✅ Onboarding set to false - user will see main app")
             
-            // Try to sign in to Supabase if credentials exist
+            // Check if we have Supabase credentials and can sign in
             Task {
                 if let email = try? securityService.secureLoadString(forKey: "userEmail"),
                    let password = try? securityService.secureLoadString(forKey: "userPassword") {
@@ -51,6 +49,12 @@ class AppState: ObservableObject {
                             try? await supabaseService.ensureProfileExists()
                         }
                         
+                        // Only complete onboarding if we can successfully sign in
+                        DispatchQueue.main.async {
+                            self.isOnboarding = false
+                            print("✅ Onboarding set to false - user will see main app")
+                        }
+                        
                     } catch {
                         print("⚠️ Auto-sign in failed: \(error)")
                         
@@ -62,13 +66,27 @@ class AppState: ObservableObject {
                             try? securityService.secureDelete(forKey: "userEmail")
                             try? securityService.secureDelete(forKey: "userPassword")
                             try? securityService.secureDelete(forKey: "currentUserId")
+                            
+                            // Show onboarding again since credentials are invalid
+                            DispatchQueue.main.async {
+                                self.isOnboarding = true
+                                print("🔄 Onboarding set to true - invalid credentials")
+                            }
+                        } else {
+                            // For other errors (like email not confirmed), stay in onboarding
+                            DispatchQueue.main.async {
+                                self.isOnboarding = true
+                                print("🔄 Onboarding set to true - sign in failed")
+                            }
                         }
-                        
-                        // Don't show error to user, just continue with local data
-                        // The user can still use the app, and we'll try to reconnect later
                     }
                 } else {
                     print("⚠️ No email/password found in secure storage")
+                    // No credentials found, stay in onboarding
+                    DispatchQueue.main.async {
+                        self.isOnboarding = true
+                        print("🔄 Onboarding set to true - no credentials")
+                    }
                 }
             }
         } else {
@@ -179,6 +197,11 @@ class AppState: ObservableObject {
             try? securityService.secureStore(encoded, forKey: "currentUser")
         }
         
+        // Note: Supabase profile creation is now handled in the UI layer
+        // to properly handle email confirmation requirements
+    }
+    
+    func completeOnboardingWithSupabase(user: User) {
         // Create user profile in Supabase using the new robust method
         Task {
             do {

@@ -10,7 +10,7 @@ import SwiftUI
 struct LoveMessageEditorView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var message = ""
-    @State private var selectedMood: MoodEntry.Mood = .happy
+    @State private var selectedMood: MoodLevel = .happy
     @State private var isPrivate = false
     @State private var isLoading = false
     
@@ -38,7 +38,7 @@ struct LoveMessageEditorView: View {
                         
                         TextEditor(text: $message)
                             .frame(minHeight: 150)
-                            .appleStyle(placeholder: "Write your love message here...", text: $message)
+                            .modifier(AppleTextEditorStyle(placeholder: "Write your love message here...", text: $message))
                     }
                     .padding(.horizontal, 20)
                     
@@ -49,7 +49,7 @@ struct LoveMessageEditorView: View {
                             .foregroundColor(Color(.label))
                         
                         LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 5), spacing: 12) {
-                            ForEach(MoodEntry.Mood.allCases, id: \.self) { mood in
+                            ForEach(MoodLevel.allCases, id: \.self) { mood in
                                 Button(action: {
                                     selectedMood = mood
                                 }) {
@@ -57,7 +57,7 @@ struct LoveMessageEditorView: View {
                                         Text(mood.emoji)
                                             .font(.system(size: 24))
                                         
-                                        Text(mood.displayName)
+                                        Text(mood.description)
                                             .font(.system(size: 12, weight: .medium))
                                             .foregroundColor(selectedMood == mood ? .white : Color(.label))
                                     }

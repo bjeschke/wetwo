@@ -12,14 +12,14 @@ struct AddMemoryView: View {
     @State private var title = ""
     @State private var description = ""
     @State private var selectedDate = Date()
-    @State private var selectedMood: MoodEntry.Mood = .happy
-    @State private var selectedPhotos: [UIImage] = []
+    @State private var selectedMood: MoodLevel = .happy
+    @State private var selectedImage: UIImage?
     @State private var showingImagePicker = false
     @State private var isLoading = false
     
     var body: some View {
         NavigationView {
-            ScrollView {
+            ScrollView(.vertical, showsIndicators: true) {
                 VStack(spacing: 24) {
                     // Header
                     VStack(spacing: 8) {
@@ -43,7 +43,7 @@ struct AddMemoryView: View {
                         
                         TextEditor(text: $description)
                             .frame(minHeight: 120)
-                            .appleStyle(placeholder: "Describe this memory...", text: $description)
+                            .modifier(AppleTextEditorStyle(placeholder: "Describe this memory...", text: $description))
                     }
                     .padding(.horizontal, 20)
                     
@@ -72,7 +72,7 @@ struct AddMemoryView: View {
                             .foregroundColor(Color(.label))
                         
                         LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 5), spacing: 12) {
-                            ForEach(MoodEntry.Mood.allCases, id: \.self) { mood in
+                            ForEach(MoodLevel.allCases, id: \.self) { mood in
                                 Button(action: {
                                     selectedMood = mood
                                 }) {
@@ -80,7 +80,7 @@ struct AddMemoryView: View {
                                         Text(mood.emoji)
                                             .font(.system(size: 24))
                                         
-                                        Text(mood.displayName)
+                                        Text(mood.description)
                                             .font(.system(size: 12, weight: .medium))
                                             .foregroundColor(selectedMood == mood ? .white : Color(.label))
                                     }
@@ -112,7 +112,7 @@ struct AddMemoryView: View {
                             .foregroundColor(.accentColor)
                         }
                         
-                        if selectedPhotos.isEmpty {
+                        if selectedImage == nil {
                             Button(action: {
                                 showingImagePicker = true
                             }) {
@@ -137,30 +137,25 @@ struct AddMemoryView: View {
                                 )
                             }
                         } else {
-                            ScrollView(.horizontal, showsIndicators: false) {
-                                HStack(spacing: 12) {
-                                    ForEach(Array(selectedPhotos.enumerated()), id: \.offset) { index, photo in
-                                        ZStack(alignment: .topTrailing) {
-                                            Image(uiImage: photo)
-                                                .resizable()
-                                                .aspectRatio(contentMode: .fill)
-                                                .frame(width: 80, height: 80)
-                                                .clipShape(RoundedRectangle(cornerRadius: 8))
-                                            
-                                            Button(action: {
-                                                selectedPhotos.remove(at: index)
-                                            }) {
-                                                Image(systemName: "xmark.circle.fill")
-                                                    .font(.system(size: 20))
-                                                    .foregroundColor(.white)
-                                                    .background(Color.black.opacity(0.6))
-                                                    .clipShape(Circle())
-                                            }
-                                            .offset(x: 6, y: -6)
-                                        }
+                            if let image = selectedImage {
+                                ZStack(alignment: .topTrailing) {
+                                    Image(uiImage: image)
+                                        .resizable()
+                                        .aspectRatio(contentMode: .fill)
+                                        .frame(width: 80, height: 80)
+                                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                                    
+                                    Button(action: {
+                                        selectedImage = nil
+                                    }) {
+                                        Image(systemName: "xmark.circle.fill")
+                                            .font(.system(size: 20))
+                                            .foregroundColor(.white)
+                                            .background(Color.black.opacity(0.6))
+                                            .clipShape(Circle())
                                     }
+                                    .offset(x: 6, y: -6)
                                 }
-                                .padding(.horizontal, 4)
                             }
                         }
                     }
@@ -195,17 +190,14 @@ struct AddMemoryView: View {
             }
             .background(Color(.systemBackground))
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Cancel") {
-                        dismiss()
-                    }
-                    .foregroundColor(.accentColor)
-                }
+            .navigationBarBackButtonHidden(true)
+            .navigationBarItems(leading: Button("Cancel") {
+                dismiss()
             }
+            .foregroundColor(.accentColor))
         }
         .sheet(isPresented: $showingImagePicker) {
-            PhotoPickerView(selectedImages: $selectedPhotos)
+            PhotoPickerView(selectedImage: $selectedImage)
         }
     }
     

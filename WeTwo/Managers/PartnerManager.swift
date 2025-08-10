@@ -44,8 +44,8 @@ class PartnerManager: ObservableObject, Sendable {
     
     private func getCurrentUserId() -> UUID? {
         do {
-            if let userIdString = try SecurityService.shared.secureLoadString(forKey: "currentUserId"),
-               let userId = UUID(uuidString: userIdString) {
+            let userIdString = try SecurityService.shared.secureLoadString(forKey: "currentUserId")
+            if let userId = UUID(uuidString: userIdString) {
                 return userId
             }
         } catch {

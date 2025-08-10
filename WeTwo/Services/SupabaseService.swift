@@ -435,10 +435,23 @@ final class SupabaseService: @unchecked Sendable {
             
             print("✅ Sign in successful after email confirmation")
             
-            // Create a User with the provided data
+            // Extract user information from the response
+            let name = response.user.userMetadata["name"]?.stringValue ?? "User"
+            let birthDateString = response.user.userMetadata["birth_date"]?.stringValue
+            
+            // Parse birth date or use current date as fallback
+            let birthDate: Date
+            if let birthDateString = birthDateString,
+               let parsedDate = DateFormatter.yyyyMMdd.date(from: birthDateString) {
+                birthDate = parsedDate
+            } else {
+                birthDate = Date()
+            }
+            
+            // Create a User with the extracted data
             return User(
-                name: response.user.userMetadata["name"]?.stringValue ?? "User",
-                birthDate: Date()
+                name: name,
+                birthDate: birthDate
             )
         } catch {
             print("❌ Sign in failed after email confirmation: \(error)")

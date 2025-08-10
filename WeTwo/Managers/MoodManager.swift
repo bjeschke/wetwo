@@ -146,8 +146,8 @@ class MoodManager: ObservableObject {
     private func getCurrentUserId() -> UUID? {
         // Get from secure storage (should be set during login/signup)
         do {
-            if let userIdString = try SecurityService.shared.secureLoadString(forKey: "currentUserId"),
-               let userId = UUID(uuidString: userIdString) {
+            let userIdString = try SecurityService.shared.secureLoadString(forKey: "currentUserId")
+            if let userId = UUID(uuidString: userIdString) {
                 return userId
             }
         } catch {

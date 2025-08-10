@@ -82,6 +82,177 @@
 "signup_email_confirmation_continue" = "I've confirmed my email";
 "signup_email_confirmation_resend" = "Resend confirmation email";
 
+// MARK: - Partner Connection
+"partner_connection_generate_code" = "Generate Connection Code";
+"partner_connection_enter_code" = "Enter Partner's Code";
+"partner_connection_code_placeholder" = "Enter 6-digit code";
+"partner_connection_connect" = "Connect";
+"partner_connection_success" = "Connection successful!";
+"partner_connection_error" = "Connection error";
+"partner_connection_invalid_code" = "Invalid code";
+"partner_connection_network_error" = "Network error";
+"partner_connection_already_connected" = "Already connected";
+"partner_connection_unknown_error" = "Unknown error";
+"generate_code_title" = "Generate Connection Code";
+"generate_code_subtitle" = "Share this code with your partner to connect";
+"enter_code_title" = "Enter Partner Code";
+"enter_code_subtitle" = "Enter the 6-digit code your partner shared with you";
+"generate_connection_code" = "Generate Connection Code";
+"enter_partner_code" = "Enter Partner Code";
+"skip_for_now" = "Skip for now";
+"your_connection_code" = "Your Connection Code";
+"copy_code" = "Copy Code";
+"generate_code" = "Generate Code";
+"generating" = "Generating...";
+"connection_code" = "Connection Code";
+"connect_with_partner" = "Connect with Partner";
+"connecting" = "Connecting...";
+"connection_successful" = "Connection successful";
+"connection_successful_message" = "You're now connected with your partner!";
+"connection_error" = "Connection error";
+"invalid_code_message" = "Invalid connection code. Please try again.";
+"enter_valid_code" = "Please enter a valid 6-digit code";
+
+// MARK: - Memory Management
+"memory_add_title" = "Add Memory";
+"memory_edit_title" = "Edit Memory";
+"memory_delete_title" = "Delete Memory";
+"memory_delete_message" = "Are you sure you want to delete this memory?";
+"memory_save_success" = "Memory saved";
+"memory_save_error" = "Error saving memory";
+"memory_delete_success" = "Memory deleted";
+"memory_delete_error" = "Error deleting memory";
+
+// MARK: - Mood Tracking
+"mood_track_title" = "Mood Tracking";
+"mood_track_success" = "Mood recorded";
+"mood_track_error" = "Error recording mood";
+"mood_history" = "Mood History";
+"mood_average" = "Average";
+"mood_trend" = "Trend";
+
+// MARK: - Photo Management
+"photo_select" = "Select Photo";
+"photo_take" = "Take Photo";
+"photo_upload" = "Upload Photo";
+"photo_delete" = "Delete Photo";
+"photo_save_success" = "Photo saved";
+"photo_save_error" = "Error saving photo";
+"photo_upload_success" = "Photo uploaded";
+"photo_upload_error" = "Error uploading photo";
+
+// MARK: - Loading States
+"loading_saving" = "Saving...";
+"loading_uploading" = "Uploading...";
+"loading_connecting" = "Connecting...";
+"loading_sending" = "Sending...";
+
+// MARK: - Date and Time
+"date_today" = "Today";
+"date_yesterday" = "Yesterday";
+"date_tomorrow" = "Tomorrow";
+"time_just_now" = "Just now";
+"time_minutes_ago" = "%d minutes ago";
+"time_hours_ago" = "%d hours ago";
+"time_days_ago" = "%d days ago";
+"year" = "year";
+"years" = "years";
+"month" = "month";
+"months" = "months";
+"child" = "child";
+"children" = "children";
+
+// MARK: - Navigation
+"nav_today" = "Today";
+"nav_calendar" = "Calendar";
+"nav_timeline" = "Timeline";
+"nav_activity" = "Activities";
+"nav_profile" = "Profile";
+
+// MARK: - Activity View
+"activity_title" = "Activities";
+"activity_subtitle" = "Discover quizzes and fun games for both of you";
+"activity_quizzes" = "Quizzes";
+"activity_games" = "Games";
+"activity_quiz_love_language" = "Love Language";
+"activity_quiz_compatibility" = "Compatibility";
+
+// Quiz Types
+"quiz_compatibility" = "Compatibility Quiz";
+"quiz_compatibility_desc" = "Test your compatibility";
+"quiz_relationship" = "Relationship Quiz";
+"quiz_relationship_desc" = "Learn more about your relationship";
+"quiz_personality" = "Personality Quiz";
+"quiz_personality_desc" = "Discover your personalities";
+"quiz_future" = "Future Quiz";
+"quiz_future_desc" = "Plan your future together";
+
+// Game Types
+"game_truth_dare" = "Truth or Dare";
+"game_truth_dare_desc" = "Classic truth or dare";
+"game_would_rather" = "Would You Rather";
+"game_would_rather_desc" = "Make difficult decisions";
+"game_memory" = "Memory Game";
+"game_memory_desc" = "Test your memory";
+"game_trivia" = "Trivia";
+"game_trivia_desc" = "Fun trivia questions";
+
+// MARK: - Onboarding Welcome
+"onboarding_welcome" = "Welcome to WeTwo!";
+"onboarding_welcome_subtitle" = "The app for couples who want to grow together";
+
+// MARK: - Onboarding Relationship Step
+"onboarding_relationship_title" = "Your Relationship";
+"onboarding_meeting_date_placeholder" = "Select date";
+"onboarding_relationship_duration" = "Relationship duration:";
+"onboarding_relationship_status_label" = "Your relationship status";
+"onboarding_children_label" = "Children";
+"onboarding_has_children" = "Do you have children together?";
+"onboarding_children_count_label" = "Number of children";
+"onboarding_birthdate_placeholder" = "Select birth date";
+
+// MARK: - Relationship Status
+"relationship_status_single" = "Single";
+"relationship_status_in_relationship" = "In a relationship";
+"relationship_status_engaged" = "Engaged";
+"relationship_status_married" = "Married";
+"relationship_status_complicated" = "It's complicated";
+"relationship_status_dating" = "Dating";
+"relationship_status_long_term" = "Long-term relationship";
+
+// MARK: - Errors
+"error_unknown" = "Unknown error";
+"error_invalid_input" = "Invalid input";
+"error_permission_denied" = "Permission denied";
+"error_file_not_found" = "File not found";
+"error_connection_failed" = "Connection failed";
+"error_timeout" = "Timeout";
+
+// MARK: - Success Messages
+"success_saved" = "Successfully saved";
+"success_updated" = "Successfully updated";
+"success_deleted" = "Successfully deleted";
+"success_connected" = "Successfully connected";
+"success_sent" = "Successfully sent";
+
+// MARK: - Profile Additional
+"profile_relationship_status" = "Relationship Status";
+"profile_premium_upgrade" = "Premium Upgrade";
+"profile_about_amavo" = "About Amavo";
+
+// MARK: - Settings Additional
+"settings_contact" = "Contact";
+"settings_feedback" = "Feedback";
+"settings_rate_app" = "Rate App";
+"settings_share_app" = "Share App";
+
+// MARK: - Premium Additional
+"premium_features" = "Premium Features";
+"premium_feature_1" = "Unlimited Love Messages";
+"premium_feature_2" = "Advanced Quizzes";
+"premium_feature_3" = "Relationship Analysis";
+"premium_feature_4" = "No Ads";
+
 // MARK: - Email Confirmation
 "email_confirmation_title" = "Confirm your email";
 "email_confirmation_subtitle" = "We sent a confirmation email to";
@@ -95,27 +266,49 @@
 "tab_calendar" = "Calendar";
 "tab_partner" = "Partner";
 "tab_profile" = "Profile";
+"tab_activity" = "Activities";
 
 // MARK: - Today View
 "today_title" = "How are you feeling today?";
+"today_greeting" = "Hello!";
+"today_mood_question" = "How are you feeling today?";
 "today_mood_happy" = "Happy";
-"today_mood_neutral" = "Neutral";
+"today_mood_good" = "Good";
+"today_mood_okay" = "Okay";
 "today_mood_sad" = "Sad";
+"today_mood_terrible" = "Terrible";
+"today_mood_neutral" = "Neutral";
 "today_mood_very_happy" = "Very Happy";
 "today_mood_very_sad" = "Very Sad";
 "today_add_event" = "Add Event";
 "today_add_photo" = "Add Photo";
 "today_generate_insight" = "Generate Insight";
-"today_generate_love_message" = "Love Message";
-"today_partner_mood" = "Partner's Mood";
-"today_compatibility_score" = "Compatibility";
-"today_no_insight" = "No insight for today yet";
-"today_no_love_message" = "No love message yet";
+"today_love_message" = "Love Message";
+"today_send_love_message" = "Send Love Message";
+"today_generate_love_message" = "Generate Love Message";
+"today_love_message_placeholder" = "Write your love message here...";
+"today_love_message_editor_title" = "Love Message Editor";
+"today_love_message_editor_subtitle" = "Create a special message for your partner";
+"today_love_message_label" = "Love Message";
+"today_generate_new" = "Generate New";
+"today_copy_message" = "Copy Message";
+"today_send_confirmation_title" = "Send Message?";
+"today_send_confirmation_message" = "Are you sure you want to send this love message?";
+"today_send" = "Send";
+"today_connect_partner" = "Connect with Partner";
+"today_partner_connected" = "Connected with";
+"today_disconnect" = "Disconnect";
+"today_profile_photo" = "Profile Photo";
+"today_upload_photo" = "Upload Photo";
 "today_save_mood" = "Save My Mood";
 "today_daily_insight" = "Daily Insight";
 "today_generating_insight" = "Generating insight...";
 "today_partner_no_mood" = "Partner hasn't shared their mood yet";
 "today_insights_remaining" = "left";
+"today_no_insight" = "No insight for today yet";
+"today_no_love_message" = "No love message yet";
+"today_compatibility_score" = "Compatibility";
+"today_partner_mood" = "Partner's Mood";
 
 // MARK: - Timeline View
 "timeline_title" = "Our Memories";
@@ -131,6 +324,11 @@
 "timeline_filter_shared" = "Shared";
 "timeline_filter_personal" = "Personal";
 "timeline_filter_favorites" = "Favorites";
+"timeline_no_memories_description" = "Start creating special memories with your partner";
+"timeline_memory_title" = "Memory Title";
+"timeline_memory_description" = "Memory Description";
+"timeline_memory_date" = "Memory Date";
+"timeline_memory_photo" = "Memory Photo";
 
 // MARK: - Memory Creation
 "memory_new_title" = "Create New Memory";
@@ -170,8 +368,26 @@
 
 // MARK: - Calendar View
 "calendar_title" = "Week Overview";
-"calendar_week_summary" = "Week Summary";
+"calendar_meeting_date" = "Meeting Date";
+"calendar_relationship_duration" = "Relationship Duration";
+"calendar_weekly_summary" = "Weekly Summary";
 "calendar_view_details" = "View Details";
+"calendar_average_mood" = "Average Mood";
+"calendar_add_entry" = "Add Entry";
+"calendar_add_entry_title" = "New Calendar Entry";
+"calendar_add_entry_subtitle" = "Create a new calendar entry with date and time";
+"calendar_entry_title_label" = "Title";
+"calendar_entry_title_placeholder" = "Enter title";
+"calendar_entry_description_label" = "Description";
+"calendar_entry_description_placeholder" = "Enter description";
+"calendar_entry_datetime_label" = "Date & Time";
+"calendar_entry_date_label" = "Date";
+"calendar_entry_date_placeholder" = "Select date";
+"calendar_entry_time_label" = "Time";
+"calendar_entry_time_placeholder" = "Select time";
+"calendar_entry_allday_label" = "All Day";
+"calendar_entry_allday_description" = "Mark as all-day event";
+"calendar_week_summary" = "Week Summary";
 "calendar_no_data" = "No data for this week yet";
 "calendar_week" = "Week";
 "calendar_trend" = "Trend";
@@ -179,6 +395,11 @@
 "calendar_partner_week" = "Partner's Week";
 "calendar_average" = "Average";
 "calendar_days_shared" = "Days Shared";
+"calendar_meeting_date_label" = "We met on";
+"calendar_relationship_status" = "Status";
+"calendar_unknown_duration" = "Unknown duration";
+"calendar_weekly_insights" = "Weekly Insights";
+"calendar_mood_journey" = "Your mood journey this week";
 
 // MARK: - Partner View
 "partner_title" = "Partner";

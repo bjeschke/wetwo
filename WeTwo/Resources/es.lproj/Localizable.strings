@@ -342,6 +342,7 @@
 "tab_calendar" = "Calendario";
 "tab_partner" = "Pareja";
 "tab_profile" = "Perfil";
+"tab_activity" = "Actividades";
 
 // MARK: - Partner View
 "partner_title" = "Pareja";
@@ -634,4 +635,167 @@
 "partner_error_invalid_code" = "Código de conexión inválido";
 "partner_error_network" = "Error de red ocurrido";
 "partner_error_already_connected" = "Ya conectado con una pareja";
-"partner_error_unknown" = "Ocurrió un error desconocido"; 
+"partner_error_unknown" = "Ocurrió un error desconocido";
+
+// MARK: - Partner Connection
+"partner_connection_generate_code" = "Generar código de conexión";
+"partner_connection_enter_code" = "Ingresar código de pareja";
+"partner_connection_code_placeholder" = "Ingresar código de 6 dígitos";
+"partner_connection_connect" = "Conectar";
+"partner_connection_success" = "¡Conexión exitosa!";
+"partner_connection_error" = "Error de conexión";
+"partner_connection_invalid_code" = "Código inválido";
+"partner_connection_network_error" = "Error de red";
+"partner_connection_already_connected" = "Ya conectado";
+"partner_connection_unknown_error" = "Error desconocido";
+"generate_code_title" = "Generar código de conexión";
+"generate_code_subtitle" = "Comparte este código con tu pareja para conectarte";
+"enter_code_title" = "Ingresar código de pareja";
+"enter_code_subtitle" = "Ingresa el código de 6 dígitos que tu pareja compartió contigo";
+"generate_connection_code" = "Generar código de conexión";
+"enter_partner_code" = "Ingresar código de pareja";
+"skip_for_now" = "Omitir por ahora";
+"your_connection_code" = "Tu código de conexión";
+"copy_code" = "Copiar código";
+"generate_code" = "Generar código";
+"generating" = "Generando...";
+"connection_code" = "Código de conexión";
+"connect_with_partner" = "Conectar con pareja";
+"connecting" = "Conectando...";
+"connection_successful" = "Conexión exitosa";
+"connection_successful_message" = "¡Ahora estás conectado con tu pareja!";
+"connection_error" = "Error de conexión";
+"invalid_code_message" = "Código de conexión inválido. Por favor intenta de nuevo.";
+"enter_valid_code" = "Por favor ingresa un código válido de 6 dígitos";
+
+// MARK: - Memory Management
+"memory_add_title" = "Añadir recuerdo";
+"memory_edit_title" = "Editar recuerdo";
+"memory_delete_title" = "Eliminar recuerdo";
+"memory_delete_message" = "¿Estás seguro de que quieres eliminar este recuerdo?";
+"memory_save_success" = "Recuerdo guardado";
+"memory_save_error" = "Error al guardar recuerdo";
+"memory_delete_success" = "Recuerdo eliminado";
+"memory_delete_error" = "Error al eliminar recuerdo";
+
+// MARK: - Mood Tracking
+"mood_track_title" = "Seguimiento del estado de ánimo";
+"mood_track_success" = "Estado de ánimo registrado";
+"mood_track_error" = "Error al registrar estado de ánimo";
+"mood_history" = "Historial de estados de ánimo";
+"mood_average" = "Promedio";
+"mood_trend" = "Tendencia";
+
+// MARK: - Photo Management
+"photo_select" = "Seleccionar foto";
+"photo_take" = "Tomar foto";
+"photo_upload" = "Subir foto";
+"photo_delete" = "Eliminar foto";
+"photo_save_success" = "Foto guardada";
+"photo_save_error" = "Error al guardar foto";
+"photo_upload_success" = "Foto subida";
+"photo_upload_error" = "Error al subir foto";
+
+// MARK: - Loading States
+"loading_saving" = "Guardando...";
+"loading_uploading" = "Subiendo...";
+"loading_connecting" = "Conectando...";
+"loading_sending" = "Enviando...";
+
+// MARK: - Date and Time
+"date_today" = "Hoy";
+"date_yesterday" = "Ayer";
+"date_tomorrow" = "Mañana";
+"time_just_now" = "Ahora mismo";
+"time_minutes_ago" = "hace %d minutos";
+"time_hours_ago" = "hace %d horas";
+"time_days_ago" = "hace %d días";
+"year" = "año";
+"years" = "años";
+"month" = "mes";
+"months" = "meses";
+"child" = "hijo";
+"children" = "hijos";
+
+// MARK: - Navigation
+"nav_today" = "Hoy";
+"nav_calendar" = "Calendario";
+"nav_timeline" = "Línea de tiempo";
+"nav_activity" = "Actividades";
+"nav_profile" = "Perfil";
+
+// MARK: - Quiz Types
+"quiz_compatibility" = "Cuestionario de compatibilidad";
+"quiz_compatibility_desc" = "Prueba tu compatibilidad";
+"quiz_relationship" = "Cuestionario de relación";
+"quiz_relationship_desc" = "Aprende más sobre tu relación";
+"quiz_personality" = "Cuestionario de personalidad";
+"quiz_personality_desc" = "Descubre tus personalidades";
+"quiz_future" = "Cuestionario del futuro";
+"quiz_future_desc" = "Planea tu futuro juntos";
+
+// MARK: - Game Types
+"game_truth_dare" = "Verdad o reto";
+"game_truth_dare_desc" = "Verdad o reto clásico";
+"game_would_rather" = "¿Qué prefieres?";
+"game_would_rather_desc" = "Toma decisiones difíciles";
+"game_memory" = "Juego de memoria";
+"game_memory_desc" = "Prueba tu memoria";
+"game_trivia" = "Trivia";
+"game_trivia_desc" = "Preguntas de trivia divertidas";
+
+// MARK: - Onboarding Welcome
+"onboarding_welcome" = "¡Bienvenido a WeTwo!";
+"onboarding_welcome_subtitle" = "La app para parejas que quieren crecer juntas";
+
+// MARK: - Onboarding Relationship Step
+"onboarding_relationship_title" = "Tu relación";
+"onboarding_meeting_date_placeholder" = "Seleccionar fecha";
+"onboarding_relationship_duration" = "Duración de la relación:";
+"onboarding_relationship_status_label" = "Estado de tu relación";
+"onboarding_children_label" = "Hijos";
+"onboarding_has_children" = "¿Tienen hijos juntos?";
+"onboarding_children_count_label" = "Número de hijos";
+"onboarding_birthdate_placeholder" = "Seleccionar fecha de nacimiento";
+
+// MARK: - Relationship Status
+"relationship_status_single" = "Soltero/a";
+"relationship_status_in_relationship" = "En una relación";
+"relationship_status_engaged" = "Comprometido/a";
+"relationship_status_married" = "Casado/a";
+"relationship_status_complicated" = "Es complicado";
+"relationship_status_dating" = "Saliendo";
+"relationship_status_long_term" = "Relación a largo plazo";
+
+// MARK: - Errors
+"error_unknown" = "Error desconocido";
+"error_invalid_input" = "Entrada inválida";
+"error_permission_denied" = "Permiso denegado";
+"error_file_not_found" = "Archivo no encontrado";
+"error_connection_failed" = "Error de conexión";
+"error_timeout" = "Tiempo de espera agotado";
+
+// MARK: - Success Messages
+"success_saved" = "Guardado exitosamente";
+"success_updated" = "Actualizado exitosamente";
+"success_deleted" = "Eliminado exitosamente";
+"success_connected" = "Conectado exitosamente";
+"success_sent" = "Enviado exitosamente";
+
+// MARK: - Profile Additional
+"profile_relationship_status" = "Estado de la relación";
+"profile_premium_upgrade" = "Actualización premium";
+"profile_about_amavo" = "Acerca de Amavo";
+
+// MARK: - Settings Additional
+"settings_contact" = "Contacto";
+"settings_feedback" = "Comentarios";
+"settings_rate_app" = "Calificar app";
+"settings_share_app" = "Compartir app";
+
+// MARK: - Premium Additional
+"premium_features" = "Funciones premium";
+"premium_feature_1" = "Mensajes de amor ilimitados";
+"premium_feature_2" = "Cuestionarios avanzados";
+"premium_feature_3" = "Análisis de relación";
+"premium_feature_4" = "Sin anuncios"; 

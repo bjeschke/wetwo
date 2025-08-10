@@ -45,41 +45,8 @@ struct TodayView: View {
                     // Header with greeting
                     headerSection
                     
-                    // Partner connection section (if not connected)
-                    if !partnerManager.isConnected {
-                        partnerConnectionSection
-                        
-                        // Love message info when not connected
-                        loveMessageInfoSection
-                    }
-                    
                     // Mood input section
                     moodInputSection
-                    
-                    // Daily insight card
-                    if let insight = moodManager.dailyInsight {
-                        dailyInsightCard(insight)
-                    }
-                    
-                    // Love message button (only when connected)
-                    if partnerManager.isConnected {
-                        loveMessageButton
-                    }
-                    
-                    // Test notification button (for development)
-                    if !notificationService.isAuthorized {
-                        testNotificationButton
-                    }
-                    
-                    // Partner's mood (if connected)
-                    if partnerManager.isConnected {
-                        partnerMoodSection
-                    }
-                    
-                    // Received love messages (if connected)
-                    if partnerManager.isConnected && !loveMessageManager.receivedMessages.isEmpty {
-                        receivedLoveMessagesSection
-                    }
                     
                     Spacer(minLength: 100)
                 }
@@ -91,47 +58,6 @@ struct TodayView: View {
             .onAppear {
                 loadTodayMood()
                 loadProfilePhoto()
-            }
-            .onChange(of: profilePhoto) { _ in
-                saveProfilePhoto()
-            }
-            .sheet(isPresented: $showingEventInput) {
-                EventInputView(eventLabel: $eventLabel, onSave: saveMoodEntry)
-            }
-            .sheet(isPresented: $showingPhotoPicker) {
-                PhotoPickerView(selectedImage: $selectedPhoto)
-            }
-            .sheet(isPresented: $showingProfilePhotoPicker) {
-                PhotoPickerView(selectedImage: $profilePhoto)
-            }
-            .sheet(isPresented: $showingLoveMessageEditor) {
-                LoveMessageEditorView(
-                    initialMessage: generatedLoveMessage,
-                    customMessage: $customLoveMessage,
-                    onGenerate: generateLoveMessage,
-                    onSend: sendLoveMessage
-                )
-            }
-            .alert(NSLocalizedString("today_generate_love_message", comment: "Generate love message"), isPresented: $showingLoveMessage) {
-                Button("Send") {
-                    // In a real app, this would send the message to partner
-                }
-                Button("Copy") {
-                    UIPasteboard.general.string = generatedLoveMessage
-                }
-                Button(NSLocalizedString("cancel", comment: "Cancel"), role: .cancel) { }
-            } message: {
-                Text(generatedLoveMessage)
-            }
-            .alert("Verbindungsfehler", isPresented: $showingConnectionError) {
-                Button("OK") { }
-            } message: {
-                Text(connectionErrorMessage)
-            }
-            .alert("Erfolgreich verbunden! 💕", isPresented: $showingConnectionSuccess) {
-                Button("OK") { }
-            } message: {
-                Text("Du bist jetzt mit deinem Partner verbunden!")
             }
         }
     }

@@ -52,7 +52,7 @@ struct SignupView: View {
                             text: $email,
                             keyboardType: .emailAddress,
                             textContentType: .emailAddress,
-                            autocapitalization: .none
+                            autocapitalization: .never
                         )
                         
                         AppleStyleInputField(
