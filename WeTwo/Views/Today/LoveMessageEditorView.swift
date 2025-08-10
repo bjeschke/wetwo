@@ -8,193 +8,151 @@
 import SwiftUI
 
 struct LoveMessageEditorView: View {
-    let initialMessage: String
-    @Binding var customMessage: String
-    let onGenerate: () -> Void
-    let onSend: () -> Void
-    
     @Environment(\.dismiss) private var dismiss
-    @State private var isGenerating = false
-    @State private var showingSendConfirmation = false
+    @State private var message = ""
+    @State private var selectedMood: MoodEntry.Mood = .happy
+    @State private var isPrivate = false
+    @State private var isLoading = false
     
     var body: some View {
         NavigationView {
-            VStack(spacing: 20) {
-                // Header
-                VStack(spacing: 15) {
-                    Image(systemName: "heart.fill")
-                        .font(.system(size: 50))
-                        .foregroundColor(ColorTheme.accentPink)
-                    
-                    Text(NSLocalizedString("today_love_message_editor_title", comment: "Love message editor title"))
-                        .font(.title2)
-                        .fontWeight(.bold)
-                        .multilineTextAlignment(.center)
-                        .foregroundColor(ColorTheme.primaryText)
-                    
-                    Text(NSLocalizedString("today_love_message_editor_subtitle", comment: "Love message editor subtitle"))
-                        .font(.body)
-                        .multilineTextAlignment(.center)
-                        .foregroundColor(ColorTheme.secondaryText)
-                }
-                .padding(.top, 20)
-                
-                // Message editor
-                VStack(spacing: 15) {
-                    HStack {
-                        Text(NSLocalizedString("today_love_message_label", comment: "Love message label"))
-                            .font(.headline)
-                            .foregroundColor(ColorTheme.primaryText)
+            ScrollView {
+                VStack(spacing: 24) {
+                    // Header
+                    VStack(spacing: 8) {
+                        Text("Write a Love Message")
+                            .font(.system(size: 24, weight: .bold))
+                            .foregroundColor(Color(.label))
                         
-                        Spacer()
-                        
-                        Button(action: {
-                            isGenerating = true
-                            onGenerate()
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-                                isGenerating = false
-                            }
-                        }) {
-                            HStack {
-                                if isGenerating {
-                                    ProgressView()
-                                        .progressViewStyle(CircularProgressViewStyle(tint: ColorTheme.accentPink))
-                                        .scaleEffect(0.8)
-                                } else {
-                                    Image(systemName: "wand.and.stars")
-                                }
-                                Text(NSLocalizedString("today_generate_new", comment: "Generate new"))
-                            }
-                            .font(.caption)
-                            .foregroundColor(ColorTheme.accentPink)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 6)
-                            .background(
-                                RoundedRectangle(cornerRadius: 15)
-                                    .fill(ColorTheme.accentPink.opacity(0.1))
-                            )
-                        }
-                        .disabled(isGenerating)
+                        Text("Share your feelings with your partner")
+                            .font(.system(size: 16, weight: .regular))
+                            .foregroundColor(Color(.systemGray))
                     }
+                    .padding(.top, 20)
                     
-                    TextEditor(text: $customMessage)
-                        .font(.body)
-                        .foregroundColor(ColorTheme.primaryText)
-                        .padding(15)
-                        .background(
-                            RoundedRectangle(cornerRadius: 15)
-                                .fill(ColorTheme.cardBackgroundSecondary)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 15)
-                                        .stroke(ColorTheme.accentPink.opacity(0.3), lineWidth: 1)
-                                )
-                        )
-                        .frame(minHeight: 150)
-                        .overlay(
-                            Group {
-                                if customMessage.isEmpty {
-                                    VStack {
-                                        HStack {
-                                            Text(NSLocalizedString("today_love_message_placeholder", comment: "Love message placeholder"))
-                                                .font(.body)
-                                                .foregroundColor(ColorTheme.secondaryText.opacity(0.6))
-                                            Spacer()
-                                        }
-                                        Spacer()
+                    // Message Input
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Your Message")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundColor(Color(.label))
+                        
+                        TextEditor(text: $message)
+                            .frame(minHeight: 150)
+                            .appleStyle(placeholder: "Write your love message here...", text: $message)
+                    }
+                    .padding(.horizontal, 20)
+                    
+                    // Mood Selection
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("How are you feeling?")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundColor(Color(.label))
+                        
+                        LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 5), spacing: 12) {
+                            ForEach(MoodEntry.Mood.allCases, id: \.self) { mood in
+                                Button(action: {
+                                    selectedMood = mood
+                                }) {
+                                    VStack(spacing: 8) {
+                                        Text(mood.emoji)
+                                            .font(.system(size: 24))
+                                        
+                                        Text(mood.displayName)
+                                            .font(.system(size: 12, weight: .medium))
+                                            .foregroundColor(selectedMood == mood ? .white : Color(.label))
                                     }
-                                    .padding(20)
-                                    .allowsHitTesting(false)
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 12)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 12)
+                                            .fill(selectedMood == mood ? Color.accentColor : Color(.systemGray6))
+                                    )
                                 }
                             }
-                        )
-                }
-                
-                // Character count
-                HStack {
-                    Text("\(customMessage.count) / 500")
-                        .font(.caption)
-                        .foregroundColor(customMessage.count > 450 ? ColorTheme.error : ColorTheme.secondaryText)
-                    
-                    Spacer()
-                }
-                
-                Spacer()
-                
-                // Action buttons
-                VStack(spacing: 15) {
-                    Button(action: {
-                        showingSendConfirmation = true
-                    }) {
-                        HStack {
-                            Image(systemName: "paperplane.fill")
-                            Text(NSLocalizedString("today_send_love_message", comment: "Send love message"))
                         }
-                        .font(.title3)
-                        .fontWeight(.semibold)
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 15)
-                        .background(
-                            LinearGradient(colors: [ColorTheme.accentPink, ColorTheme.primaryPurple], startPoint: .leading, endPoint: .trailing)
-                        )
-                        .cornerRadius(25)
-                        .shadow(color: ColorTheme.accentPink.opacity(0.3), radius: 10, x: 0, y: 5)
                     }
-                    .disabled(customMessage.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    .padding(.horizontal, 20)
                     
-                    Button(action: {
-                        UIPasteboard.general.string = customMessage
-                    }) {
+                    // Privacy Toggle
+                    VStack(alignment: .leading, spacing: 12) {
                         HStack {
-                            Image(systemName: "doc.on.doc")
-                            Text(NSLocalizedString("today_copy_message", comment: "Copy message"))
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Private Message")
+                                    .font(.system(size: 16, weight: .semibold))
+                                    .foregroundColor(Color(.label))
+                                
+                                Text("Only you can see this message")
+                                    .font(.system(size: 14, weight: .regular))
+                                    .foregroundColor(Color(.systemGray))
+                            }
+                            
+                            Spacer()
+                            
+                            Toggle("", isOn: $isPrivate)
+                                .toggleStyle(SwitchToggleStyle(tint: .accentColor))
                         }
-                        .font(.body)
-                        .foregroundColor(ColorTheme.accentPink)
-                        .frame(maxWidth: .infinity)
+                        .padding(.horizontal, 16)
                         .padding(.vertical, 12)
                         .background(
-                            RoundedRectangle(cornerRadius: 20)
-                                .stroke(ColorTheme.accentPink, lineWidth: 1)
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(Color(.systemGray6))
                         )
                     }
-                    .disabled(customMessage.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    .padding(.horizontal, 20)
+                    
+                    // Send Button
+                    Button(action: sendMessage) {
+                        HStack {
+                            if isLoading {
+                                ProgressView()
+                                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                    .scaleEffect(0.8)
+                            } else {
+                                Text("Send Message")
+                                    .font(.system(size: 16, weight: .semibold))
+                            }
+                        }
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 50)
+                        .background(
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(Color.accentColor)
+                        )
+                        .opacity(isLoading ? 0.7 : 1.0)
+                    }
+                    .disabled(isLoading || message.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    .padding(.horizontal, 20)
+                    
+                    Spacer(minLength: 40)
                 }
             }
-            .padding(.horizontal, 20)
-            .padding(.bottom, 20)
-            .purpleTheme()
-            .navigationTitle(NSLocalizedString("today_love_message_editor_title", comment: "Love message editor title"))
+            .background(Color(.systemBackground))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button(NSLocalizedString("cancel", comment: "Cancel")) {
+                    Button("Cancel") {
                         dismiss()
                     }
+                    .foregroundColor(.accentColor)
                 }
             }
-            .onAppear {
-                if customMessage.isEmpty && !initialMessage.isEmpty {
-                    customMessage = initialMessage
-                }
-            }
-            .alert(NSLocalizedString("today_send_confirmation_title", comment: "Send confirmation title"), isPresented: $showingSendConfirmation) {
-                Button(NSLocalizedString("today_send", comment: "Send")) {
-                    onSend()
-                }
-                Button(NSLocalizedString("cancel", comment: "Cancel"), role: .cancel) { }
-            } message: {
-                Text(NSLocalizedString("today_send_confirmation_message", comment: "Send confirmation message"))
-            }
+        }
+    }
+    
+    private func sendMessage() {
+        isLoading = true
+        
+        // Simulate API call
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+            isLoading = false
+            dismiss()
         }
     }
 }
 
-#Preview {
-    LoveMessageEditorView(
-        initialMessage: "Du bist der beste Partner der Welt! 💕",
-        customMessage: .constant("Du bist der beste Partner der Welt! 💕"),
-        onGenerate: {},
-        onSend: {}
-    )
+struct LoveMessageEditorView_Previews: PreviewProvider {
+    static var previews: some View {
+        LoveMessageEditorView()
+    }
 }

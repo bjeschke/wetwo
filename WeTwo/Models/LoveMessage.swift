@@ -141,11 +141,15 @@ class LoveMessageManager: ObservableObject {
     }
     
     private func getCurrentUserId() -> UUID? {
-        guard let userIdString = UserDefaults.standard.string(forKey: "currentUserId"),
-              let userId = UUID(uuidString: userIdString) else {
-            return nil
+        do {
+            if let userIdString = try SecurityService.shared.secureLoadString(forKey: "currentUserId"),
+               let userId = UUID(uuidString: userIdString) {
+                return userId
+            }
+        } catch {
+            print("⚠️ Error loading current user ID from secure storage: \(error)")
         }
-        return userId
+        return nil
     }
 }
 

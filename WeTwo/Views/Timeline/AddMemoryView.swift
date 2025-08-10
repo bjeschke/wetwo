@@ -6,473 +6,222 @@
 //
 
 import SwiftUI
-import PhotosUI
 
 struct AddMemoryView: View {
-    @EnvironmentObject var memoryManager: MemoryManager
-    @EnvironmentObject var appState: AppState
-    @EnvironmentObject var partnerManager: PartnerManager
     @Environment(\.dismiss) private var dismiss
-    
     @State private var title = ""
     @State private var description = ""
-    @State private var location = ""
-    @State private var selectedMood: MoodLevel = .happy
-    @State private var selectedPhoto: UIImage?
-    @State private var showingPhotoPicker = false
-    @State private var showingTagInput = false
-    @State private var tags: [String] = []
-    @State private var isSharingWithPartner = false
-    @State private var isSaving = false
-    
-    private let quickTags = [
-        "Urlaub", "Date Night", "Geburtstag", "Jahrestag", "Reise", 
-        "Essen", "Konzert", "Sport", "Familie", "Freunde", "favorite"
-    ]
+    @State private var selectedDate = Date()
+    @State private var selectedMood: MoodEntry.Mood = .happy
+    @State private var selectedPhotos: [UIImage] = []
+    @State private var showingImagePicker = false
+    @State private var isLoading = false
     
     var body: some View {
         NavigationView {
-            VStack(spacing: 0) {
-                // Custom Header with buttons
-                headerWithButtons
-                
-                ScrollView {
-                    VStack(spacing: 25) {
-                        // Icon only
-                        VStack(spacing: 20) {
-                            Text("📸")
-                                .font(.system(size: 60))
-                        }
+            ScrollView {
+                VStack(spacing: 24) {
+                    // Header
+                    VStack(spacing: 8) {
+                        Text("Add New Memory")
+                            .font(.system(size: 24, weight: .bold))
+                            .foregroundColor(Color(.label))
                         
-                        // Photo section
-                        photoSection
+                        Text("Capture this special moment")
+                            .font(.system(size: 16, weight: .regular))
+                            .foregroundColor(Color(.systemGray))
+                    }
+                    .padding(.top, 20)
+                    
+                    // Input Fields
+                    VStack(spacing: 20) {
+                        AppleStyleInputField(
+                            placeholder: "Memory Title",
+                            text: $title,
+                            autocapitalization: .sentences
+                        )
                         
-                        // Title and description
-                        titleDescriptionSection
-                        
-                        // Location
-                        locationSection
-                        
-                        // Mood selection
-                        moodSection
-                        
-                        // Tags
-                        tagsSection
-                        
-                        // Partner sharing
-                        if partnerManager.isConnected {
-                            partnerSharingSection
-                        }
-                        
-                        Spacer(minLength: 100)
+                        TextEditor(text: $description)
+                            .frame(minHeight: 120)
+                            .appleStyle(placeholder: "Describe this memory...", text: $description)
                     }
                     .padding(.horizontal, 20)
-                    .padding(.top, 20)
-                }
-            }
-            .purpleTheme()
-            .navigationBarHidden(true)
-            .sheet(isPresented: $showingPhotoPicker) {
-                PhotoPickerView(selectedImage: $selectedPhoto)
-            }
-            .alert("Tag hinzufügen", isPresented: $showingTagInput) {
-                TextField("Tag eingeben", text: .constant(""))
-                Button("Hinzufügen") {
-                    // Add tag logic
-                }
-                Button("Abbrechen", role: .cancel) { }
-            }
-        }
-    }
-    
-    private var headerWithButtons: some View {
-        HStack {
-            Button("Abbrechen") {
-                dismiss()
-            }
-            .foregroundColor(ColorTheme.accentBlue)
-            .font(.body)
-            
-            Spacer()
-            
-            Text("Neue Erinnerung")
-                .font(.headline)
-                .fontWeight(.semibold)
-                .foregroundColor(ColorTheme.primaryText)
-            
-            Spacer()
-            
-            Button("Speichern") {
-                saveMemory()
-            }
-            .fontWeight(.semibold)
-            .foregroundColor(ColorTheme.accentBlue)
-            .disabled(title.isEmpty || isSaving)
-        }
-        .padding(.horizontal, 20)
-        .padding(.top, 60)
-        .padding(.bottom, 20)
-        .background(ColorTheme.cardBackground)
-    }
-    
-    private var headerSection: some View {
-        VStack(spacing: 15) {
-            Text("📸")
-                .font(.system(size: 60))
-            
-            Text("Neue Erinnerung erstellen")
-                .font(.title2)
-                .fontWeight(.bold)
-                .foregroundColor(ColorTheme.primaryText)
-            
-            Text("Teile einen besonderen Moment mit deinem Partner")
-                .font(.body)
-                .foregroundColor(ColorTheme.secondaryText)
-                .multilineTextAlignment(.center)
-        }
-    }
-    
-    private var photoSection: some View {
-        VStack(spacing: 15) {
-            HStack {
-                Text("📷")
-                    .font(.title2)
-                
-                Text("Foto")
-                    .font(.title3)
-                    .fontWeight(.semibold)
-                    .foregroundColor(ColorTheme.primaryText)
-                
-                Spacer()
-            }
-            
-            if let image = selectedPhoto {
-                VStack(spacing: 10) {
-                    Image(uiImage: image)
-                        .resizable()
-                        .scaledToFill()
-                        .frame(height: 200)
-                        .clipShape(RoundedRectangle(cornerRadius: 15))
-                        .shadow(color: Color.black.opacity(0.3), radius: 10, x: 0, y: 5)
                     
-                    Button("Foto ändern") {
-                        showingPhotoPicker = true
-                    }
-                    .font(.body)
-                    .foregroundColor(ColorTheme.accentBlue)
-                }
-            } else {
-                Button(action: { showingPhotoPicker = true }) {
-                    VStack(spacing: 15) {
-                        Image(systemName: "camera.fill")
-                            .font(.system(size: 40))
-                            .foregroundColor(ColorTheme.accentBlue)
+                    // Date Picker
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("When did this happen?")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundColor(Color(.label))
                         
-                        Text("Foto hinzufügen")
-                            .font(.title3)
-                            .fontWeight(.semibold)
-                            .foregroundColor(ColorTheme.primaryText)
-                        
-                        Text("Optional - aber Fotos machen Erinnerungen lebendiger!")
-                            .font(.body)
-                            .foregroundColor(ColorTheme.secondaryText)
-                            .multilineTextAlignment(.center)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 200)
-                    .background(
-                        RoundedRectangle(cornerRadius: 15)
-                            .stroke(ColorTheme.accentBlue, style: StrokeStyle(lineWidth: 2, dash: [10]))
-                            .background(ColorTheme.accentBlue.opacity(0.1))
-                    )
-                }
-                .buttonStyle(PlainButtonStyle())
-            }
-        }
-        .padding(20)
-        .purpleCard()
-    }
-    
-    private var titleDescriptionSection: some View {
-        VStack(spacing: 15) {
-            HStack {
-                Text("✏️")
-                    .font(.title2)
-                
-                Text("Details")
-                    .font(.title3)
-                    .fontWeight(.semibold)
-                    .foregroundColor(ColorTheme.primaryText)
-                
-                Spacer()
-            }
-            
-            VStack(spacing: 15) {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Titel")
-                        .font(.body)
-                        .fontWeight(.medium)
-                        .foregroundColor(ColorTheme.primaryText)
-                    
-                    TextField("z.B. Unser erster Urlaub zusammen", text: $title)
-                        .textFieldStyle(PlainTextFieldStyle())
-                        .font(.body)
-                        .padding()
-                        .background(ColorTheme.cardBackgroundSecondary)
-                        .cornerRadius(10)
-                        .foregroundColor(ColorTheme.primaryText)
-                }
-                
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Beschreibung (optional)")
-                        .font(.body)
-                        .fontWeight(.medium)
-                        .foregroundColor(ColorTheme.primaryText)
-                    
-                    TextField("Erzähle mehr über diesen Moment...", text: $description, axis: .vertical)
-                        .textFieldStyle(PlainTextFieldStyle())
-                        .font(.body)
-                        .lineLimit(3...6)
-                        .padding()
-                        .background(ColorTheme.cardBackgroundSecondary)
-                        .cornerRadius(10)
-                        .foregroundColor(ColorTheme.primaryText)
-                }
-            }
-        }
-        .padding(20)
-        .purpleCard()
-    }
-    
-    private var locationSection: some View {
-        VStack(spacing: 15) {
-            HStack {
-                Text("📍")
-                    .font(.title2)
-                
-                Text("Ort")
-                    .font(.title3)
-                    .fontWeight(.semibold)
-                    .foregroundColor(ColorTheme.primaryText)
-                
-                Spacer()
-            }
-            
-            TextField("z.B. Mallorca, Spanien", text: $location)
-                .textFieldStyle(PlainTextFieldStyle())
-                .font(.body)
-                .padding()
-                .background(ColorTheme.cardBackgroundSecondary)
-                .cornerRadius(10)
-                .foregroundColor(ColorTheme.primaryText)
-        }
-        .padding(20)
-        .purpleCard()
-    }
-    
-    private var moodSection: some View {
-        VStack(spacing: 15) {
-            HStack {
-                Text("😊")
-                    .font(.title2)
-                
-                Text("Wie war deine Stimmung?")
-                    .font(.title3)
-                    .fontWeight(.semibold)
-                    .foregroundColor(ColorTheme.primaryText)
-                
-                Spacer()
-            }
-            
-            VStack(spacing: 10) {
-                Text(selectedMood.emoji)
-                    .font(.system(size: 50))
-                    .scaleEffect(selectedMood == .veryHappy ? 1.2 : 1.0)
-                    .animation(.spring(response: 0.5, dampingFraction: 0.6), value: selectedMood)
-                
-                Text(selectedMood.description)
-                    .font(.title3)
-                    .fontWeight(.medium)
-                    .foregroundColor(selectedMood.color)
-            }
-            
-            HStack(spacing: 0) {
-                ForEach(MoodLevel.allCases, id: \.self) { mood in
-                    Button(action: { selectedMood = mood }) {
-                        Text(mood.emoji)
-                            .font(.title2)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 10)
+                        DatePicker("", selection: $selectedDate, displayedComponents: [.date, .hourAndMinute])
+                            .datePickerStyle(CompactDatePickerStyle())
+                            .labelsHidden()
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 12)
                             .background(
-                                RoundedRectangle(cornerRadius: 15)
-                                    .fill(selectedMood == mood ? mood.color.opacity(0.2) : Color.clear)
+                                RoundedRectangle(cornerRadius: 12)
+                                    .fill(Color(.systemGray6))
                             )
                     }
-                    .buttonStyle(PlainButtonStyle())
-                }
-            }
-            .background(
-                RoundedRectangle(cornerRadius: 15)
-                    .fill(ColorTheme.cardBackgroundSecondary.opacity(0.3))
-            )
-        }
-        .padding(20)
-        .purpleCard()
-    }
-    
-    private var tagsSection: some View {
-        VStack(spacing: 15) {
-            HStack {
-                Text("🏷️")
-                    .font(.title2)
-                
-                Text("Tags")
-                    .font(.title3)
-                    .fontWeight(.semibold)
-                    .foregroundColor(ColorTheme.primaryText)
-                
-                Spacer()
-                
-                Button("+") {
-                    showingTagInput = true
-                }
-                .font(.title2)
-                .fontWeight(.bold)
-                .foregroundColor(ColorTheme.accentBlue)
-                .frame(width: 30, height: 30)
-                .background(
-                    Circle()
-                        .fill(ColorTheme.accentBlue.opacity(0.2))
-                )
-            }
-            
-            if tags.isEmpty {
-                Text("Füge Tags hinzu, um deine Erinnerung zu kategorisieren")
-                    .font(.body)
-                    .foregroundColor(ColorTheme.secondaryText)
-                    .multilineTextAlignment(.center)
-                    .padding(.vertical, 20)
-            } else {
-                LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: 10) {
-                    ForEach(tags, id: \.self) { tag in
+                    .padding(.horizontal, 20)
+                    
+                    // Mood Selection
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("How did you feel?")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundColor(Color(.label))
+                        
+                        LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 5), spacing: 12) {
+                            ForEach(MoodEntry.Mood.allCases, id: \.self) { mood in
+                                Button(action: {
+                                    selectedMood = mood
+                                }) {
+                                    VStack(spacing: 8) {
+                                        Text(mood.emoji)
+                                            .font(.system(size: 24))
+                                        
+                                        Text(mood.displayName)
+                                            .font(.system(size: 12, weight: .medium))
+                                            .foregroundColor(selectedMood == mood ? .white : Color(.label))
+                                    }
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 12)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 12)
+                                            .fill(selectedMood == mood ? Color.accentColor : Color(.systemGray6))
+                                    )
+                                }
+                            }
+                        }
+                    }
+                    .padding(.horizontal, 20)
+                    
+                    // Photo Selection
+                    VStack(alignment: .leading, spacing: 12) {
                         HStack {
-                            Text(tag)
-                                .font(.body)
-                                .foregroundColor(.white)
+                            Text("Photos")
+                                .font(.system(size: 16, weight: .semibold))
+                                .foregroundColor(Color(.label))
                             
                             Spacer()
                             
-                            Button(action: { tags.removeAll { $0 == tag } }) {
-                                Image(systemName: "xmark")
-                                    .font(.caption)
-                                    .foregroundColor(.white)
+                            Button("Add Photos") {
+                                showingImagePicker = true
                             }
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(.accentColor)
                         }
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 8)
-                        .background(
-                            RoundedRectangle(cornerRadius: 15)
-                                .fill(ColorTheme.accentBlue)
-                        )
-                    }
-                }
-            }
-            
-            // Quick tags
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 10) {
-                    ForEach(quickTags, id: \.self) { tag in
-                        Button(action: {
-                            if !tags.contains(tag) {
-                                tags.append(tag)
-                            }
-                        }) {
-                            Text(tag)
-                                .font(.body)
-                                .foregroundColor(tags.contains(tag) ? .white : ColorTheme.accentBlue)
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 6)
+                        
+                        if selectedPhotos.isEmpty {
+                            Button(action: {
+                                showingImagePicker = true
+                            }) {
+                                VStack(spacing: 12) {
+                                    Image(systemName: "camera.fill")
+                                        .font(.system(size: 32))
+                                        .foregroundColor(Color(.systemGray))
+                                    
+                                    Text("Add photos to your memory")
+                                        .font(.system(size: 14, weight: .medium))
+                                        .foregroundColor(Color(.systemGray))
+                                }
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 120)
                                 .background(
-                                    RoundedRectangle(cornerRadius: 15)
-                                        .fill(tags.contains(tag) ? ColorTheme.accentBlue : ColorTheme.accentBlue.opacity(0.2))
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .fill(Color(.systemGray6))
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 12)
+                                                .stroke(Color(.systemGray4), style: StrokeStyle(lineWidth: 1, dash: [5]))
+                                        )
                                 )
+                            }
+                        } else {
+                            ScrollView(.horizontal, showsIndicators: false) {
+                                HStack(spacing: 12) {
+                                    ForEach(Array(selectedPhotos.enumerated()), id: \.offset) { index, photo in
+                                        ZStack(alignment: .topTrailing) {
+                                            Image(uiImage: photo)
+                                                .resizable()
+                                                .aspectRatio(contentMode: .fill)
+                                                .frame(width: 80, height: 80)
+                                                .clipShape(RoundedRectangle(cornerRadius: 8))
+                                            
+                                            Button(action: {
+                                                selectedPhotos.remove(at: index)
+                                            }) {
+                                                Image(systemName: "xmark.circle.fill")
+                                                    .font(.system(size: 20))
+                                                    .foregroundColor(.white)
+                                                    .background(Color.black.opacity(0.6))
+                                                    .clipShape(Circle())
+                                            }
+                                            .offset(x: 6, y: -6)
+                                        }
+                                    }
+                                }
+                                .padding(.horizontal, 4)
+                            }
                         }
-                        .buttonStyle(PlainButtonStyle())
                     }
+                    .padding(.horizontal, 20)
+                    
+                    // Save Button
+                    Button(action: saveMemory) {
+                        HStack {
+                            if isLoading {
+                                ProgressView()
+                                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                    .scaleEffect(0.8)
+                            } else {
+                                Text("Save Memory")
+                                    .font(.system(size: 16, weight: .semibold))
+                            }
+                        }
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 50)
+                        .background(
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(Color.accentColor)
+                        )
+                        .opacity(isLoading ? 0.7 : 1.0)
+                    }
+                    .disabled(isLoading || title.isEmpty)
+                    .padding(.horizontal, 20)
+                    
+                    Spacer(minLength: 40)
                 }
-                .padding(.horizontal, 5)
+            }
+            .background(Color(.systemBackground))
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Cancel") {
+                        dismiss()
+                    }
+                    .foregroundColor(.accentColor)
+                }
             }
         }
-        .padding(20)
-        .purpleCard()
-    }
-    
-    private var partnerSharingSection: some View {
-        VStack(spacing: 15) {
-            HStack {
-                Text("💕")
-                    .font(.title2)
-                
-                Text("Mit Partner teilen")
-                    .font(.title3)
-                    .fontWeight(.semibold)
-                    .foregroundColor(ColorTheme.primaryText)
-                
-                Spacer()
-                
-                Toggle("", isOn: $isSharingWithPartner)
-                    .toggleStyle(SwitchToggleStyle(tint: ColorTheme.accentBlue))
-            }
-            
-            if isSharingWithPartner {
-                Text("Diese Erinnerung wird automatisch mit deinem Partner geteilt")
-                    .font(.body)
-                    .foregroundColor(ColorTheme.secondaryText)
-                    .multilineTextAlignment(.leading)
-            }
+        .sheet(isPresented: $showingImagePicker) {
+            PhotoPickerView(selectedImages: $selectedPhotos)
         }
-        .padding(20)
-        .purpleCard()
     }
     
     private func saveMemory() {
-        isSaving = true
+        isLoading = true
         
-        var photoData: Data?
-        if let image = selectedPhoto {
-            // Add error handling for image processing
-            guard let data = image.jpegData(compressionQuality: 0.8) else {
-                print("❌ Error: Failed to convert image to JPEG data")
-                isSaving = false
-                return
-            }
-            photoData = data
-        }
-        
-        let memory = MemoryEntry(
-            userId: appState.currentUser?.id ?? UUID(),
-            title: title,
-            description: description.isEmpty ? nil : description,
-            photoData: photoData,
-            location: location.isEmpty ? nil : location,
-            moodLevel: selectedMood,
-            tags: tags,
-            partnerId: isSharingWithPartner ? partnerManager.partner?.id : nil
-        )
-        
-        memoryManager.addMemory(memory)
-        
-        // Simulate save delay
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-            isSaving = false
+        // Simulate API call
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+            isLoading = false
             dismiss()
         }
     }
 }
 
-#Preview {
-    AddMemoryView()
-        .environmentObject(MemoryManager())
-        .environmentObject(AppState())
-        .environmentObject(PartnerManager.shared)
+struct AddMemoryView_Previews: PreviewProvider {
+    static var previews: some View {
+        AddMemoryView()
+    }
 } 
