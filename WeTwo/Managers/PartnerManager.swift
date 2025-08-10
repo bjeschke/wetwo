@@ -27,6 +27,8 @@ enum PartnerError: Error, LocalizedError {
 
 @MainActor
 class PartnerManager: ObservableObject, Sendable {
+    static let shared = PartnerManager()
+    
     @Published var partner: User?
     @Published var isConnected: Bool = false
     @Published var connectionCode: String = ""
@@ -40,7 +42,19 @@ class PartnerManager: ObservableObject, Sendable {
     private let userDefaults = UserDefaults.standard
     private let supabaseService = SupabaseService.shared
     
-    init() {
+    private func getCurrentUserId() -> UUID? {
+        do {
+            if let userIdString = try SecurityService.shared.secureLoadString(forKey: "currentUserId"),
+               let userId = UUID(uuidString: userIdString) {
+                return userId
+            }
+        } catch {
+            print("⚠️ Error loading current user ID from secure storage: \(error)")
+        }
+        return nil
+    }
+    
+    private init() {
         loadPartnerData()
         generateOwnConnectionCode()
     }
@@ -82,8 +96,7 @@ class PartnerManager: ObservableObject, Sendable {
         }
         
         // Create partnership
-        guard let currentUserIdString = UserDefaults.standard.string(forKey: "currentUserId"),
-              let currentUserId = UUID(uuidString: currentUserIdString) else {
+        guard let currentUserId = getCurrentUserId() else {
             throw PartnerError.networkError
         }
         let _ = try await supabaseService.createPartnership(
@@ -109,12 +122,14 @@ class PartnerManager: ObservableObject, Sendable {
         
         // Load partner profile photo
         await loadPartnerProfilePhoto(partnerId: partnerProfile.id.uuidString)
+        
+        // Send push notification to partner about connection
+        await notifyPartnerAboutConnection(partnerId: partnerProfile.id)
     }
     
     func disconnectPartner() async {
         do {
-            guard let currentUserIdString = UserDefaults.standard.string(forKey: "currentUserId"),
-                  let currentUserId = UUID(uuidString: currentUserIdString) else {
+            guard let currentUserId = getCurrentUserId() else {
                 throw PartnerError.networkError
             }
             try await supabaseService.disconnectPartner(userId: currentUserId)
@@ -189,11 +204,35 @@ class PartnerManager: ObservableObject, Sendable {
         }
     }
     
+    // MARK: - Push Notifications
+    
+    private func notifyPartnerAboutConnection(partnerId: UUID) async {
+        guard let currentUserId = getCurrentUserId() else { return }
+        
+        do {
+            let title = "💕 Neuer Partner verbunden!"
+            let body = "Jemand hat sich mit dir verbunden"
+            let data = [
+                "type": "partner_connected",
+                "user_id": currentUserId.uuidString
+            ]
+            
+            try await supabaseService.sendPushNotificationToPartner(
+                userId: currentUserId,
+                partnerId: partnerId,
+                title: title,
+                body: body,
+                data: data
+            )
+        } catch {
+            print("Failed to send connection notification to partner: \(error)")
+        }
+    }
+    
     // MARK: - Profile Synchronization
     func syncProfileWithPartner(name: String, zodiacSign: String, birthDate: Date) async {
         do {
-            guard let currentUserIdString = UserDefaults.standard.string(forKey: "currentUserId"),
-                  let currentUserId = UUID(uuidString: currentUserIdString) else {
+            guard let currentUserId = getCurrentUserId() else {
                 throw PartnerError.networkError
             }
             try await supabaseService.updateSharedProfile(
@@ -213,8 +252,7 @@ class PartnerManager: ObservableObject, Sendable {
     
     func loadPartnershipStatus() async {
         do {
-            guard let currentUserIdString = UserDefaults.standard.string(forKey: "currentUserId"),
-                  let currentUserId = UUID(uuidString: currentUserIdString) else {
+            guard let currentUserId = getCurrentUserId() else {
                 throw PartnerError.networkError
             }
             let status = try await supabaseService.getPartnershipStatus(userId: currentUserId)

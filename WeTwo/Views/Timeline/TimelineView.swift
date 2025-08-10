@@ -228,5 +228,5 @@ struct FilterButton: View {
     TimelineView()
         .environmentObject(MemoryManager())
         .environmentObject(AppState())
-        .environmentObject(PartnerManager())
+        .environmentObject(PartnerManager.shared)
 } 

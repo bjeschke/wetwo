@@ -142,5 +142,5 @@ struct GameCard: View {
 #Preview {
     ActivityView()
         .environmentObject(AppState())
-        .environmentObject(PartnerManager())
+        .environmentObject(PartnerManager.shared)
 } 

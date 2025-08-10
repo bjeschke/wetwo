@@ -48,6 +48,47 @@
 "onboarding_manual_nav_title" = "Registration";
 "onboarding_cancel" = "Cancel";
 
+// MARK: - Signup
+"signup_title" = "Create Your Account";
+"signup_subtitle" = "Join Amavo to strengthen your relationship";
+"signup_or" = "or";
+"signup_with_email" = "Sign up with Email";
+"signup_profile_title" = "Complete Your Profile";
+"signup_profile_subtitle" = "Tell us about yourself";
+"signup_credentials_title" = "Create Your Account";
+"signup_name_title" = "What's your name?";
+"signup_name_subtitle" = "Tell us your name";
+"signup_birthdate_title" = "When were you born?";
+"signup_birthdate_subtitle" = "Tell us your birth date";
+
+"signup_email_label" = "Email Address";
+"signup_email_placeholder" = "Enter your email";
+"signup_password_label" = "Password";
+"signup_password_placeholder" = "Create a password";
+"signup_confirm_password_label" = "Confirm Password";
+"signup_confirm_password_placeholder" = "Confirm your password";
+"signup_name_label" = "Full Name";
+"signup_name_placeholder" = "Enter your full name";
+"signup_birthdate_label" = "Birth Date";
+"signup_birthdate_placeholder" = "Select your birth date";
+"signup_zodiac_label" = "Your zodiac sign:";
+"signup_back" = "Back";
+"signup_next" = "Next";
+"signup_create_account" = "Create Account";
+"signup_email_confirmation_required" = "Please check your email and confirm your account before continuing";
+"signup_email_confirmation_title" = "Confirm your email";
+"signup_email_confirmation_subtitle" = "We sent a confirmation email to";
+"signup_email_confirmation_instructions" = "Please check your email and click the confirmation link, then return here to continue";
+"signup_email_confirmation_continue" = "I've confirmed my email";
+"signup_email_confirmation_resend" = "Resend confirmation email";
+
+// MARK: - Email Confirmation
+"email_confirmation_title" = "Confirm your email";
+"email_confirmation_subtitle" = "We sent a confirmation email to";
+"email_confirmation_instructions" = "Please check your email and click the confirmation link, then return here to continue";
+"email_confirmation_continue" = "I've confirmed my email";
+"email_confirmation_resend" = "Resend confirmation email";
+
 // MARK: - Tab Navigation
 "tab_today" = "Today";
 "tab_timeline" = "Timeline";
@@ -251,8 +292,13 @@
 "love_messages_show_all" = "Show All";
 "love_messages_send_success" = "Love message sent!";
 "love_messages_send_error" = "Error sending message";
+"love_messages_connect_required" = "Connect with your partner";
+"love_messages_connect_description" = "Send and receive love messages";
+"love_messages_personalized" = "Personalized messages";
+"love_messages_ai_generated" = "AI-generated love messages based on your mood";
 "love_message_error_user_not_found" = "User not found";
 "love_message_error_partner_not_found" = "Partner not found";
+"love_message_error_not_connected" = "Not connected to partner";
 "love_message_error_network" = "Network error";
 
 // MARK: - Who Knows Better Game
@@ -351,3 +397,22 @@
 "tag_family" = "Family";
 "tag_friends" = "Friends";
 "tag_favorite" = "favorite"; 
+
+// MARK: - Login
+"login_title" = "Welcome Back";
+"login_subtitle" = "Sign in to your Amavo account";
+"login_with_email" = "Sign in with Email";
+"login_credentials_title" = "Sign In";
+"login_sign_in" = "Sign In";
+"login_has_account" = "Already have an account? Log in";
+"signup_no_account" = "Don't have an account? Sign up";
+
+// MARK: - Signup (Additional strings)
+"signup_email_label" = "Email Address";
+"signup_email_placeholder" = "Enter your email";
+"signup_password_label" = "Password";
+"signup_password_placeholder" = "Create a password";
+"signup_confirm_password_label" = "Confirm Password";
+"signup_confirm_password_placeholder" = "Confirm your password";
+"signup_back" = "Back";
+"signup_create_account" = "Create Account"; 

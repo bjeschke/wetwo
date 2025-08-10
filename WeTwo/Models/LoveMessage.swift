@@ -51,6 +51,11 @@ class LoveMessageManager: ObservableObject {
             throw LoveMessageError.userNotFound
         }
         
+        // Check if user is connected to a partner
+        guard PartnerManager.shared.isConnected else {
+            throw LoveMessageError.notConnected
+        }
+        
         let loveMessage = LoveMessage(
             senderId: currentUserId,
             receiverId: partnerId,
@@ -63,15 +68,36 @@ class LoveMessageManager: ObservableObject {
             text: message
         )
         
-        // TODO: Send push notification to receiver
-        // This could be done through:
-        // 1. Supabase Edge Functions
-        // 2. Firebase Cloud Messaging
-        // 3. Apple Push Notification Service (APNs)
+        // Send push notification to partner
+        await notifyPartnerAboutLoveMessage(partnerId: partnerId, message: message)
         
         // Update local state
         await MainActor.run {
             sentMessages.append(loveMessage)
+        }
+    }
+    
+    private func notifyPartnerAboutLoveMessage(partnerId: UUID, message: String) async {
+        guard let currentUserId = getCurrentUserId() else { return }
+        
+        do {
+            let title = "💌 Neue Liebesnachricht"
+            let body = message.count > 50 ? String(message.prefix(50)) + "..." : message
+            let data = [
+                "type": "love_message",
+                "message_id": UUID().uuidString,
+                "sender_id": currentUserId.uuidString
+            ]
+            
+            try await supabaseService.sendPushNotificationToPartner(
+                userId: currentUserId,
+                partnerId: partnerId,
+                title: title,
+                body: body,
+                data: data
+            )
+        } catch {
+            print("Failed to send push notification for love message: \(error)")
         }
     }
     
@@ -126,6 +152,7 @@ class LoveMessageManager: ObservableObject {
 enum LoveMessageError: Error, LocalizedError {
     case userNotFound
     case partnerNotFound
+    case notConnected
     case networkError
     
     var errorDescription: String? {
@@ -134,6 +161,8 @@ enum LoveMessageError: Error, LocalizedError {
             return NSLocalizedString("love_message_error_user_not_found", comment: "User not found")
         case .partnerNotFound:
             return NSLocalizedString("love_message_error_partner_not_found", comment: "Partner not found")
+        case .notConnected:
+            return NSLocalizedString("love_message_error_not_connected", comment: "Not connected to partner")
         case .networkError:
             return NSLocalizedString("love_message_error_network", comment: "Network error")
         }

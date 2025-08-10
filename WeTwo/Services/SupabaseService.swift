@@ -19,6 +19,9 @@ enum AuthError: Error, LocalizedError {
     case photoUploadFailed
     case photoDeleteFailed
     case storageError
+    case refreshTokenInvalid
+    case sessionExpired
+
     
     var errorDescription: String? {
         switch self {
@@ -50,6 +53,10 @@ enum AuthError: Error, LocalizedError {
             return "Failed to delete photo"
         case .storageError:
             return "Storage operation failed"
+        case .refreshTokenInvalid:
+            return "Session expired, please sign in again"
+        case .sessionExpired:
+            return "Session expired, please sign in again"
         }
     }
 }
@@ -74,13 +81,33 @@ struct Profile: Codable, Sendable {
     var relationship_status: String?
     var has_children: String?
     var children_count: String?
+    var push_token: String?          // For push notifications
     var created_at: Date?
     var updated_at: Date?
     
     enum CodingKeys: String, CodingKey {
         case id, name, zodiac_sign, birth_date, profile_photo_url
         case relationship_status, has_children, children_count
-        case created_at, updated_at
+        case push_token, created_at, updated_at
+    }
+}
+
+struct SupabaseMoodEntry: Codable, Sendable {
+    var id: UUID?
+    var user_id: UUID
+    var date: String                 // YYYY-MM-DD
+    var mood_level: Int             // 1-5 (1=very sad, 5=very happy)
+    var event_label: String?
+    var location: String?
+    var photo_data: Data?
+    var insight: String?
+    var love_message: String?
+    var created_at: Date?
+    var updated_at: Date?
+    
+    enum CodingKeys: String, CodingKey {
+        case id, user_id, date, mood_level, event_label, location
+        case photo_data, insight, love_message, created_at, updated_at
     }
 }
 
@@ -173,6 +200,14 @@ final class SupabaseService: @unchecked Sendable {
     var currentUserId: UUID? {
         return client.auth.currentUser?.id
     }
+    
+    /// Gets the current user ID from the active session
+    func getCurrentUserId() async throws -> String? {
+        guard let session = try? await client.auth.session else {
+            return nil
+        }
+        return session.user.id.uuidString
+    }
 
     func session() async throws -> Session? {
         try await client.auth.session
@@ -183,29 +218,126 @@ final class SupabaseService: @unchecked Sendable {
     }
     
     func signIn(email: String, password: String) async throws -> User {
-        let response = try await client.auth.signIn(
+        print("🔧 Starting email/password sign-in with Supabase")
+        
+        do {
+            let response = try await client.auth.signIn(
+                email: email,
+                password: password
+            )
+            
+            print("✅ Email/password sign-in successful for user: \(response.user.id)")
+            
+            // Create a default User with current date as birth date
+            return User(
+                name: response.user.userMetadata["name"]?.stringValue ?? "User",
+                birthDate: Date()
+            )
+        } catch {
+            print("❌ Email/password sign-in failed: \(error)")
+            throw error
+        }
+    }
+    
+    func signUp(email: String, password: String, name: String, birthDate: Date = Date()) async throws -> User {
+        let birthDateString = DateFormatter.yyyyMMdd.string(from: birthDate)
+        _ = try await client.auth.signUp(
             email: email,
-            password: password
+            password: password,
+            data: [
+                "name": AnyJSON.string(name),
+                "birth_date": AnyJSON.string(birthDateString)
+            ] // Store name and birth date in userMetadata
         )
         
-        // Create a default User with current date as birth date
+        // Create a User with the provided birth date
         return User(
-            name: response.user.userMetadata["name"]?.stringValue ?? "User",
-            birthDate: Date()
+            name: name,
+            birthDate: birthDate
         )
     }
     
-    func signUp(email: String, password: String) async throws -> User {
-        _ = try await client.auth.signUp(
-            email: email,
-            password: password
-        )
+    // MARK: - Apple Sign-In
+    
+    func signInWithApple(idToken: String, nonce: String) async throws -> User {
+        print("🍎 Starting Apple Sign-In with Supabase")
         
-        // Create a default User with current date as birth date
-        return User(
-            name: "User",
-            birthDate: Date()
-        )
+        do {
+            let response = try await client.auth.signInWithIdToken(
+                credentials: OpenIDConnectCredentials(
+                    provider: .apple,
+                    idToken: idToken,
+                    nonce: nonce
+                )
+            )
+            
+            print("✅ Apple Sign-In successful for user: \(response.user.id)")
+            
+            // Extract user information from the response
+            let name = response.user.userMetadata["name"]?.stringValue ?? "User"
+            let birthDateString = response.user.userMetadata["birth_date"]?.stringValue
+            
+            // Parse birth date or use current date as fallback
+            let birthDate: Date
+            if let birthDateString = birthDateString,
+               let parsedDate = DateFormatter.yyyyMMdd.date(from: birthDateString) {
+                birthDate = parsedDate
+            } else {
+                birthDate = Date()
+            }
+            
+            return User(name: name, birthDate: birthDate)
+            
+        } catch {
+            print("❌ Apple Sign-In failed: \(error)")
+            throw AuthError.invalidCredentials
+        }
+    }
+    
+    func signUpWithApple(idToken: String, nonce: String, name: String, birthDate: Date) async throws -> User {
+        print("🍎 Starting Apple Sign-Up with Supabase")
+        
+        let birthDateString = DateFormatter.yyyyMMdd.string(from: birthDate)
+        
+        do {
+            let response = try await client.auth.signInWithIdToken(
+                credentials: OpenIDConnectCredentials(
+                    provider: .apple,
+                    idToken: idToken,
+                    nonce: nonce
+                )
+            )
+            
+            print("✅ Apple Sign-In successful for user: \(response.user.id)")
+            
+            // Update user metadata with name and birth date
+            try await client.auth.update(user: UserAttributes(
+                data: [
+                    "name": AnyJSON.string(name),
+                    "birth_date": AnyJSON.string(birthDateString)
+                ]
+            ))
+            
+            return User(name: name, birthDate: birthDate)
+            
+        } catch {
+            print("❌ Apple Sign-In failed: \(error)")
+            throw AuthError.signUpFailed
+        }
+    }
+    
+    /// Updates the auth user's display name in userMetadata
+    func updateAuthUserDisplayName(name: String) async throws {
+        guard let session = try? await client.auth.session else {
+            throw AuthError.unauthorized
+        }
+        
+        // Update the user's metadata with the new display name
+        try await client.auth.update(user: UserAttributes(
+            data: ["name": AnyJSON.string(name)]
+        ))
+        
+        print("✅ Auth user display name updated to: \(name)")
     }
     
     /// Completes onboarding by creating user account and updating profile
@@ -215,33 +347,70 @@ final class SupabaseService: @unchecked Sendable {
                             password: String,
                             name: String,
                             birthDate: Date) async throws -> SupabaseUser {
-        // 1) Signup
-        _ = try await client.auth.signUp(email: email, password: password)
-
-        // 2) Ensure session (for dev, you might get it directly; in prod, show verification flow)
-        if (try? await client.auth.session) == nil {
-            _ = try await client.auth.signIn(email: email, password: password)
+        print("🔧 Starting onboarding completion for email: \(email)")
+        
+        // 1) Signup with name and birth date in userMetadata
+        let birthDateString = DateFormatter.yyyyMMdd.string(from: birthDate)
+        let signUpResponse = try await client.auth.signUp(
+            email: email, 
+            password: password,
+            data: [
+                "name": AnyJSON.string(name),
+                "birth_date": AnyJSON.string(birthDateString)
+            ] // Store name and birth date in userMetadata for trigger
+        )
+        
+        print("✅ Signup successful for user: \(signUpResponse.user.id)")
+        
+        // 2) Check if user needs email confirmation
+        let signupUser = signUpResponse.user
+        print("✅ User created successfully: \(signupUser.id)")
+        
+        // Check if email confirmation is required
+        if signUpResponse.session == nil {
+            print("⚠️ Email confirmation required - user needs to confirm email before signing in")
+            // Store the user data temporarily and wait for email confirmation
+            // For now, we'll throw a specific error that the UI can handle
+            throw AuthError.validationError
         }
         
-        guard let session = try? await client.auth.session else {
-            throw AuthError.unauthorized
+        // 3) If we have a session, user is already confirmed
+        guard let session = signUpResponse.session else {
+            print("❌ No session after signup - email confirmation required")
+            throw AuthError.validationError
         }
         
         let user = session.user
+        print("✅ Session established for user: \(user.id)")
 
-        // 3) Update profile only (profile exists through trigger)
+        // 4) Ensure profile exists (with retry logic)
+        print("🔧 Ensuring profile exists for user: \(user.id)")
+        try await ensureProfileExists()
+        
+        // 5) Update profile with user data
         let birth = DateFormatter.yyyyMMdd.string(from: birthDate)
         let zodiac = ZodiacSign.calculate(from: birthDate).rawValue
 
-        try await client
-            .from("profiles")
-            .update([
-                "name": name,
-                "zodiac_sign": zodiac,
-                "birth_date": birth
-            ])
-            .eq("id", value: user.id.uuidString)
-            .execute()
+        print("🔧 Updating profile for user: \(user.id)")
+        print("   Name: \(name)")
+        print("   Birth Date: \(birthDate)")
+        
+        do {
+            try await client
+                .from("profiles")
+                .update([
+                    "name": name,
+                    "zodiac_sign": zodiac,
+                    "birth_date": birth
+                ])
+                .eq("id", value: user.id.uuidString)
+                .execute()
+            
+            print("✅ Profile updated successfully")
+        } catch {
+            print("❌ Error updating profile: \(error)")
+            throw error
+        }
 
         return SupabaseUser(
             id: user.id.uuidString,
@@ -253,6 +422,118 @@ final class SupabaseService: @unchecked Sendable {
     func signOut() async throws {
         try await client.auth.signOut()
     }
+    
+    /// Handles email confirmation by attempting to sign in after user confirms email
+    func confirmEmailAndSignIn(email: String, password: String) async throws -> User {
+        print("🔄 Attempting to sign in after email confirmation...")
+        
+        do {
+            let response = try await client.auth.signIn(
+                email: email,
+                password: password
+            )
+            
+            print("✅ Sign in successful after email confirmation")
+            
+            // Create a User with the provided data
+            return User(
+                name: response.user.userMetadata["name"]?.stringValue ?? "User",
+                birthDate: Date()
+            )
+        } catch {
+            print("❌ Sign in failed after email confirmation: \(error)")
+            throw error
+        }
+    }
+    
+    /// Checks if email confirmation is required by attempting a test signup
+    func isEmailConfirmationRequired() async -> Bool {
+        print("🔧 Checking if email confirmation is required...")
+        
+        // Create a test email that won't actually be used
+        let testEmail = "test-\(UUID().uuidString)@example.com"
+        let testPassword = "TestPassword123!"
+        
+        do {
+            let signUpResponse = try await client.auth.signUp(
+                email: testEmail,
+                password: testPassword
+            )
+            
+            // If we get a session, email confirmation is not required
+            let requiresConfirmation = signUpResponse.session == nil
+            print("📧 Email confirmation required: \(requiresConfirmation)")
+            
+            return requiresConfirmation
+        } catch {
+            print("⚠️ Error checking email confirmation requirement: \(error)")
+            // Default to requiring confirmation for safety
+            return true
+        }
+    }
+    
+    /// Handles refresh token errors by clearing the session and forcing re-authentication
+    func handleRefreshTokenError() async {
+        print("🔄 Handling refresh token error - clearing session")
+        do {
+            try await client.auth.signOut()
+            print("✅ Session cleared successfully")
+        } catch {
+            print("⚠️ Error clearing session: \(error)")
+        }
+    }
+    
+    /// Attempts to refresh the session, handles token errors gracefully
+    func refreshSession() async throws {
+        do {
+            _ = try await client.auth.session
+            print("✅ Session refreshed successfully")
+        } catch {
+            print("⚠️ Session refresh failed: \(error)")
+            if error.localizedDescription.contains("Refresh Token") || 
+               error.localizedDescription.contains("Invalid") {
+                await handleRefreshTokenError()
+                throw AuthError.refreshTokenInvalid
+            }
+            throw error
+        }
+    }
+    
+    /// Ensures a profile exists for the current user, creating it if necessary
+    func ensureProfileExists() async throws {
+        guard let session = try? await client.auth.session else {
+            throw AuthError.unauthorized
+        }
+        
+        let userId = session.user.id.uuidString
+        
+        // Check if profile exists
+        do {
+            let _ = try await client
+                .from("profiles")
+                .select("id")
+                .eq("id", value: userId)
+                .single()
+                .execute()
+            
+            print("✅ Profile exists for user: \(userId)")
+        } catch {
+            print("⚠️ Profile not found for user: \(userId), creating...")
+            
+            // Create profile
+            try await client
+                .from("profiles")
+                .insert([
+                    "id": userId,
+                    "name": session.user.userMetadata["name"]?.stringValue ?? "User",
+                    "zodiac_sign": "unknown",
+                    "birth_date": DateFormatter.yyyyMMdd.string(from: Date())
+                ])
+                .execute()
+            
+            print("✅ Profile created for user: \(userId)")
+        }
+    }
 
     // MARK: - Profile Management
     
@@ -261,6 +542,21 @@ final class SupabaseService: @unchecked Sendable {
             .from("profiles")
             .upsert(profile, onConflict: "id")
             .select()
+            .single()
+            .execute()
+        
+        return try JSONDecoder().decode(Profile.self, from: resp.data)
+    }
+    
+    func getUserProfile() async throws -> Profile? {
+        guard let session = try? await client.auth.session else {
+            return nil
+        }
+        
+        let resp = try await client
+            .from("profiles")
+            .select()
+            .eq("id", value: session.user.id.uuidString)
             .single()
             .execute()
         
@@ -293,6 +589,13 @@ final class SupabaseService: @unchecked Sendable {
         return try? JSONDecoder().decode(Profile.self, from: resp.data)
     }
     
+    func getProfile(userId: String) async throws -> Profile? {
+        guard let userIdUUID = UUID(uuidString: userId) else {
+            throw AuthError.invalidData
+        }
+        return try await profile(of: userIdUUID)
+    }
+    
     func profileByEmail(_ email: String) async throws -> Profile? {
         let resp = try await client
             .from("profiles")
@@ -305,9 +608,13 @@ final class SupabaseService: @unchecked Sendable {
     }
     
     func updateProfile(userId: String, name: String, birthDate: Date?) async throws {
+        let actualBirthDate = birthDate ?? Date()
+        let zodiacSign = ZodiacSign.calculate(from: actualBirthDate).rawValue
+        
         let updates: [String: String] = [
             "name": name,
-            "birth_date": birthDate?.ISO8601String() ?? Date().ISO8601String(),
+            "birth_date": actualBirthDate.ISO8601String(),
+            "zodiac_sign": zodiacSign,
             "updated_at": Date().ISO8601String()
         ]
         
@@ -315,6 +622,17 @@ final class SupabaseService: @unchecked Sendable {
             .from("profiles")
             .update(updates)
             .eq("id", value: userId)
+            .execute()
+        
+        // Also update the auth user's display name in userMetadata
+        try await updateAuthUserDisplayName(name: name)
+    }
+    
+    func updateProfilePushToken(userId: UUID, pushToken: String) async throws {
+        try await client
+            .from("profiles")
+            .update(["push_token": pushToken])
+            .eq("id", value: userId.uuidString)
             .execute()
     }
     
@@ -500,6 +818,103 @@ final class SupabaseService: @unchecked Sendable {
             .eq("id", value: messageId.uuidString)
             .execute()
     }
+    
+    // MARK: - Mood Entry Management
+    
+    func createMoodEntry(_ moodEntry: SupabaseMoodEntry) async throws -> SupabaseMoodEntry {
+        let resp = try await client
+            .from("mood_entries")
+            .insert(moodEntry)
+            .select()
+            .single()
+            .execute()
+        
+        return try JSONDecoder().decode(SupabaseMoodEntry.self, from: resp.data)
+    }
+    
+    func updateMoodEntry(_ moodEntry: SupabaseMoodEntry) async throws -> SupabaseMoodEntry {
+        guard let id = moodEntry.id else {
+            throw AuthError.invalidData
+        }
+        
+        let resp = try await client
+            .from("mood_entries")
+            .update(moodEntry)
+            .eq("id", value: id.uuidString)
+            .select()
+            .single()
+            .execute()
+        
+        return try JSONDecoder().decode(SupabaseMoodEntry.self, from: resp.data)
+    }
+    
+    func getMoodEntries(userId: UUID, startDate: Date? = nil, endDate: Date? = nil) async throws -> [SupabaseMoodEntry] {
+        var query = client
+            .from("mood_entries")
+            .select()
+            .eq("user_id", value: userId.uuidString)
+        
+        if let startDate = startDate {
+            let startString = startDate.formatted(date: .numeric, time: .omitted)
+            query = query.gte("date", value: startString)
+        }
+        
+        if let endDate = endDate {
+            let endString = endDate.formatted(date: .numeric, time: .omitted)
+            query = query.lte("date", value: endString)
+        }
+        
+        let resp = try await query.order("date", ascending: false).execute()
+        return try JSONDecoder().decode([SupabaseMoodEntry].self, from: resp.data)
+    }
+    
+    func getTodayMoodEntry(userId: UUID) async throws -> SupabaseMoodEntry? {
+        let today = Date().formatted(date: .numeric, time: .omitted)
+        
+        let resp = try await client
+            .from("mood_entries")
+            .select()
+            .eq("user_id", value: userId.uuidString)
+            .eq("date", value: today)
+            .limit(1)
+            .single()
+            .execute()
+        
+        return try? JSONDecoder().decode(SupabaseMoodEntry.self, from: resp.data)
+    }
+    
+    func deleteMoodEntry(_ moodEntryId: UUID) async throws {
+        try await client
+            .from("mood_entries")
+            .delete()
+            .eq("id", value: moodEntryId.uuidString)
+            .execute()
+    }
+    
+    // MARK: - Push Notifications
+    
+    func sendPushNotificationToPartner(userId: UUID, partnerId: UUID, title: String, body: String, data: [String: String] = [:]) async throws {
+        // Get partner's push token
+        guard let partnerProfile = try await getProfile(userId: partnerId.uuidString),
+              let pushToken = partnerProfile.push_token else {
+            print("⚠️ Partner has no push token")
+            return
+        }
+        
+        // In a real app, this would send to APNs or use a push service
+        // For now, we'll log the notification
+        print("📱 Push notification to partner \(partnerId):")
+        print("   Title: \(title)")
+        print("   Body: \(body)")
+        print("   Token: \(pushToken)")
+        print("   Data: \(data)")
+        
+        // TODO: Implement actual push notification sending
+        // This could be done through:
+        // 1. Supabase Edge Functions
+        // 2. Firebase Cloud Messaging
+        // 3. Direct APNs integration
+    }
 
     // MARK: - Partnership Status
     
@@ -662,20 +1077,54 @@ final class SupabaseService: @unchecked Sendable {
     // MARK: - Profile Photo Storage
     
     func uploadProfilePhoto(userId: UUID, imageData: Data) async throws {
-        let fileName = "\(userId.uuidString)_profile.jpg"
+        let path = "\(userId.uuidString)/profile.jpg"
+        
+        print("📸 Uploading profile photo for user: \(userId)")
+        print("📁 Path: \(path)")
+        print("📊 Data size: \(imageData.count) bytes")
         
         do {
-            try await client.storage
+            // Ensure user is authenticated
+            guard let session = try? await client.auth.session else {
+                print("❌ No active session for user: \(userId)")
+                throw AuthError.unauthorized
+            }
+            
+            print("✅ User authenticated: \(session.user.id)")
+            
+            let result = try await client.storage
                 .from("profile-photos")
                 .upload(
-                    fileName,
+                    path,
                     data: imageData,
                     options: FileOptions(
                         contentType: "image/jpeg"
                     )
                 )
+            
+            print("✅ Profile photo uploaded successfully: \(result)")
+            
+            // Update the profile with the photo URL
+            let photoURL = try await client.storage
+                .from("profile-photos")
+                .getPublicURL(path: path)
+            
+            print("🔗 Photo URL: \(photoURL)")
+            
+            // Update the profile record with the photo URL
+            try await client
+                .from("profiles")
+                .update(["profile_photo_url": photoURL.absoluteString])
+                .eq("id", value: userId.uuidString)
+                .execute()
+            
+            print("✅ Profile updated with photo URL")
+            
         } catch {
             print("❌ Error uploading profile photo: \(error)")
+            if let storageError = error as? StorageError {
+                print("🔍 Storage error details: \(storageError)")
+            }
             throw AuthError.photoUploadFailed
         }
     }
@@ -706,7 +1155,7 @@ final class SupabaseService: @unchecked Sendable {
         let response = try await client
             .storage
             .from("profile-photos")
-            .remove(paths: ["\(userId.uuidString).jpg"])
+            .remove(paths: ["\(userId.uuidString)/profile.jpg"])
         
         print("🗑️ Profile photo deleted for user \(userId)")
     }
@@ -716,7 +1165,7 @@ final class SupabaseService: @unchecked Sendable {
             let response = try await client
                 .storage
                 .from("profile-photos")
-                .download(path: "\(userId.uuidString).jpg")
+                .download(path: "\(userId.uuidString)/profile.jpg")
             
             return response
         } catch {
@@ -743,7 +1192,7 @@ final class SupabaseService: @unchecked Sendable {
             let response = try await client
                 .storage
                 .from("profile-photos")
-                .download(path: "\(userId.uuidString).jpg")
+                .download(path: "\(userId.uuidString)/profile.jpg")
             
             return response
         } catch {

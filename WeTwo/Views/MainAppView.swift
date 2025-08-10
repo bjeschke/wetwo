@@ -2,10 +2,12 @@ import SwiftUI
 
 struct MainAppView: View {
     @StateObject private var appState = AppState()
-    @StateObject private var partnerManager = PartnerManager()
+    @StateObject private var partnerManager = PartnerManager.shared
     @StateObject private var moodManager = MoodManager()
     @StateObject private var memoryManager = MemoryManager()
     @StateObject private var gptService = GPTService()
+    @StateObject private var notificationService = NotificationService.shared
+    @StateObject private var deepLinkHandler = DeepLinkHandler()
     
     var body: some View {
         Group {
@@ -16,6 +18,8 @@ struct MainAppView: View {
                     .environmentObject(moodManager)
                     .environmentObject(memoryManager)
                     .environmentObject(gptService)
+                    .environmentObject(notificationService)
+                    .environmentObject(deepLinkHandler)
             } else {
                 MainTabView()
                     .environmentObject(appState)
@@ -23,11 +27,19 @@ struct MainAppView: View {
                     .environmentObject(moodManager)
                     .environmentObject(memoryManager)
                     .environmentObject(gptService)
+                    .environmentObject(notificationService)
+                    .environmentObject(deepLinkHandler)
             }
         }
         .purpleTheme()
         .accentColor(ColorTheme.primaryPurple)
         .environment(\.locale, Locale.current)
+        .onReceive(NotificationCenter.default.publisher(for: .emailConfirmed)) { _ in
+            // Email was confirmed, complete onboarding
+            DispatchQueue.main.async {
+                appState.isOnboarding = false
+            }
+        }
     }
 }
 

@@ -12,6 +12,7 @@ struct TodayView: View {
     @EnvironmentObject var partnerManager: PartnerManager
     @EnvironmentObject var appState: AppState
     @EnvironmentObject var gptService: GPTService
+    @EnvironmentObject var notificationService: NotificationService
     @StateObject private var loveMessageManager = LoveMessageManager()
     
     private let supabaseService = SupabaseService.shared
@@ -47,6 +48,9 @@ struct TodayView: View {
                     // Partner connection section (if not connected)
                     if !partnerManager.isConnected {
                         partnerConnectionSection
+                        
+                        // Love message info when not connected
+                        loveMessageInfoSection
                     }
                     
                     // Mood input section
@@ -57,8 +61,15 @@ struct TodayView: View {
                         dailyInsightCard(insight)
                     }
                     
-                    // Love message button
-                    loveMessageButton
+                    // Love message button (only when connected)
+                    if partnerManager.isConnected {
+                        loveMessageButton
+                    }
+                    
+                    // Test notification button (for development)
+                    if !notificationService.isAuthorized {
+                        testNotificationButton
+                    }
                     
                     // Partner's mood (if connected)
                     if partnerManager.isConnected {
@@ -511,7 +522,7 @@ struct TodayView: View {
                         .scaleEffect(0.8)
                 } else {
                     Image(systemName: "arrow.right")
-                        .font(.title3)
+                    .font(.title3)
                 }
             }
             .foregroundColor(.white)
@@ -523,6 +534,36 @@ struct TodayView: View {
             )
         }
         .disabled(gptService.isGenerating)
+    }
+    
+    private var testNotificationButton: some View {
+        Button(action: {
+            notificationService.scheduleLocalNotification(
+                title: "🧪 Test-Benachrichtigung",
+                body: "Dies ist eine Test-Benachrichtigung für die Entwicklung"
+            )
+        }) {
+            HStack {
+                Text("🔔")
+                    .font(.title2)
+                
+                Text("Push-Benachrichtigungen aktivieren")
+                    .font(.title3)
+                    .fontWeight(.semibold)
+                
+                Spacer()
+                
+                Image(systemName: "arrow.right")
+                    .font(.title3)
+            }
+            .foregroundColor(.white)
+            .padding(25)
+            .background(
+                RoundedRectangle(cornerRadius: 25)
+                    .fill(LinearGradient(colors: [Color.orange, Color.red], startPoint: .leading, endPoint: .trailing))
+                    .shadow(color: Color.orange.opacity(0.3), radius: 10, x: 0, y: 5)
+            )
+        }
     }
     
     private var partnerMoodSection: some View {
@@ -766,7 +807,7 @@ struct TodayView: View {
         Task {
             do {
                 if let imageData = photo.jpegData(compressionQuality: 0.8) {
-                    // Upload to Supabase Storage
+                    // Upload to Supabase Storage with folder structure
                     _ = try await supabaseService.uploadProfilePhoto(userId: userId, imageData: imageData)
                     
                     // Also save locally for offline access
@@ -819,6 +860,70 @@ struct TodayView: View {
                 }
             }
         }
+    }
+    
+    // MARK: - Love Message Info Section (when not connected)
+    private var loveMessageInfoSection: some View {
+        VStack(spacing: 15) {
+            HStack {
+                Text("💕")
+                    .font(.title2)
+                
+                Text("Liebesnachrichten")
+                    .font(.title2)
+                    .fontWeight(.bold)
+                    .foregroundColor(ColorTheme.primaryText)
+                
+                Spacer()
+            }
+            
+            VStack(spacing: 12) {
+                HStack {
+                    Text("🔗")
+                        .font(.title3)
+                    
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(NSLocalizedString("love_messages_connect_required", comment: "Connect with partner"))
+                            .font(.body)
+                            .fontWeight(.semibold)
+                            .foregroundColor(ColorTheme.primaryText)
+                        
+                        Text(NSLocalizedString("love_messages_connect_description", comment: "Send and receive love messages"))
+                            .font(.caption)
+                            .foregroundColor(ColorTheme.secondaryText)
+                    }
+                    
+                    Spacer()
+                }
+                
+                HStack {
+                    Text("💌")
+                        .font(.title3)
+                    
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(NSLocalizedString("love_messages_personalized", comment: "Personalized messages"))
+                            .font(.body)
+                            .fontWeight(.semibold)
+                            .foregroundColor(ColorTheme.primaryText)
+                        
+                        Text(NSLocalizedString("love_messages_ai_generated", comment: "AI-generated love messages based on mood"))
+                            .font(.caption)
+                            .foregroundColor(ColorTheme.secondaryText)
+                    }
+                    
+                    Spacer()
+                }
+            }
+        }
+        .padding(25)
+        .background(
+            RoundedRectangle(cornerRadius: 20)
+                .fill(ColorTheme.cardBackgroundSecondary)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 20)
+                        .stroke(ColorTheme.accentPink.opacity(0.3), lineWidth: 1)
+                )
+        )
     }
     
     // MARK: - Received Love Messages Section
@@ -924,7 +1029,8 @@ struct LoveMessageCard: View {
 #Preview {
     TodayView()
         .environmentObject(MoodManager())
-        .environmentObject(PartnerManager())
+        .environmentObject(PartnerManager.shared)
         .environmentObject(AppState())
         .environmentObject(GPTService())
+        .environmentObject(NotificationService.shared)
 } 

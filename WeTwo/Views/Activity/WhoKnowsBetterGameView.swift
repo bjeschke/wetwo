@@ -473,5 +473,5 @@ struct WhoKnowsBetterQuestions {
 
 #Preview {
     WhoKnowsBetterGameView()
-        .environmentObject(PartnerManager())
+        .environmentObject(PartnerManager.shared)
 }

@@ -313,3 +313,54 @@
 "settings_feedback" = "Comentarios";
 "settings_rate_app" = "Calificar app";
 "settings_share_app" = "Compartir app"; 
+
+// MARK: - Login
+"login_title" = "Bienvenido de vuelta";
+"login_subtitle" = "Inicia sesión en tu cuenta de Amavo";
+"login_with_email" = "Iniciar sesión con email";
+"login_credentials_title" = "Iniciar sesión";
+"login_sign_in" = "Iniciar sesión";
+"login_has_account" = "¿Ya tienes una cuenta? Inicia sesión";
+"signup_no_account" = "¿No tienes cuenta? Regístrate";
+
+// MARK: - Signup
+"signup_title" = "Crea tu cuenta";
+"signup_subtitle" = "Únete a Amavo para fortalecer tu relación";
+"signup_or" = "o";
+"signup_with_email" = "Regístrate con email";
+"signup_profile_title" = "Completa tu perfil";
+"signup_profile_subtitle" = "Cuéntanos sobre ti";
+"signup_credentials_title" = "Crea tu cuenta";
+"signup_name_title" = "¿Cómo te llamas?";
+"signup_name_subtitle" = "Cuéntanos tu nombre";
+"signup_birthdate_title" = "¿Cuándo naciste?";
+"signup_birthdate_subtitle" = "Cuéntanos tu fecha de nacimiento";
+"signup_name_label" = "Nombre completo";
+"signup_name_placeholder" = "Introduce tu nombre completo";
+"signup_birthdate_label" = "Fecha de nacimiento";
+"signup_birthdate_placeholder" = "Selecciona tu fecha de nacimiento";
+"signup_zodiac_label" = "Tu signo zodiacal:";
+"signup_next" = "Siguiente";
+
+// MARK: - Signup (Additional strings)
+"signup_email_label" = "Dirección de correo electrónico";
+"signup_email_placeholder" = "Introduce tu correo electrónico";
+"signup_password_label" = "Contraseña";
+"signup_password_placeholder" = "Crea una contraseña";
+"signup_confirm_password_label" = "Confirmar contraseña";
+"signup_confirm_password_placeholder" = "Confirma tu contraseña";
+"signup_back" = "Atrás";
+"signup_create_account" = "Crear cuenta";
+"signup_email_confirmation_required" = "Por favor revisa tu correo electrónico y confirma tu cuenta antes de continuar";
+"signup_email_confirmation_title" = "Confirma tu correo electrónico";
+"signup_email_confirmation_subtitle" = "Enviamos un correo de confirmación a";
+"signup_email_confirmation_instructions" = "Por favor revisa tu correo electrónico y haz clic en el enlace de confirmación, luego regresa aquí para continuar";
+"signup_email_confirmation_continue" = "He confirmado mi correo electrónico";
+"signup_email_confirmation_resend" = "Reenviar correo de confirmación";
+
+// MARK: - Email Confirmation
+"email_confirmation_title" = "Confirma tu correo electrónico";
+"email_confirmation_subtitle" = "Enviamos un correo de confirmación a";
+"email_confirmation_instructions" = "Por favor revisa tu correo electrónico y haz clic en el enlace de confirmación, luego regresa aquí para continuar";
+"email_confirmation_continue" = "He confirmado mi correo electrónico";
+"email_confirmation_resend" = "Reenviar correo de confirmación"; 

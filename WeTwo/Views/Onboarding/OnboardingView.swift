@@ -14,7 +14,7 @@ struct OnboardingView: View {
     @State private var currentStep = 0
     @State private var showingPartnerConnection = false
     
-    private let totalSteps = 3
+    private let totalSteps = 4
     
     var body: some View {
         ZStack {
@@ -39,8 +39,10 @@ struct OnboardingView: View {
                 case 0:
                     welcomeStep
                 case 1:
-                    profileStep
+                    signupStep
                 case 2:
+                    profileStep
+                case 3:
                     relationshipStep
                 default:
                     EmptyView()
@@ -60,6 +62,16 @@ struct OnboardingView: View {
     }
     
     // MARK: - Step Views
+    
+    private var signupStep: some View {
+        SignupView()
+            .environmentObject(appState)
+            .onReceive(NotificationCenter.default.publisher(for: .emailConfirmed)) { _ in
+                withAnimation {
+                    currentStep = 2 // Go to profile step after email confirmation
+                }
+            }
+    }
     
     private var welcomeStep: some View {
         VStack(spacing: 30) {
@@ -285,6 +297,7 @@ struct OnboardingView: View {
                     }
                 }
                 .foregroundColor(ColorTheme.primaryText)
+                .disabled(currentStep == 1 && appState.currentUser == nil) // Disable if no user created yet (step 1 is signup)
             } else {
                 Button(NSLocalizedString("onboarding_complete", comment: "Complete button")) {
                     completeOnboarding()
@@ -387,38 +400,7 @@ final class OnboardingViewModel: ObservableObject {
     
 
     
-    func finish() async {
-        guard !name.isEmpty, !email.isEmpty, !password.isEmpty else {
-            errorMessage = "Bitte alle Felder ausfüllen."
-            return
-        }
-        isLoading = true
-        defer { isLoading = false }
 
-        do {
-            let user = try await SupabaseService.shared.completeOnboarding(
-                email: email,
-                password: password,
-                name: name,
-                birthDate: birthDate
-            )
-            print("🎉 Onboarding fertig, User: \(user.id)")
-            
-            // Save relationship data if user is connected
-            if let userId = UUID(uuidString: user.id) {
-                try await SupabaseService.shared.updateRelationshipData(
-                    userId: user.id,
-                    relationshipStatus: relationshipStatus.rawValue,
-                    hasChildren: hasChildren ? "true" : "false",
-                    childrenCount: String(childrenCount)
-                )
-                print("✅ Relationship data saved successfully!")
-            }
-            
-        } catch {
-            errorMessage = error.localizedDescription
-        }
-    }
 }
 
 // MARK: - Supporting Views

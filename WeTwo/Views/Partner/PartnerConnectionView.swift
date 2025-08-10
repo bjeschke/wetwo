@@ -211,5 +211,5 @@ struct QRCodeView: View {
 
 #Preview {
     PartnerConnectionView()
-        .environmentObject(PartnerManager())
+        .environmentObject(PartnerManager.shared)
 } 

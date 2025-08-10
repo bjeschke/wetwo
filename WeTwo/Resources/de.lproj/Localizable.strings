@@ -40,6 +40,47 @@
 "onboarding_complete" = "Los geht's!";
 "onboarding_skip" = "Überspringen";
 
+// MARK: - Signup
+"signup_title" = "Erstelle dein Konto";
+"signup_subtitle" = "Tritt Amavo bei, um deine Beziehung zu stärken";
+"signup_or" = "oder";
+"signup_with_email" = "Mit E-Mail registrieren";
+"signup_profile_title" = "Vervollständige dein Profil";
+"signup_profile_subtitle" = "Erzähle uns von dir";
+"signup_credentials_title" = "Erstelle dein Konto";
+"signup_name_title" = "Wie heißt du?";
+"signup_name_subtitle" = "Erzähle uns deinen Namen";
+"signup_birthdate_title" = "Wann wurdest du geboren?";
+"signup_birthdate_subtitle" = "Erzähle uns dein Geburtsdatum";
+
+"signup_email_label" = "E-Mail-Adresse";
+"signup_email_placeholder" = "Gib deine E-Mail ein";
+"signup_password_label" = "Passwort";
+"signup_password_placeholder" = "Erstelle ein Passwort";
+"signup_confirm_password_label" = "Passwort bestätigen";
+"signup_confirm_password_placeholder" = "Bestätige dein Passwort";
+"signup_name_label" = "Vollständiger Name";
+"signup_name_placeholder" = "Gib deinen vollständigen Namen ein";
+"signup_birthdate_label" = "Geburtsdatum";
+"signup_birthdate_placeholder" = "Wähle dein Geburtsdatum";
+"signup_zodiac_label" = "Dein Sternzeichen:";
+"signup_back" = "Zurück";
+"signup_next" = "Weiter";
+"signup_create_account" = "Konto erstellen";
+"signup_email_confirmation_required" = "Bitte überprüfe deine E-Mails und bestätige dein Konto, bevor du fortfährst";
+"signup_email_confirmation_title" = "Bestätige deine E-Mail";
+"signup_email_confirmation_subtitle" = "Wir haben eine Bestätigungs-E-Mail an gesendet";
+"signup_email_confirmation_instructions" = "Bitte überprüfe deine E-Mails und klicke auf den Bestätigungslink, dann kehre hierher zurück, um fortzufahren";
+"signup_email_confirmation_continue" = "Ich habe meine E-Mail bestätigt";
+"signup_email_confirmation_resend" = "Bestätigungs-E-Mail erneut senden";
+
+// MARK: - Email Confirmation
+"email_confirmation_title" = "Bestätige deine E-Mail";
+"email_confirmation_subtitle" = "Wir haben eine Bestätigungs-E-Mail an gesendet";
+"email_confirmation_instructions" = "Bitte überprüfe deine E-Mails und klicke auf den Bestätigungslink, dann kehre hierher zurück, um fortzufahren";
+"email_confirmation_continue" = "Ich habe meine E-Mail bestätigt";
+"email_confirmation_resend" = "Bestätigungs-E-Mail erneut senden";
+
 // Relationship Status
 "relationship_status_dating" = "Dating";
 "relationship_status_engaged" = "Verlobt";
@@ -208,8 +249,13 @@
 "love_messages_show_all" = "Alle anzeigen";
 "love_messages_send_success" = "Liebesnachricht gesendet!";
 "love_messages_send_error" = "Fehler beim Senden der Nachricht";
+"love_messages_connect_required" = "Verbinde dich mit deinem Partner";
+"love_messages_connect_description" = "Sende und empfange Liebesnachrichten";
+"love_messages_personalized" = "Personalisierte Nachrichten";
+"love_messages_ai_generated" = "KI-generierte Liebesnachrichten basierend auf deiner Stimmung";
 "love_message_error_user_not_found" = "Benutzer nicht gefunden";
 "love_message_error_partner_not_found" = "Partner nicht gefunden";
+"love_message_error_not_connected" = "Nicht mit Partner verbunden";
 "love_message_error_network" = "Netzwerkfehler";
 
 // MARK: - Who Knows Better Game
@@ -287,3 +333,22 @@
 "animal_cat" = "Katze";
 "animal_bird" = "Vogel";
 "animal_fish" = "Fisch"; 
+
+// MARK: - Login
+"login_title" = "Willkommen zurück";
+"login_subtitle" = "Melde dich in deinem Amavo-Konto an";
+"login_with_email" = "Mit E-Mail anmelden";
+"login_credentials_title" = "Anmelden";
+"login_sign_in" = "Anmelden";
+"login_has_account" = "Hast du bereits ein Konto? Melde dich an";
+"signup_no_account" = "Hast du noch kein Konto? Registriere dich";
+
+// MARK: - Signup (Additional strings)
+"signup_email_label" = "E-Mail-Adresse";
+"signup_email_placeholder" = "Gib deine E-Mail ein";
+"signup_password_label" = "Passwort";
+"signup_password_placeholder" = "Erstelle ein Passwort";
+"signup_confirm_password_label" = "Passwort bestätigen";
+"signup_confirm_password_placeholder" = "Bestätige dein Passwort";
+"signup_back" = "Zurück";
+"signup_create_account" = "Konto erstellen"; 

@@ -446,5 +446,5 @@ struct CalendarView: View {
 #Preview {
     CalendarView()
         .environmentObject(MoodManager())
-        .environmentObject(PartnerManager())
+        .environmentObject(PartnerManager.shared)
 } 

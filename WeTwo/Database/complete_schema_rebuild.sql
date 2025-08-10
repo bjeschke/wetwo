@@ -115,13 +115,39 @@ CREATE POLICY "Users can update their partnerships" ON partnerships
 
 -- 9. Create RLS Policies for love_messages
 CREATE POLICY "Users can view messages they sent or received" ON love_messages
-    FOR SELECT USING (auth.uid() = sender_id OR auth.uid() = receiver_id);
+    FOR SELECT USING (
+        (auth.uid() = sender_id OR auth.uid() = receiver_id) AND
+        EXISTS (
+            SELECT 1 FROM partnerships 
+            WHERE (user_id = auth.uid() AND partner_id = CASE 
+                WHEN auth.uid() = sender_id THEN receiver_id 
+                ELSE sender_id 
+            END) OR (partner_id = auth.uid() AND user_id = CASE 
+                WHEN auth.uid() = sender_id THEN receiver_id 
+                ELSE sender_id 
+            END)
+        )
+    );
 
 CREATE POLICY "Users can send messages" ON love_messages
-    FOR INSERT WITH CHECK (auth.uid() = sender_id);
+    FOR INSERT WITH CHECK (
+        auth.uid() = sender_id AND
+        EXISTS (
+            SELECT 1 FROM partnerships 
+            WHERE (user_id = auth.uid() AND partner_id = receiver_id) 
+               OR (partner_id = auth.uid() AND user_id = receiver_id)
+        )
+    );
 
 CREATE POLICY "Users can update messages they received" ON love_messages
-    FOR UPDATE USING (auth.uid() = receiver_id);
+    FOR UPDATE USING (
+        auth.uid() = receiver_id AND
+        EXISTS (
+            SELECT 1 FROM partnerships 
+            WHERE (user_id = auth.uid() AND partner_id = sender_id) 
+               OR (partner_id = auth.uid() AND user_id = sender_id)
+        )
+    );
 
 -- 10. Create indexes for better performance
 CREATE INDEX idx_memories_user_id ON memories(user_id);

@@ -474,5 +474,5 @@ struct AddMemoryView: View {
     AddMemoryView()
         .environmentObject(MemoryManager())
         .environmentObject(AppState())
-        .environmentObject(PartnerManager())
+        .environmentObject(PartnerManager.shared)
 } 

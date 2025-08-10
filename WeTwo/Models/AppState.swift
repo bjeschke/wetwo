@@ -42,11 +42,28 @@ class AppState: ObservableObject {
                         let supabaseUser = try await supabaseService.signIn(email: email, password: password)
                         print("✅ Auto-sign in successful for user: \(supabaseUser.name)")
                         
-                        // Store the current user ID for other services
-                        try? securityService.secureStore(supabaseUser.id.uuidString, forKey: "currentUserId")
+                        // Get the current Supabase user ID
+                        if let userId = try? await supabaseService.getCurrentUserId() {
+                            print("🔧 Storing Supabase user ID: \(userId)")
+                            try? securityService.secureStore(userId, forKey: "currentUserId")
+                            
+                            // Ensure profile exists
+                            try? await supabaseService.ensureProfileExists()
+                        }
                         
                     } catch {
                         print("⚠️ Auto-sign in failed: \(error)")
+                        
+                        // Handle specific refresh token errors
+                        if error.localizedDescription.contains("Refresh Token") || 
+                           error.localizedDescription.contains("Invalid") {
+                            print("🔄 Clearing invalid credentials due to refresh token error")
+                            // Clear the stored credentials since they're invalid
+                            try? securityService.secureDelete(forKey: "userEmail")
+                            try? securityService.secureDelete(forKey: "userPassword")
+                            try? securityService.secureDelete(forKey: "currentUserId")
+                        }
+                        
                         // Don't show error to user, just continue with local data
                         // The user can still use the app, and we'll try to reconnect later
                     }
@@ -100,7 +117,7 @@ class AppState: ObservableObject {
                 print("🔄 Creating user profile with Apple ID: \(appleUserID)")
                 
                 // First, try to sign up the user
-                let supabaseUser = try await supabaseService.signUp(email: email, password: password)
+                let supabaseUser = try await supabaseService.signUp(email: email, password: password, name: user.name)
                 let userId = supabaseUser.id
                 
                 // Save the user ID and credentials securely
@@ -114,6 +131,9 @@ class AppState: ObservableObject {
                     name: user.name, 
                     birthDate: user.birthDate
                 )
+                
+                // Update the auth user's display name in userMetadata
+                try await supabaseService.updateAuthUserDisplayName(name: user.name)
                 
                 print("✅ User profile updated with Apple ID successfully")
                 print("📧 Email: \(email)")
@@ -137,6 +157,10 @@ class AppState: ObservableObject {
                             name: user.name, 
                             birthDate: user.birthDate
                         )
+                        
+                        // Update the auth user's display name in userMetadata
+                        try await supabaseService.updateAuthUserDisplayName(name: user.name)
+                        
                         print("✅ User signed in and profile updated with Apple ID successfully")
                     } catch {
                         print("❌ Error signing in with existing credentials: \(error)")
@@ -158,11 +182,12 @@ class AppState: ObservableObject {
         // Create user profile in Supabase using the new robust method
         Task {
             do {
-                // Generate a unique email based on user name and timestamp
-                let timestamp = Int(Date().timeIntervalSince1970)
-                let sanitizedName = user.name.lowercased().replacingOccurrences(of: " ", with: "").replacingOccurrences(of: "ä", with: "ae").replacingOccurrences(of: "ö", with: "oe").replacingOccurrences(of: "ü", with: "ue").replacingOccurrences(of: "ß", with: "ss")
-                let email = "\(sanitizedName)\(timestamp)@amavo.app"
-                let password = "Amavo\(timestamp)!"
+                // Get the email and password from secure storage (set during signup)
+                guard let email = try? securityService.secureLoadString(forKey: "userEmail"),
+                      let password = try? securityService.secureLoadString(forKey: "userPassword") else {
+                    print("❌ No email/password found in secure storage")
+                    return
+                }
                 
                 print("🔄 Attempting to create user with email: \(email)")
                 
@@ -173,6 +198,9 @@ class AppState: ObservableObject {
                     name: user.name,
                     birthDate: user.birthDate
                 )
+                
+                // Update the auth user's display name in userMetadata
+                try await supabaseService.updateAuthUserDisplayName(name: user.name)
                 
                 // Save the user ID and credentials securely
                 try? securityService.secureStore(supabaseUser.id, forKey: "currentUserId")
@@ -197,6 +225,10 @@ class AppState: ObservableObject {
                         
                         // Update the profile
                         try await supabaseService.updateProfile(userId: userId.uuidString, name: user.name, birthDate: user.birthDate)
+                        
+                        // Update the auth user's display name in userMetadata
+                        try await supabaseService.updateAuthUserDisplayName(name: user.name)
+                        
                         print("✅ User signed in and profile updated successfully")
                     } catch {
                         print("❌ Error signing in with existing credentials: \(error)")

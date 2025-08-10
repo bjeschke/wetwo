@@ -20,48 +20,66 @@ struct AddCalendarEntryView: View {
     
     var body: some View {
         NavigationView {
-            ScrollView {
-                VStack(spacing: 25) {
-                    // Header
-                    headerSection
-                    
-                    // Title input
-                    titleSection
-                    
-                    // Description input
-                    descriptionSection
-                    
-                    // Date and time selection
-                    dateTimeSection
-                    
-                    // All day toggle
-                    allDaySection
-                    
-                    Spacer(minLength: 100)
+            VStack(spacing: 0) {
+                // Header with navigation
+                headerWithNavigation
+                
+                ScrollView {
+                    VStack(spacing: 25) {
+                        // Title input
+                        titleSection
+                        
+                        // Description input
+                        descriptionSection
+                        
+                        // Date and time selection
+                        dateTimeSection
+                        
+                        // All day toggle
+                        allDaySection
+                        
+                        // Action buttons
+                        actionButtonsSection
+                        
+                        Spacer(minLength: 50)
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.top, 20)
                 }
-                .padding(.horizontal, 20)
-                .padding(.top, 100)
             }
             .purpleTheme()
             .navigationBarHidden(true)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button(NSLocalizedString("cancel", comment: "Cancel")) {
-                        dismiss()
-                    }
-                    .foregroundColor(ColorTheme.accentBlue)
-                }
-                
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(NSLocalizedString("save", comment: "Save")) {
-                        saveEntry()
-                    }
-                    .fontWeight(.semibold)
-                    .foregroundColor(ColorTheme.accentBlue)
-                    .disabled(title.isEmpty || isSaving)
-                }
-            }
         }
+    }
+    
+    private var headerWithNavigation: some View {
+        HStack {
+            Button("Abbrechen") {
+                dismiss()
+            }
+            .foregroundColor(ColorTheme.accentBlue)
+            .font(.body)
+            
+            Spacer()
+            
+            Text(NSLocalizedString("calendar_add_entry_title", comment: "Add Calendar Entry"))
+                .font(.headline)
+                .fontWeight(.semibold)
+                .foregroundColor(ColorTheme.primaryText)
+            
+            Spacer()
+            
+            Button("Speichern") {
+                saveEntry()
+            }
+            .fontWeight(.semibold)
+            .foregroundColor(ColorTheme.accentBlue)
+            .disabled(title.isEmpty || isSaving)
+        }
+        .padding(.horizontal, 20)
+        .padding(.top, 60)
+        .padding(.bottom, 20)
+        .background(ColorTheme.cardBackground)
     }
     
     private var headerSection: some View {
@@ -76,7 +94,6 @@ struct AddCalendarEntryView: View {
                 .foregroundColor(ColorTheme.primaryText)
             
             Text(NSLocalizedString("calendar_add_entry_subtitle", comment: "Create a new calendar entry with date and time"))
-                .font(.body)
                 .foregroundColor(ColorTheme.secondaryText)
                 .multilineTextAlignment(.center)
         }
@@ -184,6 +201,51 @@ struct AddCalendarEntryView: View {
             }
         }
         .purpleCard()
+    }
+    
+    private var actionButtonsSection: some View {
+        VStack(spacing: 15) {
+            // Save button
+            Button(action: saveEntry) {
+                HStack {
+                    if isSaving {
+                        ProgressView()
+                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                            .scaleEffect(0.8)
+                    } else {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.system(size: 18))
+                    }
+                    
+                    Text(NSLocalizedString("save", comment: "Save"))
+                        .font(.headline)
+                        .fontWeight(.semibold)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 16)
+                .background(title.isEmpty || isSaving ? ColorTheme.secondaryText : ColorTheme.accentPink)
+                .foregroundColor(.white)
+                .cornerRadius(12)
+            }
+            .disabled(title.isEmpty || isSaving)
+            
+            // Cancel button
+            Button(action: { dismiss() }) {
+                HStack {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 18))
+                    
+                    Text(NSLocalizedString("cancel", comment: "Cancel"))
+                        .font(.headline)
+                        .fontWeight(.medium)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 16)
+                .background(ColorTheme.cardBackgroundSecondary)
+                .foregroundColor(ColorTheme.primaryText)
+                .cornerRadius(12)
+            }
+        }
     }
     
     private func saveEntry() {

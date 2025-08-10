@@ -8,10 +8,5 @@
 import Testing
 @testable import WeTwo
 
-struct WeTwoTests {
-
-    @Test func example() async throws {
-        // Write your test here and use APIs like `#expect(...)` to check expected conditions.
-    }
-
-}
+// TODO: Add actual tests when needed
+// This file is currently empty as no tests have been implemented yet

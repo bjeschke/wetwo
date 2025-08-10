@@ -242,7 +242,8 @@ struct ProfileView: View {
             // Register user with profile using existing app function
             let user = try await SupabaseService.shared.signUp(
                 email: testEmail,
-                password: testPassword
+                password: testPassword,
+                name: testName
             )
             
             print("✅ SUCCESS: User registered in database!")
