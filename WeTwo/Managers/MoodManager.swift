@@ -17,7 +17,7 @@ class MoodManager: ObservableObject {
     @Published var dailyInsight: DailyInsight?
     @Published var isLoading: Bool = false
     
-    private let supabaseService = SupabaseService.shared
+    private let dataService = ServiceFactory.shared.getCurrentService()
     private let partnerManager = PartnerManager.shared
     private let userDefaults = UserDefaults.standard
     
@@ -144,17 +144,24 @@ class MoodManager: ObservableObject {
     }
     
     private func getCurrentUserId() -> UUID? {
-        // Get from secure storage (should be set during login/signup)
+        // First try to get from SupabaseService (most reliable)
+        if let supabaseUserId = try? await dataService.getCurrentUserId() {
+            print("✅ Got user ID from SupabaseService: \(supabaseUserId)")
+            return supabaseUserId
+        }
+        
+        // Fallback to secure storage (should be set during login/signup)
         do {
             let userIdString = try SecurityService.shared.secureLoadString(forKey: "currentUserId")
             if let userId = UUID(uuidString: userIdString) {
+                print("✅ Got user ID from secure storage: \(userId)")
                 return userId
             }
         } catch {
             print("⚠️ Error loading current user ID from secure storage: \(error)")
         }
         
-        print("⚠️ No current user ID found in secure storage")
+        print("❌ No current user ID found in SupabaseService or secure storage")
         return nil
     }
     
@@ -179,20 +186,9 @@ class MoodManager: ObservableObject {
                 love_message: entry.loveMessage
             )
             
-            // Check if entry already exists for today
-            if let existingEntry = try await supabaseService.getTodayMoodEntry(userId: entry.userId) {
-                print("🔄 Updating existing mood entry for today")
-                // Update existing entry
-                var updatedEntry = supabaseEntry
-                updatedEntry.id = existingEntry.id
-                _ = try await supabaseService.updateMoodEntry(updatedEntry)
-                print("✅ Mood entry updated successfully")
-            } else {
-                print("🆕 Creating new mood entry for today")
-                // Create new entry
-                _ = try await supabaseService.createMoodEntry(supabaseEntry)
-                print("✅ Mood entry created successfully")
-            }
+            // Try to create the entry (will handle unique constraint automatically)
+            _ = try await dataService.createMoodEntry(supabaseEntry)
+            print("✅ Mood entry saved successfully")
             
             // Send push notification to partner
             await notifyPartnerAboutMoodUpdate(entry)
@@ -203,7 +199,7 @@ class MoodManager: ObservableObject {
     
     private func notifyPartnerAboutMoodUpdate(_ entry: MoodEntry) async {
         guard let currentUserId = getCurrentUserId(),
-              let partnerId = getPartnerId(for: currentUserId) else { return }
+              let partnerId = await getPartnerId(for: currentUserId) else { return }
         
         do {
             let title = "💕 Neue Stimmung von deinem Partner"
@@ -214,7 +210,7 @@ class MoodManager: ObservableObject {
                 "date": entry.date.formatted(date: .numeric, time: .omitted)
             ]
             
-            try await supabaseService.sendPushNotificationToPartner(
+            try await dataService.sendPushNotificationToPartner(
                 userId: currentUserId,
                 partnerId: partnerId,
                 title: title,
@@ -237,10 +233,10 @@ class MoodManager: ObservableObject {
     
     private func loadPartnerTodayMood() async {
         guard let currentUserId = getCurrentUserId(),
-              let partnerId = getPartnerId(for: currentUserId) else { return }
+              let partnerId = await getPartnerId(for: currentUserId) else { return }
         
         do {
-            if let partnerMoodEntry = try await supabaseService.getTodayMoodEntry(userId: partnerId) {
+            if let partnerMoodEntry = try await dataService.getTodayMoodEntry(userId: partnerId) {
                 await MainActor.run {
                     // Convert Supabase MoodEntry to local MoodEntry
                     let localEntry = MoodEntry(
@@ -260,14 +256,14 @@ class MoodManager: ObservableObject {
     
     private func loadPartnerWeeklyMoods() async {
         guard let currentUserId = getCurrentUserId(),
-              let partnerId = getPartnerId(for: currentUserId) else { return }
+              let partnerId = await getPartnerId(for: currentUserId) else { return }
         
         do {
             // Get partner moods for the last 7 days
             let endDate = Date()
             let startDate = Calendar.current.date(byAdding: .day, value: -6, to: endDate) ?? endDate
             
-            let partnerMoodEntries = try await supabaseService.getMoodEntries(
+            let partnerMoodEntries = try await dataService.getMoodEntries(
                 userId: partnerId,
                 startDate: startDate,
                 endDate: endDate
@@ -292,10 +288,18 @@ class MoodManager: ObservableObject {
         }
     }
     
-    private func getPartnerId(for userId: UUID) -> UUID? {
-        // This should get the partner ID from the partnership
-        // For now, we'll need to implement this based on the partnership system
-        // TODO: Implement proper partner ID retrieval
+    private func getPartnerId(for userId: UUID) async -> UUID? {
+        do {
+            if let partnership = try await dataService.partnership(userId: userId) {
+                // Determine which ID is the partner's ID
+                // If user_id matches the current user, then partner_id is the partner
+                // If partner_id matches the current user, then user_id is the partner
+                let partnerIdString = partnership.user_id == userId.uuidString ? partnership.partner_id : partnership.user_id
+                return UUID(uuidString: partnerIdString)
+            }
+        } catch {
+            print("❌ Failed to get partnership for user \(userId): \(error)")
+        }
         return nil
     }
     

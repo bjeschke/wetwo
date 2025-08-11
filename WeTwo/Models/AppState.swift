@@ -15,7 +15,7 @@ class AppState: ObservableObject {
     @Published var dailyInsightsRemaining: Int = 3
     @Published var photoMissionsRemaining: Int = 1
     
-    private let supabaseService = SupabaseService.shared
+    private let dataService = ServiceFactory.shared.getCurrentService()
     private let securityService = SecurityService.shared
     
     init() {
@@ -37,16 +37,16 @@ class AppState: ObservableObject {
                    let password = try? securityService.secureLoadString(forKey: "userPassword") {
                     print("🔄 Auto-signing in with email/password...")
                     do {
-                        let supabaseUser = try await supabaseService.signIn(email: email, password: password)
+                        let supabaseUser = try await dataService.signIn(email: email, password: password)
                         print("✅ Auto-sign in successful for user: \(supabaseUser.name)")
                         
                         // Get the current Supabase user ID
-                        if let userId = try? await supabaseService.getCurrentUserId() {
+                        if let userId = try? await dataService.getCurrentUserId() {
                             print("🔧 Storing Supabase user ID: \(userId)")
                             try? securityService.secureStore(userId, forKey: "currentUserId")
                             
                             // Ensure profile exists
-                            try? await supabaseService.ensureProfileExists()
+                            try? await dataService.ensureProfileExists()
                         }
                         
                         // Only complete onboarding if we can successfully sign in

@@ -141,14 +141,24 @@ class LoveMessageManager: ObservableObject {
     }
     
     private func getCurrentUserId() -> UUID? {
+        // First try to get from SupabaseService (most reliable)
+        if let supabaseUserId = supabaseService.currentUserId {
+            print("✅ Got user ID from SupabaseService: \(supabaseUserId)")
+            return supabaseUserId
+        }
+        
+        // Fallback to secure storage (should be set during login/signup)
         do {
             let userIdString = try SecurityService.shared.secureLoadString(forKey: "currentUserId")
             if let userId = UUID(uuidString: userIdString) {
+                print("✅ Got user ID from secure storage: \(userId)")
                 return userId
             }
         } catch {
             print("⚠️ Error loading current user ID from secure storage: \(error)")
         }
+        
+        print("❌ No current user ID found in SupabaseService or secure storage")
         return nil
     }
 }

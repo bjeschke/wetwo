@@ -4,7 +4,6 @@ import CryptoKit
 
 extension Notification.Name {
     static let signupCompleted = Notification.Name("signupCompleted")
-    static let emailConfirmed = Notification.Name("emailConfirmed")
 }
 
 struct SignupView: View {
@@ -17,6 +16,7 @@ struct SignupView: View {
     @State private var isLoading = false
     @State private var showError = false
     @State private var errorMessage = ""
+    @State private var showingEmailConfirmation = false
     
     var body: some View {
         NavigationView {
@@ -134,6 +134,10 @@ struct SignupView: View {
             }
             .background(Color(.systemBackground))
             .navigationBarHidden(true)
+            .sheet(isPresented: $showingEmailConfirmation) {
+                EmailConfirmationView()
+                    .environmentObject(appState)
+            }
         }
     }
     
@@ -151,33 +155,114 @@ struct SignupView: View {
         isLoading = true
         showError = false
         
-        // Simulate API call
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+        print("🔧 Starting signup process for email: \(email)")
+        
+        // Validate passwords match
+        if password != confirmPassword {
+            showError = true
+            errorMessage = "Passwords don't match"
             isLoading = false
-            
-            // Validate passwords match
-            if password != confirmPassword {
-                showError = true
-                errorMessage = "Passwords don't match"
-                return
+            return
+        }
+        
+        // Validate password length
+        if password.count < 6 {
+            showError = true
+            errorMessage = "Password must be at least 6 characters"
+            isLoading = false
+            return
+        }
+        
+        // Validate email format
+        if !email.contains("@") {
+            showError = true
+            errorMessage = "Please enter a valid email address"
+            isLoading = false
+            return
+        }
+        
+        // Validate full name
+        if fullName.isEmpty {
+            showError = true
+            errorMessage = "Please enter your full name"
+            isLoading = false
+            return
+        }
+        
+        // Store credentials securely for later use
+        Task {
+            do {
+                print("🔧 Storing credentials securely...")
+                try SecurityService.shared.secureStore(email, forKey: "userEmail")
+                try SecurityService.shared.secureStore(password, forKey: "userPassword")
+                
+                // Verify storage was successful
+                let storedEmail = try SecurityService.shared.secureLoadString(forKey: "userEmail")
+                let storedPassword = try SecurityService.shared.secureLoadString(forKey: "userPassword")
+                print("✅ Credentials stored and verified:")
+                print("   Email: \(storedEmail)")
+                print("   Password: \(String(repeating: "*", count: storedPassword.count))")
+                
+                print("🔧 Attempting to complete signup with Supabase...")
+                
+                // Try to complete signup with Supabase
+                do {
+                    let _ = try await SupabaseService.shared.completeOnboarding(
+                        email: email,
+                        password: password,
+                        name: fullName,
+                        birthDate: Date() // Using current date as fallback since we don't have birth date in this view
+                    )
+                    
+                    print("✅ Signup completed successfully without email confirmation")
+                    
+                    // If we get here, email confirmation was not required
+                    // Create user and complete signup
+                    let user = User(name: fullName, birthDate: Date())
+                    appState.completeOnboarding(user: user)
+                    appState.completeOnboardingWithSupabase(user: user)
+                    
+                    DispatchQueue.main.async {
+                        isLoading = false
+                        NotificationCenter.default.post(name: .signupCompleted, object: nil)
+                    }
+                    
+                } catch AuthError.validationError {
+                    print("⚠️ Email confirmation required - showing email confirmation screen")
+                    // Email confirmation required
+                    DispatchQueue.main.async {
+                        isLoading = false
+                        showingEmailConfirmation = true
+                    }
+                } catch {
+                    print("❌ Error during signup: \(error)")
+                    print("❌ Error type: \(type(of: error))")
+                    
+                    // For debugging: if no specific error is caught, still show email confirmation
+                    // This helps if Supabase project doesn't require email confirmation but we want to test the flow
+                    if error.localizedDescription.contains("validation") || error.localizedDescription.contains("confirm") {
+                        print("⚠️ Assuming email confirmation required based on error message")
+                        DispatchQueue.main.async {
+                            isLoading = false
+                            showingEmailConfirmation = true
+                        }
+                    } else {
+                        DispatchQueue.main.async {
+                            isLoading = false
+                            showError = true
+                            errorMessage = "Error creating account: \(error.localizedDescription)"
+                        }
+                    }
+                }
+                
+            } catch {
+                print("❌ Error storing credentials: \(error)")
+                DispatchQueue.main.async {
+                    isLoading = false
+                    showError = true
+                    errorMessage = "Error storing credentials: \(error.localizedDescription)"
+                }
             }
-            
-            // Validate password length
-            if password.count < 6 {
-                showError = true
-                errorMessage = "Password must be at least 6 characters"
-                return
-            }
-            
-            // Validate email format
-            if !email.contains("@") {
-                showError = true
-                errorMessage = "Please enter a valid email address"
-                return
-            }
-            
-            // Proceed with signup
-            // TODO: Implement actual signup logic
         }
     }
 }

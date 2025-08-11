@@ -395,7 +395,7 @@ struct OnboardingView: View {
             // Check if we have email/password but no current user ID (indicating email not confirmed)
             if let _ = try? SecurityService.shared.secureLoadString(forKey: "userEmail"),
                let _ = try? SecurityService.shared.secureLoadString(forKey: "userPassword"),
-               try? SecurityService.shared.secureLoadString(forKey: "currentUserId") == nil {
+               (try? SecurityService.shared.secureLoadString(forKey: "currentUserId")) == nil {
                 
                 print("🔄 User exists but email not confirmed - showing email confirmation")
                 showingEmailConfirmation = true
@@ -452,6 +452,9 @@ struct RegistrationView: View {
     @EnvironmentObject var appState: AppState
     @State private var showingEmailSignup = false
     @State private var showingAppleSignIn = false
+    @State private var showingEmailConfirmation = false
+    @State private var showingLogin = false
+    @State private var isLoginMode = false
     
     let name: String
     let birthDate: Date
@@ -467,13 +470,13 @@ struct RegistrationView: View {
                     .font(.system(size: 80))
                     .foregroundColor(ColorTheme.accentPink)
                 
-                Text(NSLocalizedString("onboarding_signin_title", comment: "Sign In Title"))
+                Text(isLoginMode ? "Anmelden" : "Konto erstellen")
                     .font(.title)
                     .fontWeight(.bold)
                     .multilineTextAlignment(.center)
                     .foregroundColor(ColorTheme.primaryText)
                 
-                Text(NSLocalizedString("onboarding_signin_subtitle", comment: "Sign In Subtitle"))
+                Text(isLoginMode ? "Melde dich mit deinen Anmeldedaten an" : "Erstelle dein Konto für WeTwo")
                     .font(.body)
                     .multilineTextAlignment(.center)
                     .foregroundColor(ColorTheme.secondaryText)
@@ -515,14 +518,18 @@ struct RegistrationView: View {
                         .foregroundColor(ColorTheme.secondaryText.opacity(0.3))
                 }
                 
-                // Email registration
+                // Email registration/login
                 Button(action: {
-                    showingEmailSignup = true
+                    if isLoginMode {
+                        showingLogin = true
+                    } else {
+                        showingEmailSignup = true
+                    }
                 }) {
                     HStack {
                         Image(systemName: "envelope")
                             .font(.title2)
-                        Text("Mit E-Mail registrieren")
+                        Text(isLoginMode ? "Mit E-Mail anmelden" : "Mit E-Mail registrieren")
                             .font(.headline)
                             .fontWeight(.semibold)
                     }
@@ -535,6 +542,15 @@ struct RegistrationView: View {
             }
             .padding(.horizontal)
             
+            // Toggle between login and registration
+            Button(action: {
+                isLoginMode.toggle()
+            }) {
+                Text(isLoginMode ? "Noch kein Konto? Registrieren" : "Bereits ein Konto? Anmelden")
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundColor(ColorTheme.accentPink)
+            }
+            
             Spacer()
         }
         .sheet(isPresented: $showingEmailSignup) {
@@ -546,6 +562,10 @@ struct RegistrationView: View {
                 childrenCount: childrenCount
             )
             .environmentObject(appState)
+        }
+        .sheet(isPresented: $showingLogin) {
+            LoginView()
+                .environmentObject(appState)
         }
         .sheet(isPresented: $showingAppleSignIn) {
             AppleSignInView(
@@ -699,6 +719,10 @@ struct EmailSignupView: View {
                     }
                 }
             }
+            .sheet(isPresented: $showingEmailConfirmation) {
+                EmailConfirmationView()
+                    .environmentObject(appState)
+            }
         }
     }
     
@@ -714,6 +738,21 @@ struct EmailSignupView: View {
     private func handleSignup() {
         isLoading = true
         showError = false
+        
+        print("🔧 Starting signup process for email: \(email)")
+        
+        // TEMPORARY: For testing email confirmation flow
+        // Set this to true to force email confirmation screen
+        let forceEmailConfirmation = false
+        
+        if forceEmailConfirmation {
+            print("🧪 FORCED: Showing email confirmation screen for testing")
+            DispatchQueue.main.async {
+                isLoading = false
+                showingEmailConfirmation = true
+            }
+            return
+        }
         
         // Validate passwords match
         if password != confirmPassword {
@@ -742,17 +781,22 @@ struct EmailSignupView: View {
         // Store credentials securely for later use
         Task {
             do {
+                print("🔧 Storing credentials securely...")
                 try SecurityService.shared.secureStore(email, forKey: "userEmail")
                 try SecurityService.shared.secureStore(password, forKey: "userPassword")
                 
+                print("🔧 Attempting to complete onboarding with Supabase...")
+                
                 // Try to complete onboarding with Supabase
                 do {
-                    let supabaseUser = try await SupabaseService.shared.completeOnboarding(
+                    let _ = try await SupabaseService.shared.completeOnboarding(
                         email: email,
                         password: password,
                         name: name,
                         birthDate: birthDate
                     )
+                    
+                    print("✅ Onboarding completed successfully without email confirmation")
                     
                     // If we get here, email confirmation was not required
                     // Create user and complete onboarding
@@ -770,20 +814,35 @@ struct EmailSignupView: View {
                     }
                     
                 } catch AuthError.validationError {
+                    print("⚠️ Email confirmation required - showing email confirmation screen")
                     // Email confirmation required
                     DispatchQueue.main.async {
                         isLoading = false
                         showingEmailConfirmation = true
                     }
                 } catch {
-                    DispatchQueue.main.async {
-                        isLoading = false
-                        showError = true
-                        errorMessage = "Fehler beim Erstellen des Kontos: \(error.localizedDescription)"
+                    print("❌ Error during onboarding: \(error)")
+                    print("❌ Error type: \(type(of: error))")
+                    
+                    // For debugging: if no specific error is caught, still show email confirmation
+                    // This helps if Supabase project doesn't require email confirmation but we want to test the flow
+                    if error.localizedDescription.contains("validation") || error.localizedDescription.contains("confirm") {
+                        print("⚠️ Assuming email confirmation required based on error message")
+                        DispatchQueue.main.async {
+                            isLoading = false
+                            showingEmailConfirmation = true
+                        }
+                    } else {
+                        DispatchQueue.main.async {
+                            isLoading = false
+                            showError = true
+                            errorMessage = "Fehler beim Erstellen des Kontos: \(error.localizedDescription)"
+                        }
                     }
                 }
                 
             } catch {
+                print("❌ Error storing credentials: \(error)")
                 DispatchQueue.main.async {
                     isLoading = false
                     showError = true

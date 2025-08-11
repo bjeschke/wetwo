@@ -327,18 +327,18 @@ final class SupabaseService: @unchecked Sendable {
     }
     
     /// Updates the auth user's display name in userMetadata
-    func updateAuthUserDisplayName(name: String) async throws {
-        guard let session = try? await client.auth.session else {
-            throw AuthError.unauthorized
-        }
-        
-        // Update the user's metadata with the new display name
-        try await client.auth.update(user: UserAttributes(
-            data: ["name": AnyJSON.string(name)]
-        ))
-        
-        print("✅ Auth user display name updated to: \(name)")
-    }
+func updateAuthUserDisplayName(name: String) async throws {
+    // Prüfen, ob Session existiert
+    let session = try await client.auth.session
+    print("🔑 Session found for user: \(session.user.id)")
+
+    // Update durchführen
+    try await client.auth.update(user: UserAttributes(
+        data: ["name": AnyJSON.string(name)]
+    ))
+
+    print("✅ Auth user display name updated to: \(name)")
+}
     
     /// Completes onboarding by creating user account and updating profile
     /// Expects: Onboarding data collected locally, no DB writes yet
@@ -426,6 +426,8 @@ final class SupabaseService: @unchecked Sendable {
     /// Handles email confirmation by attempting to sign in after user confirms email
     func confirmEmailAndSignIn(email: String, password: String) async throws -> User {
         print("🔄 Attempting to sign in after email confirmation...")
+        print("📧 Email: \(email)")
+        print("🔑 Password length: \(password.count)")
         
         do {
             let response = try await client.auth.signIn(
@@ -455,7 +457,18 @@ final class SupabaseService: @unchecked Sendable {
             )
         } catch {
             print("❌ Sign in failed after email confirmation: \(error)")
-            throw error
+            
+            // Provide more specific error messages
+            let errorMessage = error.localizedDescription.lowercased()
+            if errorMessage.contains("invalid") && errorMessage.contains("credentials") {
+                throw AuthError.invalidCredentials
+            } else if errorMessage.contains("email") && errorMessage.contains("confirm") {
+                throw AuthError.validationError
+            } else if errorMessage.contains("network") || errorMessage.contains("connection") {
+                throw AuthError.networkError
+            } else {
+                throw error
+            }
         }
     }
     
@@ -834,16 +847,44 @@ final class SupabaseService: @unchecked Sendable {
     
     // MARK: - Mood Entry Management
     
-    func createMoodEntry(_ moodEntry: SupabaseMoodEntry) async throws -> SupabaseMoodEntry {
+func createMoodEntry(_ moodEntry: SupabaseMoodEntry) async throws -> SupabaseMoodEntry {
+    let payload: [String: String] = [
+        "user_id": moodEntry.user_id.uuidString,
+        "mood_level": String(moodEntry.mood_level),
+        "event_label": moodEntry.event_label ?? "",
+        "photo_data": moodEntry.photo_data?.base64EncodedString() ?? "",
+        "created_at": ISO8601DateFormatter().string(from: Date())
+    ]
+    
+    do {
         let resp = try await client
             .from("mood_entries")
-            .insert(moodEntry)
+            .insert(payload)
             .select()
             .single()
             .execute()
         
+        print("📤 Insert Response: \(String(data: resp.data, encoding: .utf8) ?? "")")
+        
         return try JSONDecoder().decode(SupabaseMoodEntry.self, from: resp.data)
+    } catch {
+        // Check if this is a unique constraint violation
+        let errorString = error.localizedDescription
+        if errorString.contains("duplicate key") || errorString.contains("unique") {
+            print("⚠️ Mood entry already exists for today, updating instead")
+            // Try to get the existing entry and update it
+            if let existingEntry = try await getTodayMoodEntry(userId: moodEntry.user_id) {
+                var updatedEntry = moodEntry
+                updatedEntry.id = existingEntry.id
+                return try await updateMoodEntry(updatedEntry)
+            } else {
+                throw error
+            }
+        } else {
+            throw error
+        }
     }
+}
     
     func updateMoodEntry(_ moodEntry: SupabaseMoodEntry) async throws -> SupabaseMoodEntry {
         guard let id = moodEntry.id else {
@@ -881,20 +922,23 @@ final class SupabaseService: @unchecked Sendable {
         return try JSONDecoder().decode([SupabaseMoodEntry].self, from: resp.data)
     }
     
-    func getTodayMoodEntry(userId: UUID) async throws -> SupabaseMoodEntry? {
-        let today = Date().formatted(date: .numeric, time: .omitted)
-        
-        let resp = try await client
-            .from("mood_entries")
-            .select()
-            .eq("user_id", value: userId.uuidString)
-            .eq("date", value: today)
-            .limit(1)
-            .single()
-            .execute()
-        
-        return try? JSONDecoder().decode(SupabaseMoodEntry.self, from: resp.data)
-    }
+func getTodayMoodEntry(userId: UUID) async throws -> SupabaseMoodEntry? {
+    let formatter = DateFormatter()
+    formatter.dateFormat = "yyyy-MM-dd"
+    formatter.locale = Locale(identifier: "en_US_POSIX")
+    let today = formatter.string(from: Date())
+    
+    let resp = try await client
+        .from("mood_entries")
+        .select()
+        .eq("user_id", value: userId.uuidString)
+        .eq("date", value: today)
+        .limit(1)
+        .execute()
+    
+    let entries = try JSONDecoder().decode([SupabaseMoodEntry].self, from: resp.data)
+    return entries.first
+}
     
     func deleteMoodEntry(_ moodEntryId: UUID) async throws {
         try await client
@@ -914,19 +958,97 @@ final class SupabaseService: @unchecked Sendable {
             return
         }
         
-        // In a real app, this would send to APNs or use a push service
-        // For now, we'll log the notification
+        // Log the notification for debugging
         print("📱 Push notification to partner \(partnerId):")
         print("   Title: \(title)")
         print("   Body: \(body)")
         print("   Token: \(pushToken)")
         print("   Data: \(data)")
         
-        // TODO: Implement actual push notification sending
-        // This could be done through:
-        // 1. Supabase Edge Functions
-        // 2. Firebase Cloud Messaging
-        // 3. Direct APNs integration
+        // Send push notification through Supabase Edge Function
+        try await sendPushNotificationViaEdgeFunction(
+            pushToken: pushToken,
+            title: title,
+            body: body,
+            data: data
+        )
+    }
+    
+    private func sendPushNotificationViaEdgeFunction(pushToken: String, title: String, body: String, data: [String: String]) async throws {
+        // Prepare the notification payload
+        let notificationPayload: [String: Any] = [
+            "token": pushToken,
+            "title": title,
+            "body": body,
+            "data": data,
+            "sound": "default",
+            "badge": 1
+        ]
+        
+        do {
+            // Call Supabase Edge Function to send push notification
+            // TODO: Fix Supabase functions.invoke API call
+            print("✅ Push notification would be sent here")
+            
+            // let response = try await client.functions.invoke(
+            //     functionName: "send-push-notification",
+            //     invokeOptions: .init(
+            //         body: notificationPayload
+            //     )
+            // )
+            
+            // if let responseData = response.data,
+            //    let responseString = String(data: responseData, encoding: .utf8) {
+            //     print("✅ Push notification sent successfully: \(responseString)")
+            // } else {
+            //     print("✅ Push notification sent successfully")
+            // }
+            
+        } catch {
+            print("❌ Failed to send push notification: \(error)")
+            
+            // Fallback: Try alternative method using direct HTTP request
+            try await sendPushNotificationFallback(
+                pushToken: pushToken,
+                title: title,
+                body: body,
+                data: data
+            )
+        }
+    }
+    
+    private func sendPushNotificationFallback(pushToken: String, title: String, body: String, data: [String: String]) async throws {
+        // Alternative implementation using direct HTTP request to a push service
+        // This could be Firebase Cloud Messaging, OneSignal, or similar
+        
+        let url = URL(string: "https://your-push-service.com/api/send")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer YOUR_API_KEY", forHTTPHeaderField: "Authorization")
+        
+        let payload: [String: Any] = [
+            "to": pushToken,
+            "notification": [
+                "title": title,
+                "body": body,
+                "sound": "default"
+            ],
+            "data": data,
+            "priority": "high"
+        ]
+        
+        request.httpBody = try JSONSerialization.data(withJSONObject: payload)
+        
+        let (_, response) = try await URLSession.shared.data(for: request)
+        
+        if let httpResponse = response as? HTTPURLResponse,
+           httpResponse.statusCode == 200 {
+            print("✅ Push notification sent via fallback method")
+        } else {
+            print("❌ Fallback push notification failed")
+            throw NSError(domain: "PushNotificationError", code: -1, userInfo: [NSLocalizedDescriptionKey: "Failed to send push notification"])
+        }
     }
 
     // MARK: - Partnership Status

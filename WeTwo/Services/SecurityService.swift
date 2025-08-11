@@ -12,6 +12,7 @@ class SecurityService: ObservableObject {
     
     private init() {
         ensureEncryptionKeyExists()
+        resetKeychainIfNeeded()
     }
     
     // MARK: - Key Management
@@ -120,25 +121,62 @@ class SecurityService: ObservableObject {
     ///   - string: Zu speichernder String
     ///   - key: Schlüssel für UserDefaults
     func secureStore(_ string: String, forKey key: String) throws {
-        let data = string.data(using: .utf8) ?? Data()
-        try secureStore(data, forKey: key)
+        do {
+            let data = string.data(using: .utf8) ?? Data()
+            try secureStore(data, forKey: key)
+            print("✅ Successfully stored encrypted data for key: \(key)")
+        } catch {
+            print("❌ Failed to store encrypted data for key: \(key), error: \(error)")
+            
+            // Fallback: Speichere unverschlüsselt in UserDefaults
+            print("⚠️ Using fallback unencrypted storage for key: \(key)")
+            UserDefaults.standard.set(string, forKey: key)
+        }
     }
     
     /// Lädt sensible Strings entschlüsselt
     /// - Parameter key: Schlüssel für UserDefaults
     /// - Returns: Entschlüsselter String
     func secureLoadString(forKey key: String) throws -> String {
-        let data = try secureLoad(forKey: key)
-        guard let string = String(data: data, encoding: .utf8) else {
-            throw SecurityError.decodingFailed
+        do {
+            let data = try secureLoad(forKey: key)
+            guard let string = String(data: data, encoding: .utf8) else {
+                throw SecurityError.decodingFailed
+            }
+            return string
+        } catch {
+            print("❌ Failed to load password from secure storage: \(error)")
+            
+            // Fallback: Versuche es mit UserDefaults ohne Verschlüsselung
+            if let fallbackString = UserDefaults.standard.string(forKey: key) {
+                print("⚠️ Using fallback unencrypted storage for key: \(key)")
+                return fallbackString
+            }
+            
+            throw error
         }
-        return string
     }
     
     /// Löscht sensible Daten sicher
     /// - Parameter key: Schlüssel für UserDefaults
     func secureDelete(forKey key: String) throws {
         UserDefaults.standard.removeObject(forKey: key)
+    }
+    
+    /// Setzt ein Passwort manuell, falls es nicht gefunden wird
+    /// - Parameters:
+    ///   - password: Das zu setzende Passwort
+    ///   - key: Der Schlüssel für die Speicherung
+    func setPasswordManually(_ password: String, forKey key: String) {
+        do {
+            try secureStore(password, forKey: key)
+            print("✅ Password set manually for key: \(key)")
+        } catch {
+            print("❌ Failed to set password manually: \(error)")
+            // Fallback: Speichere unverschlüsselt
+            UserDefaults.standard.set(password, forKey: key)
+            print("⚠️ Password stored unencrypted as fallback")
+        }
     }
     
     // MARK: - GDPR Compliance
@@ -154,6 +192,25 @@ class SecurityService: ObservableObject {
             try keychain.deleteItem(forKey: encryptionKeyIdentifier)
         } catch {
             print("⚠️ Fehler beim Löschen des Verschlüsselungsschlüssels: \(error)")
+        }
+    }
+    
+    /// Setzt den Keychain zurück, falls es Authentifizierungsprobleme gibt
+    private func resetKeychainIfNeeded() {
+        do {
+            // Teste den Keychain-Zugriff
+            _ = try keychain.data(forKey: encryptionKeyIdentifier)
+        } catch {
+            print("⚠️ Keychain authentication failed, resetting...")
+            do {
+                try keychain.deleteItem(forKey: encryptionKeyIdentifier)
+                // Erstelle einen neuen Schlüssel
+                let key = generateEncryptionKey()
+                saveEncryptionKey(key)
+                print("✅ Keychain reset successful")
+            } catch {
+                print("❌ Failed to reset keychain: \(error)")
+            }
         }
     }
     

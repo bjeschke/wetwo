@@ -15,7 +15,7 @@ class MemoryManager: ObservableObject {
     @Published var selectedFilter: MemoryFilter = .all
     @Published var currentUserId: String?
     
-    private let supabaseService = SupabaseService.shared
+    private let dataService = ServiceFactory.shared.getCurrentService()
     
     enum MemoryFilter: String, CaseIterable {
         case all = "timeline_filter_all"
@@ -66,7 +66,7 @@ class MemoryManager: ObservableObject {
                     updated_at: memory.updatedAt
                 )
                 
-                try await supabaseService.createMemory(memoryData)
+                try await dataService.createMemory(memoryData)
                 await loadMemories()
                 
                 // Sync with partner if shared
@@ -100,7 +100,7 @@ class MemoryManager: ObservableObject {
                     updated_at: memory.updatedAt
                 )
                 
-                try await supabaseService.updateMemory(memoryData)
+                try await dataService.updateMemory(memoryData)
                 await loadMemories()
             } catch {
                 print("Error updating memory: \(error)")
@@ -112,7 +112,7 @@ class MemoryManager: ObservableObject {
     func deleteMemory(_ memory: MemoryEntry) {
         Task {
             do {
-                try await supabaseService.deleteMemory(memory.id)
+                try await dataService.deleteMemory(memory.id)
                 await loadMemories()
             } catch {
                 print("Error deleting memory: \(error)")
@@ -159,7 +159,7 @@ class MemoryManager: ObservableObject {
     
     @MainActor
     private func loadCurrentUser() async {
-        if let userId = supabaseService.currentUserId {
+        if let userId = try? await dataService.getCurrentUserId() {
             currentUserId = userId.uuidString
         }
     }
@@ -171,7 +171,7 @@ class MemoryManager: ObservableObject {
         
         isLoading = true
         do {
-            let loadedMemories = try await supabaseService.memories(userId: userUUID)
+            let loadedMemories = try await dataService.memories(userId: userUUID.uuidString)
             
             // Convert Memory to MemoryEntry and filter out any invalid memories
             var convertedMemories: [MemoryEntry] = []

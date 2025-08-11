@@ -21,6 +21,7 @@ struct WeTwoApp: App {
                 .environmentObject(deepLinkHandler)
                 .onAppear {
                     setupNotifications()
+                    setupBackendService()
                 }
                 .onOpenURL { url in
                     print("🔗 Deep link received: \(url)")
@@ -36,6 +37,31 @@ struct WeTwoApp: App {
         // Request authorization
         Task {
             await notificationService.requestAuthorization()
+        }
+    }
+    
+    private func setupBackendService() {
+        // Configure the service factory for the current environment
+        ServiceFactory.shared.configureForEnvironment()
+        
+        // Print configuration information
+        BackendConfig.printConfiguration()
+        
+        // Test backend connection
+        Task {
+            print("🧪 Starting backend connection test...")
+            if let backendService = ServiceFactory.shared.getCurrentService() as? BackendService {
+                await backendService.testBackendConnection()
+            }
+            
+            // Validate the current service
+            let isValid = await ServiceFactory.shared.validateCurrentService()
+            if isValid {
+                print("✅ Backend service is healthy")
+            } else {
+                print("⚠️ Backend service validation failed, attempting fallback")
+                await ServiceFactory.shared.fallbackToSupabaseIfNeeded()
+            }
         }
     }
 }

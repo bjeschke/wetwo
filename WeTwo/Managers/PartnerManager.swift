@@ -40,17 +40,26 @@ class PartnerManager: ObservableObject, Sendable {
     @Published var partnerProfilePhoto: UIImage?
     
     private let userDefaults = UserDefaults.standard
-    private let supabaseService = SupabaseService.shared
+    private let dataService = ServiceFactory.shared.getCurrentService()
     
-    private func getCurrentUserId() -> UUID? {
+    private func getCurrentUserId() -> String? {
+        // Try to get from data service
         do {
-            let userIdString = try SecurityService.shared.secureLoadString(forKey: "currentUserId")
-            if let userId = UUID(uuidString: userIdString) {
-                return userId
-            }
+            return try await dataService.getCurrentUserId()
         } catch {
-            print("⚠️ Error loading current user ID from secure storage: \(error)")
+            print("⚠️ Error getting current user ID from data service: \(error)")
+            
+            // Fallback to secure storage (should be set during login/signup)
+            do {
+                let userIdString = try SecurityService.shared.secureLoadString(forKey: "currentUserId")
+                print("✅ Got user ID from secure storage: \(userIdString)")
+                return userIdString
+            } catch {
+                print("❌ Error loading current user ID from secure storage: \(error)")
+            }
         }
+        
+        print("❌ No current user ID found")
         return nil
     }
     
