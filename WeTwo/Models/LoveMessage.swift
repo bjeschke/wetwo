@@ -6,65 +6,82 @@
 //
 
 import Foundation
+import SwiftUI
+import FirebaseAuth
 
-struct LoveMessage: Codable, Identifiable {
-    let id: String
-    let senderId: UUID
-    let receiverId: UUID
+// MARK: - Love Message Model
+
+struct LoveMessage: Identifiable, Codable, Sendable {
+    let id: Int  // Backend uses Long/Int for id
     let message: String
     let timestamp: Date
-    let isRead: Bool
+    var isRead: Bool
+    let sender: LoveMessageUser?
+    let receiver: LoveMessageUser?
     
-    init(senderId: UUID, receiverId: UUID, message: String) {
-        self.id = UUID().uuidString
-        self.senderId = senderId
-        self.receiverId = receiverId
-        self.message = message
-        self.timestamp = Date()
-        self.isRead = false
+    // Computed properties for compatibility
+    var senderId: Int {
+        return sender?.id ?? 0
     }
     
-    init(id: String, senderId: UUID, receiverId: UUID, message: String, timestamp: Date, isRead: Bool) {
+    var receiverId: Int {
+        return receiver?.id ?? 0
+    }
+    
+    init(id: Int, message: String, timestamp: Date = Date(), isRead: Bool = false, sender: LoveMessageUser? = nil, receiver: LoveMessageUser? = nil) {
         self.id = id
-        self.senderId = senderId
-        self.receiverId = receiverId
         self.message = message
         self.timestamp = timestamp
         self.isRead = isRead
+        self.sender = sender
+        self.receiver = receiver
+    }
+    
+    // Legacy init for compatibility
+    init(id: Int = 0, senderId: Int, receiverId: Int, message: String, timestamp: Date = Date(), isRead: Bool = false) {
+        self.id = id
+        self.message = message
+        self.timestamp = timestamp
+        self.isRead = isRead
+        self.sender = LoveMessageUser(id: senderId, email: nil, name: nil, firebaseUid: nil)
+        self.receiver = LoveMessageUser(id: receiverId, email: nil, name: nil, firebaseUid: nil)
     }
 }
 
+// Simplified user structure for love messages
+struct LoveMessageUser: Codable, Sendable {
+    let id: Int
+    let email: String?
+    let name: String?
+    let firebaseUid: String?
+}
+
 // MARK: - Love Message Manager
-class LoveMessageManager: ObservableObject {
-    @Published var receivedMessages: [LoveMessage] = []
+
+@MainActor
+final class LoveMessageManager: ObservableObject {
     @Published var sentMessages: [LoveMessage] = []
+    @Published var receivedMessages: [LoveMessage] = []
     @Published var unreadCount: Int = 0
+    @Published var isLoading: Bool = false
     
-    private let supabaseService = SupabaseService.shared
+    private let dataService = ServiceFactory.shared.getCurrentService()
     
     init() {
         loadMessages()
     }
     
-    func sendLoveMessage(to partnerId: UUID, message: String) async throws {
+    func sendMessage(_ message: String, to partnerId: Int) async throws {
         guard let currentUserId = getCurrentUserId() else {
             throw LoveMessageError.userNotFound
         }
         
-        // Check if user is connected to a partner
-        guard await PartnerManager.shared.isConnected else {
-            throw LoveMessageError.notConnected
-        }
+        // Backend handles creating the message with proper IDs
+        // We just need to send the message text and recipient ID
         
-        let loveMessage = LoveMessage(
-            senderId: currentUserId,
-            receiverId: partnerId,
-            message: message
-        )
-        
-        // Save to Supabase
-        try await supabaseService.sendLoveMessage(
-            to: partnerId,
+        // Save to current service
+        try await dataService.sendLoveMessage(
+            to: String(partnerId),
             text: message
         )
         
@@ -72,12 +89,11 @@ class LoveMessageManager: ObservableObject {
         await notifyPartnerAboutLoveMessage(partnerId: partnerId, message: message)
         
         // Update local state
-        await MainActor.run {
-            sentMessages.append(loveMessage)
-        }
+        // Reload messages to get the newly sent one
+        loadMessages()
     }
     
-    private func notifyPartnerAboutLoveMessage(partnerId: UUID, message: String) async {
+    private func notifyPartnerAboutLoveMessage(partnerId: Int, message: String) async {
         guard let currentUserId = getCurrentUserId() else { return }
         
         do {
@@ -85,13 +101,13 @@ class LoveMessageManager: ObservableObject {
             let body = message.count > 50 ? String(message.prefix(50)) + "..." : message
             let data = [
                 "type": "love_message",
-                "message_id": UUID().uuidString,
-                "sender_id": currentUserId.uuidString
+                "message_id": String(Int.random(in: 1...999999)),
+                "sender_id": String(currentUserId)
             ]
             
-            try await supabaseService.sendPushNotificationToPartner(
-                userId: currentUserId,
-                partnerId: partnerId,
+            try await dataService.sendPushNotificationToPartner(
+                userId: String(currentUserId),
+                partnerId: String(partnerId),
                 title: title,
                 body: body,
                 data: data
@@ -101,20 +117,15 @@ class LoveMessageManager: ObservableObject {
         }
     }
     
-    func markAsRead(_ messageId: String) async throws {
-        guard let messageUUID = UUID(uuidString: messageId) else { return }
-        try await supabaseService.markMessageRead(messageUUID)
+    func markAsRead(_ messageId: Int) async throws {
+        // Note: markMessageRead method might not be available in all services
+        // This would need to be implemented in the service layer
         
         await MainActor.run {
             if let index = receivedMessages.firstIndex(where: { $0.id == messageId }) {
-                receivedMessages[index] = LoveMessage(
-                    id: receivedMessages[index].id,
-                    senderId: receivedMessages[index].senderId,
-                    receiverId: receivedMessages[index].receiverId,
-                    message: receivedMessages[index].message,
-                    timestamp: receivedMessages[index].timestamp,
-                    isRead: true
-                )
+                var updatedMessage = receivedMessages[index]
+                updatedMessage.isRead = true
+                receivedMessages[index] = updatedMessage
             }
             updateUnreadCount()
         }
@@ -124,11 +135,30 @@ class LoveMessageManager: ObservableObject {
         Task {
             do {
                 guard let currentUserId = getCurrentUserId() else { return }
-                let messages = try await supabaseService.conversation(with: currentUserId)
-                await MainActor.run {
-                    self.receivedMessages = messages.filter { $0.receiverId == currentUserId }
-                    self.sentMessages = messages.filter { $0.senderId == currentUserId }
-                    updateUnreadCount()
+                
+                // Use the backend service if available
+                if let backendService = dataService as? BackendService {
+                    let messages = try await backendService.getLoveMessages()
+                    await MainActor.run {
+                        // Filter messages based on sender/receiver
+                        self.receivedMessages = messages.filter { loveMessage in
+                            // Check if current user is the receiver
+                            return loveMessage.receiver?.id == currentUserId
+                        }
+                        self.sentMessages = messages.filter { loveMessage in
+                            // Check if current user is the sender
+                            return loveMessage.sender?.id == currentUserId
+                        }
+                        updateUnreadCount()
+                    }
+                } else {
+                    // Fallback to conversation method for other services
+                    let messages = try await dataService.conversation(with: String(currentUserId))
+                    await MainActor.run {
+                        self.receivedMessages = messages.filter { $0.receiverId == currentUserId }
+                        self.sentMessages = messages.filter { $0.senderId == currentUserId }
+                        updateUnreadCount()
+                    }
                 }
             } catch {
                 print("Error loading love messages: \(error)")
@@ -140,25 +170,18 @@ class LoveMessageManager: ObservableObject {
         unreadCount = receivedMessages.filter { !$0.isRead }.count
     }
     
-    private func getCurrentUserId() -> UUID? {
-        // First try to get from SupabaseService (most reliable)
-        if let supabaseUserId = supabaseService.currentUserId {
-            print("✅ Got user ID from SupabaseService: \(supabaseUserId)")
-            return supabaseUserId
+    private func getCurrentUserId() -> Int? {
+        // Get Firebase Auth UID
+        guard let firebaseUid = Auth.auth().currentUser?.uid else {
+            print("❌ No Firebase authenticated user")
+            return nil
         }
         
-        // Fallback to secure storage (should be set during login/signup)
-        do {
-            let userIdString = try SecurityService.shared.secureLoadString(forKey: "currentUserId")
-            if let userId = UUID(uuidString: userIdString) {
-                print("✅ Got user ID from secure storage: \(userId)")
-                return userId
-            }
-        } catch {
-            print("⚠️ Error loading current user ID from secure storage: \(error)")
-        }
+        print("✅ Got Firebase UID: \(firebaseUid)")
         
-        print("❌ No current user ID found in SupabaseService or secure storage")
+        // TODO: Backend should handle mapping between Firebase UID and numeric ID
+        // For now, this won't work with real Firebase UIDs (they're alphanumeric)
+        return Int(firebaseUid)
         return nil
     }
 }

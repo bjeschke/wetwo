@@ -7,6 +7,7 @@
 
 import Foundation
 import SwiftUI
+import FirebaseAuth
 
 enum PartnerError: Error, LocalizedError {
     case invalidCode
@@ -42,25 +43,15 @@ class PartnerManager: ObservableObject, Sendable {
     private let userDefaults = UserDefaults.standard
     private let dataService = ServiceFactory.shared.getCurrentService()
     
-    private func getCurrentUserId() -> String? {
-        // Try to get from data service
-        do {
-            return try await dataService.getCurrentUserId()
-        } catch {
-            print("⚠️ Error getting current user ID from data service: \(error)")
-            
-            // Fallback to secure storage (should be set during login/signup)
-            do {
-                let userIdString = try SecurityService.shared.secureLoadString(forKey: "currentUserId")
-                print("✅ Got user ID from secure storage: \(userIdString)")
-                return userIdString
-            } catch {
-                print("❌ Error loading current user ID from secure storage: \(error)")
-            }
+    private func getCurrentUserId() async -> String? {
+        // Get Firebase Auth UID
+        guard let uid = Auth.auth().currentUser?.uid else {
+            print("❌ No Firebase authenticated user")
+            return nil
         }
         
-        print("❌ No current user ID found")
-        return nil
+        print("✅ Got Firebase UID: \(uid)")
+        return uid
     }
     
     private init() {
@@ -100,17 +91,33 @@ class PartnerManager: ObservableObject, Sendable {
     
     func connectWithPartner(using code: String) async throws {
         // Find partner by connection code
-        guard let partnerProfile = try await supabaseService.findPartnerByCode(connectionCode: code) else {
+        guard let partnership = try await dataService.findPartnershipByCode(code) else {
             throw PartnerError.invalidCode
         }
         
+        // For now, create a basic Profile from the partnership
+        // In a real implementation, you would fetch the partner's profile details
+        let partnerProfile = Profile(
+            id: partnership.partner_id,
+            name: "Partner", // This would come from the partner's profile
+            zodiac_sign: "aries", // This would come from the partner's profile
+            birth_date: "1990-01-01", // This would come from the partner's profile
+            profile_photo_url: nil,
+            relationship_status: "single",
+            has_children: "false",
+            children_count: "0",
+            push_token: nil,
+            created_at: Date(),
+            updated_at: Date()
+        )
+        
         // Create partnership
-        guard let currentUserId = getCurrentUserId() else {
+        guard let currentUserId = await getCurrentUserId() else {
             throw PartnerError.networkError
         }
-        let _ = try await supabaseService.createPartnership(
+        let _ = try await dataService.createPartnership(
             userId: currentUserId,
-            partnerId: partnerProfile.id,
+            partnerId: String(partnerProfile.id),
             connectionCode: code
         )
         
@@ -118,30 +125,30 @@ class PartnerManager: ObservableObject, Sendable {
         await MainActor.run {
             self.isConnected = true
             self.partnerProfile = partnerProfile
-            self.partnershipStatus = .connected(partnerName: partnerProfile.name, partnerId: partnerProfile.id.uuidString)
+            self.partnershipStatus = .connected
             self.savePartnerData()
         }
         
         // Subscribe to partner updates
-        try await supabaseService.subscribeToPartnerUpdates(userId: currentUserId) { [weak self] updatedProfile in
+        try await dataService.subscribeToPartnerUpdates(userId: currentUserId) { [weak self] updatedProfile in
             DispatchQueue.main.async {
                 self?.partnerProfile = updatedProfile
             }
         }
         
         // Load partner profile photo
-        await loadPartnerProfilePhoto(partnerId: partnerProfile.id.uuidString)
+        await loadPartnerProfilePhoto(partnerId: String(partnerProfile.id))
         
         // Send push notification to partner about connection
-        await notifyPartnerAboutConnection(partnerId: partnerProfile.id)
+        await notifyPartnerAboutConnection(partnerId: String(partnerProfile.id))
     }
     
     func disconnectPartner() async {
         do {
-            guard let currentUserId = getCurrentUserId() else {
+            guard let currentUserId = await getCurrentUserId() else {
                 throw PartnerError.networkError
             }
-            try await supabaseService.disconnectPartner(userId: currentUserId)
+            try await dataService.disconnectPartner(userId: currentUserId)
             
             await MainActor.run {
                 self.partner = nil
@@ -152,7 +159,7 @@ class PartnerManager: ObservableObject, Sendable {
             }
             
             // Unsubscribe from partner updates
-            try await supabaseService.unsubscribeFromPartnerUpdates(userId: currentUserId)
+            try await dataService.unsubscribeFromPartnerUpdates(userId: currentUserId)
         } catch {
             print("Error disconnecting partner: \(error)")
         }
@@ -186,7 +193,7 @@ class PartnerManager: ObservableObject, Sendable {
         let selectedEvent = events[eventIndex]
         
         return MoodEntry(
-            userId: partner?.id ?? UUID(),
+            userId: partner?.id ?? "",
             moodLevel: selectedMood,
             eventLabel: selectedEvent,
             location: "Home"
@@ -215,18 +222,18 @@ class PartnerManager: ObservableObject, Sendable {
     
     // MARK: - Push Notifications
     
-    private func notifyPartnerAboutConnection(partnerId: UUID) async {
-        guard let currentUserId = getCurrentUserId() else { return }
+    private func notifyPartnerAboutConnection(partnerId: String) async {
+        guard let currentUserId = await getCurrentUserId() else { return }
         
         do {
             let title = "💕 Neuer Partner verbunden!"
             let body = "Jemand hat sich mit dir verbunden"
             let data = [
                 "type": "partner_connected",
-                "user_id": currentUserId.uuidString
+                "user_id": currentUserId
             ]
             
-            try await supabaseService.sendPushNotificationToPartner(
+            try await dataService.sendPushNotificationToPartner(
                 userId: currentUserId,
                 partnerId: partnerId,
                 title: title,
@@ -241,15 +248,15 @@ class PartnerManager: ObservableObject, Sendable {
     // MARK: - Profile Synchronization
     func syncProfileWithPartner(name: String, zodiacSign: String, birthDate: Date) async {
         do {
-            guard let currentUserId = getCurrentUserId() else {
+            guard let currentUserId = await getCurrentUserId() else {
                 throw PartnerError.networkError
             }
-            try await supabaseService.updateSharedProfile(
+            try await dataService.updateSharedProfile(
                 userId: currentUserId,
                 updates: [
                     "name": name,
                     "zodiac_sign": zodiacSign,
-                    "birth_date": birthDate.ISO8601String()
+                    "birthDate": birthDate.ISO8601String()
                 ]
             )
             
@@ -261,10 +268,10 @@ class PartnerManager: ObservableObject, Sendable {
     
     func loadPartnershipStatus() async {
         do {
-            guard let currentUserId = getCurrentUserId() else {
+            guard let currentUserId = await getCurrentUserId() else {
                 throw PartnerError.networkError
             }
-            let status = try await supabaseService.getPartnershipStatus(userId: currentUserId)
+            let status = try await dataService.getPartnershipStatus(userId: currentUserId)
             
             await MainActor.run {
                 self.partnershipStatus = status
@@ -273,7 +280,7 @@ class PartnerManager: ObservableObject, Sendable {
             
             // If connected, load partner profile
             if case .connected = status {
-                let partnerProfile = try await supabaseService.getPartnerProfile(userId: currentUserId)
+                let partnerProfile = try await dataService.getPartnerProfile(userId: currentUserId)
                 await MainActor.run {
                     self.partnerProfile = partnerProfile
                 }
@@ -306,9 +313,8 @@ class PartnerManager: ObservableObject, Sendable {
     
     private func loadPartnerProfilePhoto(partnerId: String) async {
         do {
-            // Load partner profile photo from Supabase
-            guard let partnerUUID = UUID(uuidString: partnerId) else { return }
-            if let photoData = try await supabaseService.downloadProfilePhoto(userId: partnerUUID),
+            // Load partner profile photo from current service
+            if let photoData = try await dataService.downloadProfilePhoto(userId: partnerId),
                let image = UIImage(data: photoData) {
                 await MainActor.run {
                     self.partnerProfilePhoto = image

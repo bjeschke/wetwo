@@ -23,12 +23,12 @@ struct PhotoPickerView: View {
                     Text("📸")
                         .font(.system(size: 60))
                     
-                    Text("Capture your mood")
+                    Text("Stimmung einfangen")
                         .font(.title2)
                         .fontWeight(.bold)
                         .foregroundColor(ColorTheme.primaryText)
                     
-                    Text("Add a photo to remember this moment")
+                    Text("Füge ein Foto hinzu um diesen Moment zu bewahren")
                         .font(.body)
                         .foregroundColor(ColorTheme.secondaryText)
                         .multilineTextAlignment(.center)
@@ -44,7 +44,7 @@ struct PhotoPickerView: View {
                             .clipShape(RoundedRectangle(cornerRadius: 20))
                             .shadow(color: Color.black.opacity(0.1), radius: 10, x: 0, y: 5)
                         
-                        Button("Remove Photo") {
+                        Button("Foto entfernen") {
                             selectedImage = nil
                         }
                         .font(.body)
@@ -61,7 +61,7 @@ struct PhotoPickerView: View {
                                     .font(.system(size: 40))
                                     .foregroundColor(.gray)
                                 
-                                Text("No photo selected")
+                                Text("Kein Foto ausgewählt")
                                     .font(.body)
                                     .foregroundColor(.gray)
                             }
@@ -76,7 +76,7 @@ struct PhotoPickerView: View {
                     }) {
                         HStack {
                             Image(systemName: "camera.fill")
-                            Text("Take Photo")
+                            Text("Foto aufnehmen")
                         }
                         .font(.title3)
                         .fontWeight(.semibold)
@@ -96,7 +96,7 @@ struct PhotoPickerView: View {
                     }) {
                         HStack {
                             Image(systemName: "photo.fill")
-                            Text("Choose from Library")
+                            Text("Aus Galerie wählen")
                         }
                         .font(.title3)
                         .fontWeight(.semibold)
@@ -116,7 +116,7 @@ struct PhotoPickerView: View {
                 
                 // Action buttons
                 HStack(spacing: 15) {
-                    Button("Skip") {
+                    Button("Überspringen") {
                         dismiss()
                     }
                     .foregroundColor(ColorTheme.accentBlue)
@@ -125,7 +125,7 @@ struct PhotoPickerView: View {
                     .background(Color.blue.opacity(0.1))
                     .cornerRadius(20)
                     
-                    Button("Save") {
+                    Button("Speichern") {
                         dismiss()
                     }
                     .foregroundColor(.white)
@@ -140,7 +140,7 @@ struct PhotoPickerView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Done") {
+                    Button("Fertig") {
                         dismiss()
                     }
                     .foregroundColor(ColorTheme.accentBlue)

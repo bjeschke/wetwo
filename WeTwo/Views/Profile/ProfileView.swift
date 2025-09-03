@@ -240,14 +240,14 @@ struct ProfileView: View {
         
         do {
             // Register user with profile using existing app function
-            let user = try await SupabaseService.shared.signUp(
+            let user = try await ServiceFactory.shared.getCurrentService().signUp(
                 email: testEmail,
                 password: testPassword,
-                name: testName
+                name: testName,
+                birthDate: testBirthDate
             )
             
             print("✅ SUCCESS: User registered in database!")
-            print("🆔 User ID: \(user.id)")
             print("👤 Name: \(user.name)")
             print("🌟 Zodiac Sign: \(user.zodiacSign.emoji) \(user.zodiacSign.rawValue)")
             print("🎂 Birth Date: \(user.birthDate)")
@@ -268,23 +268,32 @@ struct ProfileView: View {
                 // Auto-login with the new user
                 Task {
                     do {
-                        let supabaseUser = try await SupabaseService.shared.signIn(email: testEmail, password: testPassword)
-                        print("🔐 Auto-login successful for: \(supabaseUser.name)")
+                        let loggedInUser = try await ServiceFactory.shared.getCurrentService().signIn(email: testEmail, password: testPassword)
+                        print("🔐 Auto-login successful for: \(loggedInUser.name)")
                         
-                        // Store credentials securely
-                        if let securityService = try? SecurityService.shared {
-                            try? securityService.secureStore(testEmail, forKey: "userEmail")
-                            try? securityService.secureStore(testPassword, forKey: "userPassword")
-                            try? securityService.secureStore(supabaseUser.id.uuidString, forKey: "currentUserId")
+                        // Store credentials in UserDefaults
+                        UserDefaults.standard.set(testEmail, forKey: "userEmail")
+                        UserDefaults.standard.set(testPassword, forKey: "userPassword")
+                        
+                        // Get user ID if available
+                        if let userId = try? await ServiceFactory.shared.getCurrentService().getCurrentUserId() {
+                            // Update the profile with the test user data
+                            try await ServiceFactory.shared.getCurrentService().updateProfile(
+                                userId: userId,
+                                name: testName,
+                                birthDate: testBirthDate
+                            )
+                            print("✅ Profile updated with test user data")
+                            
+                            // Update relationship data with default values
+                            try await ServiceFactory.shared.getCurrentService().updateRelationshipData(
+                                userId: userId,
+                                relationshipStatus: "in_relationship",
+                                hasChildren: "false",
+                                childrenCount: "0"
+                            )
+                            print("✅ Relationship data updated with default values")
                         }
-                        
-                        // Update the profile with the test user data
-                        try await SupabaseService.shared.updateProfile(
-                            userId: supabaseUser.id.uuidString,
-                            name: testName,
-                            birthDate: testBirthDate
-                        )
-                        print("✅ Profile updated with test user data")
                         
                         // Update app state with the new user
                         DispatchQueue.main.async {
@@ -292,15 +301,6 @@ struct ProfileView: View {
                             self.appState.currentUser = newUser
                             print("✅ App state updated with new user")
                         }
-                        
-                        // Update relationship data with default values
-                        try await SupabaseService.shared.updateRelationshipData(
-                            userId: supabaseUser.id.uuidString,
-                            relationshipStatus: "in_relationship",
-                            hasChildren: "false",
-                            childrenCount: "0"
-                        )
-                        print("✅ Relationship data updated with default values")
                         
                         // Update the success message with more details
                         DispatchQueue.main.async {
@@ -314,9 +314,9 @@ struct ProfileView: View {
                 }
             }
             
-        } catch AuthError.signUpFailed {
-            print("❌ ERROR: Sign up failed - check Supabase configuration")
-            print("💡 Make sure SUPABASE_URL and SUPABASE_ANON_KEY are set in Xcode Scheme Environment Variables")
+        } catch BackendError.signUpFailed {
+            print("❌ ERROR: Sign up failed - check service configuration")
+            print("💡 Make sure service configuration is properly set")
         } catch {
             print("❌ ERROR: Unexpected error during registration: \(error)")
             print("🔍 Error details: \(error.localizedDescription)")

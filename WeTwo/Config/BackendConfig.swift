@@ -18,22 +18,22 @@ struct BackendConfig {
         var baseURL: String {
             switch self {
             case .development:
-                return "https://wetwobackend-production.up.railway.app"
+                return "http://localhost:8080"
             case .staging:
-                return "https://wetwobackend-production.up.railway.app"
+                return "http://localhost:8080"
             case .production:
-                return "https://wetwobackend-production.up.railway.app"
+                return "http://localhost:8080"
             }
         }
         
         var apiKey: String {
             switch self {
             case .development:
-                return "" // Add your Railway API key here if needed
+                return "" // Add your API key here if needed
             case .staging:
-                return "" // Add your Railway API key here if needed
+                return "" // Add your API key here if needed
             case .production:
-                return "" // Add your Railway API key here if needed
+                return "" // Add your API key here if needed
             }
         }
     }
@@ -59,6 +59,8 @@ struct BackendConfig {
     static let loveMessagesEndpoint = "/api/love-messages"
     static let moodEntriesEndpoint = "/api/mood-entries"
     static let storageEndpoint = "/api/storage"
+    static let healthEndpoint = "/api/health"
+    static let notificationsEndpoint = "/api/notifications"
     
     // MARK: - Feature Flags
     static let enableRealTimeSync = true
@@ -84,12 +86,12 @@ struct BackendConfig {
     // MARK: - Validation
     static func validateConfiguration() -> Bool {
         guard !baseURL.isEmpty,
-              baseURL.hasPrefix("https://") else {
-            print("❌ Invalid Backend configuration")
+              (baseURL.hasPrefix("https://") || baseURL.hasPrefix("http://")) else {
+            print("❌ Invalid Backend configuration - URL must start with http:// or https://")
             return false
         }
         
-        print("✅ Backend configuration is valid")
+        print("✅ Backend configuration is valid: \(baseURL)")
         return true
     }
     
@@ -135,6 +137,14 @@ struct BackendConfig {
     
     static func storageURL() -> URL? {
         return url(for: storageEndpoint)
+    }
+    
+    static func healthURL() -> URL? {
+        return url(for: healthEndpoint)
+    }
+    
+    static func notificationsURL() -> URL? {
+        return url(for: notificationsEndpoint)
     }
 }
 

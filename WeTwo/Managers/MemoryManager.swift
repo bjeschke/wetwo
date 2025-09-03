@@ -9,230 +9,139 @@ import Foundation
 import SwiftUI
 
 class MemoryManager: ObservableObject {
-    @Published var memories: [MemoryEntry] = []
-    @Published var timeline: MemoryTimeline
-    @Published var isLoading: Bool = false
+    @Published var memories: [Memory] = []
     @Published var selectedFilter: MemoryFilter = .all
-    @Published var currentUserId: String?
     
     private let dataService = ServiceFactory.shared.getCurrentService()
     
+    init() {
+        // Initialize empty
+    }
+    
+    func loadMemories() async {
+        // Load memories from data service
+        do {
+            if let userId = try await dataService.getCurrentUserId() {
+                let loadedMemories = try await dataService.memories(userId: userId)
+                DispatchQueue.main.async {
+                    self.memories = loadedMemories
+                }
+            }
+        } catch {
+            print("❌ Error loading memories: \(error)")
+        }
+    }
+    
+    func addMemory(_ memory: Memory) async {
+        do {
+            let createdMemory = try await dataService.createMemory(memory)
+            DispatchQueue.main.async {
+                self.memories.append(createdMemory)
+            }
+        } catch {
+            print("❌ Error adding memory: \(error)")
+        }
+    }
+    
+    func updateMemory(_ memory: Memory) async {
+        do {
+            let updatedMemory = try await dataService.updateMemory(memory)
+            DispatchQueue.main.async {
+                if let index = self.memories.firstIndex(where: { $0.id == memory.id }) {
+                    self.memories[index] = updatedMemory
+                }
+            }
+        } catch {
+            print("❌ Error updating memory: \(error)")
+        }
+    }
+    
+    func deleteMemory(_ memoryId: Int) async {
+        do {
+            try await dataService.deleteMemory(memoryId)
+            DispatchQueue.main.async {
+                self.memories.removeAll { $0.id == memoryId }
+            }
+        } catch {
+            print("❌ Error deleting memory: \(error)")
+        }
+    }
+    
+    func getMemoryStats() -> (total: Int, thisMonth: Int, shared: Int, averageMood: Double) {
+        let thisMonth = Calendar.current.dateInterval(of: .month, for: Date())
+        let thisMonthCount = memories.filter { memory in
+            if let startOfMonth = thisMonth?.start,
+               let endOfMonth = thisMonth?.end {
+                let formatter = DateFormatter()
+                formatter.dateFormat = "yyyy-MM-dd"
+                if let memoryDate = formatter.date(from: memory.date) {
+                    return memoryDate >= startOfMonth && memoryDate <= endOfMonth
+                }
+            }
+            return false
+        }.count
+        
+        let sharedCount = memories.filter { memory in
+            return memory.is_shared == "true"
+        }.count
+        
+        let averageMood = memories.isEmpty ? 0.0 : 
+            memories.compactMap { memory in
+                Double(memory.mood_level)
+            }.reduce(0, +) / Double(memories.count)
+        
+        return (total: memories.count, thisMonth: thisMonthCount, shared: sharedCount, averageMood: averageMood)
+    }
+    
+    func getFilteredMemories(filter: MemoryFilter) -> [Memory] {
+        switch filter {
+        case .all:
+            return memories
+        case .recent:
+            let oneWeekAgo = Calendar.current.date(byAdding: .weekOfYear, value: -1, to: Date()) ?? Date()
+            let formatter = DateFormatter()
+            formatter.dateFormat = "yyyy-MM-dd"
+            return memories.filter { memory in
+                if let memoryDate = formatter.date(from: memory.date) {
+                    return memoryDate >= oneWeekAgo
+                }
+                return false
+            }
+        case .shared:
+            return memories.filter { $0.is_shared == "true" }
+        case .favorites:
+            return memories.filter { memory in
+                if let tags = memory.tags {
+                    return tags.contains("favorite")
+                }
+                return false
+            }
+        }
+    }
+    
+    // Filter enum for Timeline view
     enum MemoryFilter: String, CaseIterable {
-        case all = "timeline_filter_all"
-        case shared = "timeline_filter_shared"
-        case personal = "timeline_filter_personal"
-        case favorites = "timeline_filter_favorites"
+        case all = "All"
+        case recent = "Recent"
+        case shared = "Shared"
+        case favorites = "Favorites"
         
         var emoji: String {
             switch self {
-            case .all: return "📅"
-            case .shared: return "💕"
-            case .personal: return "👤"
+            case .all: return "📋"
+            case .recent: return "🕒"
+            case .shared: return "👫"
             case .favorites: return "⭐"
             }
         }
         
         var localizedTitle: String {
-            return NSLocalizedString(self.rawValue, comment: "Memory filter")
-        }
-    }
-    
-    init() {
-        self.timeline = MemoryTimeline(memories: [])
-        Task {
-            await loadCurrentUser()
-            await loadMemories()
-        }
-    }
-    
-    @MainActor
-    func addMemory(_ memory: MemoryEntry) {
-        Task {
-            do {
-                // Convert MemoryEntry to Memory
-                let memoryData = Memory(
-                    id: memory.id,
-                    user_id: memory.userId,
-                    partner_id: memory.partnerId,
-                    date: memory.date.ISO8601String().prefix(10).description, // YYYY-MM-DD format
-                    title: memory.title,
-                    description: memory.description,
-                    photo_data: memory.photoData?.base64EncodedString(),
-                    location: memory.location,
-                    mood_level: memory.moodLevel.rawValue.description,
-                    tags: memory.tags.joined(separator: ","),
-                    is_shared: memory.isShared ? "true" : "false",
-                    created_at: memory.createdAt,
-                    updated_at: memory.updatedAt
-                )
-                
-                try await dataService.createMemory(memoryData)
-                await loadMemories()
-                
-                // Sync with partner if shared
-                if memory.isShared {
-                    syncMemoryWithPartner(memory)
-                }
-            } catch {
-                print("Error adding memory: \(error)")
+            switch self {
+            case .all: return "Alle"
+            case .recent: return "Kürzlich"
+            case .shared: return "Geteilt"
+            case .favorites: return "Favoriten"
             }
         }
     }
-    
-    @MainActor
-    func updateMemory(_ memory: MemoryEntry) {
-        Task {
-            do {
-                // Convert MemoryEntry to Memory
-                let memoryData = Memory(
-                    id: memory.id,
-                    user_id: memory.userId,
-                    partner_id: memory.partnerId,
-                    date: memory.date.ISO8601String().prefix(10).description, // YYYY-MM-DD format
-                    title: memory.title,
-                    description: memory.description,
-                    photo_data: memory.photoData?.base64EncodedString(),
-                    location: memory.location,
-                    mood_level: memory.moodLevel.rawValue.description,
-                    tags: memory.tags.joined(separator: ","),
-                    is_shared: memory.isShared ? "true" : "false",
-                    created_at: memory.createdAt,
-                    updated_at: memory.updatedAt
-                )
-                
-                try await dataService.updateMemory(memoryData)
-                await loadMemories()
-            } catch {
-                print("Error updating memory: \(error)")
-            }
-        }
-    }
-    
-    @MainActor
-    func deleteMemory(_ memory: MemoryEntry) {
-        Task {
-            do {
-                try await dataService.deleteMemory(memory.id)
-                await loadMemories()
-            } catch {
-                print("Error deleting memory: \(error)")
-            }
-        }
-    }
-    
-    func getFilteredMemories() -> [MemoryEntry] {
-        switch selectedFilter {
-        case .all:
-            return timeline.memories
-        case .shared:
-            return timeline.memories.filter { $0.isShared }
-        case .personal:
-            return timeline.memories.filter { !$0.isShared }
-        case .favorites:
-            return timeline.memories.filter { $0.tags.contains("favorite") }
-        }
-    }
-    
-    func getMemoriesForDate(_ date: Date) -> [MemoryEntry] {
-        let calendar = Calendar.current
-        return timeline.memories.filter { memory in
-            calendar.isDate(memory.date, inSameDayAs: date)
-        }
-    }
-    
-    func getMemoriesForMonth(_ date: Date) -> [MemoryEntry] {
-        return timeline.memoriesForMonth(date)
-    }
-    
-    func getRecentMemories(limit: Int = 5) -> [MemoryEntry] {
-        return Array(timeline.memories.prefix(limit))
-    }
-    
-    func getMemoryStats() -> (total: Int, shared: Int, personal: Int, averageMood: Double) {
-        let total = timeline.totalCount
-        let shared = timeline.sharedCount
-        let personal = total - shared
-        let averageMood = timeline.averageMood
-        
-        return (total, shared, personal, averageMood)
-    }
-    
-    @MainActor
-    private func loadCurrentUser() async {
-        if let userId = try? await dataService.getCurrentUserId() {
-            currentUserId = userId.uuidString
-        }
-    }
-    
-    @MainActor
-    private func loadMemories() async {
-        guard let userId = currentUserId,
-              let userUUID = UUID(uuidString: userId) else { return }
-        
-        isLoading = true
-        do {
-            let loadedMemories = try await dataService.memories(userId: userUUID.uuidString)
-            
-            // Convert Memory to MemoryEntry and filter out any invalid memories
-            var convertedMemories: [MemoryEntry] = []
-            
-            for memory in loadedMemories {
-                // Convert Memory to MemoryEntry
-                let moodLevel = MoodLevel(rawValue: Int(memory.mood_level) ?? 3) ?? .neutral
-                let tags = memory.tags?.components(separatedBy: ",").filter { !$0.isEmpty } ?? []
-                let isShared = memory.is_shared == "true"
-                
-                // Parse photo data
-                var photoData: Data? = nil
-                if let photoDataString = memory.photo_data {
-                    photoData = Data(base64Encoded: photoDataString)
-                }
-                
-                // Parse date
-                let dateFormatter = DateFormatter()
-                dateFormatter.dateFormat = "yyyy-MM-dd"
-                let date = dateFormatter.date(from: memory.date) ?? Date()
-                
-                // Parse timestamps
-                let createdAt = memory.created_at ?? Date()
-                let updatedAt = memory.updated_at ?? Date()
-                
-                // Create MemoryEntry with available data
-                let memoryEntry = MemoryEntry(
-                    fromDatabase: memory.id,
-                    userId: memory.user_id,
-                    partnerId: memory.partner_id,
-                    dateString: memory.date,
-                    title: memory.title,
-                    description: memory.description,
-                    photoData: photoData,
-                    location: memory.location,
-                    moodLevel: moodLevel,
-                    tags: tags,
-                    isShared: isShared,
-                    createdAt: createdAt,
-                    updatedAt: updatedAt
-                )
-                
-                convertedMemories.append(memoryEntry)
-            }
-            
-            self.memories = convertedMemories
-        } catch {
-            print("Error loading memories: \(error)")
-        }
-        
-        isLoading = false
-    }
-    
-    private func updateTimeline() {
-        timeline = MemoryTimeline(memories: memories)
-    }
-    
-    private func syncMemoryWithPartner(_ memory: MemoryEntry) {
-        // In a real app, this would sync with the partner's device
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            print("Synced memory with partner: \(memory.title)")
-        }
-    }
-} 
+}

@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct MemoryDetailView: View {
-    let memory: MemoryEntry
+    let memory: Memory
     @EnvironmentObject var memoryManager: MemoryManager
     @Environment(\.dismiss) private var dismiss
     @State private var showingDeleteAlert = false
@@ -32,7 +32,7 @@ struct MemoryDetailView: View {
                     contentSection
                     
                     // Tags section
-                    if !memory.tags.isEmpty {
+                    if let tags = memory.tags, !tags.isEmpty {
                         tagsSection
                     }
                     
@@ -93,7 +93,9 @@ struct MemoryDetailView: View {
     
     private var photoSection: some View {
         ZStack(alignment: .topTrailing) {
-            if let photoData = memory.photoData, let uiImage = UIImage(data: photoData) {
+            if let photoDataString = memory.photo_data, 
+               let photoData = Data(base64Encoded: photoDataString),
+               let uiImage = UIImage(data: photoData) {
                 Image(uiImage: uiImage)
                     .resizable()
                     .scaledToFill()
@@ -117,7 +119,7 @@ struct MemoryDetailView: View {
             
             // Mood and sharing indicators
             VStack(spacing: 10) {
-                Text(memory.moodLevel.emoji)
+                Text(MoodLevel(rawValue: Int(memory.mood_level) ?? 3)?.emoji ?? "😐")
                     .font(.title)
                     .padding(10)
                     .background(
@@ -126,7 +128,7 @@ struct MemoryDetailView: View {
                             .shadow(color: Color.black.opacity(0.2), radius: 8, x: 0, y: 4)
                     )
                 
-                if memory.isShared {
+                if memory.is_shared == "true" {
                     Text("💕")
                         .font(.title2)
                         .padding(8)
@@ -151,7 +153,7 @@ struct MemoryDetailView: View {
                     .fontWeight(.bold)
                     .foregroundColor(ColorTheme.primaryText)
                 
-                Text(dateFormatter.string(from: memory.date))
+                Text(memory.date)
                     .font(.body)
                     .foregroundColor(ColorTheme.secondaryText)
             }
@@ -196,14 +198,14 @@ struct MemoryDetailView: View {
                     .foregroundColor(ColorTheme.primaryText)
                 
                 HStack(spacing: 12) {
-                    Text(memory.moodLevel.emoji)
+                    Text(MoodLevel(rawValue: Int(memory.mood_level) ?? 3)?.emoji ?? "😐")
                         .font(.title2)
                     
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(memory.moodLevel.description)
+                        Text(MoodLevel(rawValue: Int(memory.mood_level) ?? 3)?.description ?? "Neutral")
                             .font(.body)
                             .fontWeight(.medium)
-                            .foregroundColor(memory.moodLevel.color)
+                            .foregroundColor(MoodLevel(rawValue: Int(memory.mood_level) ?? 3)?.color ?? .gray)
                         
                         Text("Wie du dich gefühlt hast")
                             .font(.caption)
@@ -215,12 +217,12 @@ struct MemoryDetailView: View {
                 .padding(15)
                 .background(
                     RoundedRectangle(cornerRadius: 15)
-                        .fill(memory.moodLevel.color.opacity(0.1))
+                        .fill((MoodLevel(rawValue: Int(memory.mood_level) ?? 3)?.color ?? .gray).opacity(0.1))
                 )
             }
             
             // Sharing status
-            if memory.isShared {
+            if memory.is_shared == "true" {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Geteilt mit Partner")
                         .font(.headline)
@@ -267,7 +269,7 @@ struct MemoryDetailView: View {
                 .foregroundColor(ColorTheme.primaryText)
             
             LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: 10) {
-                ForEach(memory.tags, id: \.self) { tag in
+                ForEach(memory.tags?.components(separatedBy: ",") ?? [], id: \.self) { tag in
                     HStack {
                         Text(tag)
                             .font(.body)
@@ -341,13 +343,18 @@ struct MemoryDetailView: View {
     }
     
     private func deleteMemory() {
-        memoryManager.deleteMemory(memory)
-        dismiss()
+        Task {
+            guard let memoryId = memory.id else { return }
+            await memoryManager.deleteMemory(memoryId)
+            await MainActor.run {
+                dismiss()
+            }
+        }
     }
 }
 
 struct EditMemoryView: View {
-    let memory: MemoryEntry
+    let memory: Memory
     @EnvironmentObject var memoryManager: MemoryManager
     @Environment(\.dismiss) private var dismiss
     
@@ -358,13 +365,13 @@ struct EditMemoryView: View {
     @State private var tags: [String]
     @State private var isSaving = false
     
-    init(memory: MemoryEntry) {
+    init(memory: Memory) {
         self.memory = memory
         self._title = State(initialValue: memory.title)
         self._description = State(initialValue: memory.description ?? "")
         self._location = State(initialValue: memory.location ?? "")
-        self._selectedMood = State(initialValue: memory.moodLevel)
-        self._tags = State(initialValue: memory.tags)
+        self._selectedMood = State(initialValue: MoodLevel(rawValue: Int(memory.mood_level) ?? 3) ?? .neutral)
+        self._tags = State(initialValue: memory.tags?.components(separatedBy: ",") ?? [])
     }
     
     var body: some View {
@@ -482,48 +489,59 @@ struct EditMemoryView: View {
     private func saveChanges() {
         isSaving = true
         
-        let updatedMemory = MemoryEntry(
-            userId: memory.userId,
+        let updatedMemory = Memory(
+            id: memory.id,
+            user_id: memory.user_id,
+            partner_id: memory.partner_id,
+            date: memory.date,
             title: title,
             description: description.isEmpty ? nil : description,
-            photoData: memory.photoData,
+            photo_data: memory.photo_data,
             location: location.isEmpty ? nil : location,
-            moodLevel: selectedMood,
-            tags: tags,
-            partnerId: memory.partnerId
+            mood_level: String(selectedMood.rawValue),
+            tags: tags.joined(separator: ","),
+            is_shared: memory.is_shared
         )
         
         // Update the memory with new ID but keep the original date
         var memoryToUpdate = updatedMemory
-        memoryToUpdate = MemoryEntry(
-            userId: memory.userId,
+        memoryToUpdate = Memory(
+            id: memory.id,
+            user_id: memory.user_id,
+            partner_id: memory.partner_id,
+            date: memory.date,
             title: title,
             description: description.isEmpty ? nil : description,
-            photoData: memory.photoData,
+            photo_data: memory.photo_data,
             location: location.isEmpty ? nil : location,
-            moodLevel: selectedMood,
-            tags: tags,
-            partnerId: memory.partnerId
+            mood_level: String(selectedMood.rawValue),
+            tags: tags.joined(separator: ","),
+            is_shared: memory.is_shared
         )
         
-        memoryManager.updateMemory(memoryToUpdate)
-        
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            isSaving = false
-            dismiss()
+        Task {
+            await memoryManager.updateMemory(memoryToUpdate)
+            
+            await MainActor.run {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                    isSaving = false
+                    dismiss()
+                }
+            }
         }
     }
 }
 
 #Preview {
     MemoryDetailView(
-        memory: MemoryEntry(
-            userId: UUID(),
+        memory: Memory(
+            user_id: 0,
+            date: "2023-08-15",
             title: "Unser erster Urlaub zusammen",
             description: "Ein wunderschöner Tag am Strand mit Sonnenuntergang. Wir haben den ganzen Tag gelacht und neue Erinnerungen geschaffen.",
             location: "Mallorca, Spanien",
-            moodLevel: .veryHappy,
-            tags: ["Urlaub", "Strand", "favorite"]
+            mood_level: "5",
+            tags: "Urlaub,Strand,favorite"
         )
     )
     .environmentObject(MemoryManager())

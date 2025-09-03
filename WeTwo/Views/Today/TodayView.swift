@@ -11,11 +11,11 @@ struct TodayView: View {
     @EnvironmentObject var moodManager: MoodManager
     @EnvironmentObject var partnerManager: PartnerManager
     @EnvironmentObject var appState: AppState
-    @EnvironmentObject var gptService: GPTService
     @EnvironmentObject var notificationService: NotificationService
+    @EnvironmentObject var authService: FirebaseAuthService
     @StateObject private var loveMessageManager = LoveMessageManager()
     
-    private let supabaseService = SupabaseService.shared
+    private let dataService = ServiceFactory.shared.getCurrentService()
     
     @State private var selectedMood: MoodLevel = .neutral
     @State private var eventLabel = ""
@@ -45,6 +45,11 @@ struct TodayView: View {
                     // Header with greeting
                     headerSection
                     
+                    // Partner connection section (if not connected)
+                    if !partnerManager.isConnected {
+                        partnerConnectionSection
+                    }
+                    
                     // Mood input section
                     moodInputSection
                     
@@ -59,11 +64,65 @@ struct TodayView: View {
                 loadTodayMood()
                 loadProfilePhoto()
             }
+            .sheet(isPresented: $showingEventInput) {
+                EventInputView(eventLabel: $eventLabel) { selectedEvent in
+                    eventLabel = selectedEvent
+                }
+            }
+            .sheet(isPresented: $showingPhotoPicker) {
+                PhotoPickerView(selectedImage: $selectedPhoto)
+            }
+            .sheet(isPresented: $showingProfilePhotoPicker) {
+                PhotoPickerView(selectedImage: $profilePhoto)
+                    .onDisappear {
+                        if profilePhoto != nil {
+                            saveProfilePhoto()
+                        }
+                    }
+            }
+            .alert("Verbindung erfolgreich", isPresented: $showingConnectionSuccess) {
+                Button("OK") { }
+            } message: {
+                Text("Du bist jetzt mit deinem Partner verbunden!")
+            }
+            .alert("Verbindungsfehler", isPresented: $showingConnectionError) {
+                Button("OK") { }
+            } message: {
+                Text(connectionErrorMessage)
+            }
         }
     }
     
     private var headerSection: some View {
         VStack(spacing: 15) {
+            // Firebase Token Display
+            if let token = appState.firebaseIdToken {
+                VStack(alignment: .leading, spacing: 5) {
+                    Text("🔑 Firebase ID Token:")
+                        .font(.caption)
+                        .fontWeight(.semibold)
+                        .foregroundColor(ColorTheme.accentPink)
+                    
+                    Text(String(token.prefix(50)) + "...")
+                        .font(.system(.caption2, design: .monospaced))
+                        .foregroundColor(ColorTheme.secondaryText)
+                        .lineLimit(2)
+                        .padding(8)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(ColorTheme.cardBackgroundSecondary)
+                        )
+                        .onTapGesture {
+                            UIPasteboard.general.string = token
+                        }
+                    
+                    Text("Tap to copy full token")
+                        .font(.caption2)
+                        .foregroundColor(ColorTheme.secondaryText.opacity(0.7))
+                }
+                .padding(.bottom, 10)
+            }
+            
             // User profile section
             HStack(spacing: 15) {
                 // Profile photo
@@ -107,6 +166,12 @@ struct TodayView: View {
                             .font(.title3)
                             .fontWeight(.semibold)
                             .foregroundColor(ColorTheme.primaryText)
+                    }
+                    
+                    if authService.isAuthenticated {
+                        Text("✅ Firebase authenticated")
+                            .font(.caption2)
+                            .foregroundColor(ColorTheme.success)
                     }
                     
                     Text("Tippe auf das Foto um es zu ändern")
@@ -308,7 +373,7 @@ struct TodayView: View {
                 Button(action: { showingEventInput = true }) {
                     HStack {
                         Image(systemName: "plus.circle.fill")
-                        Text(NSLocalizedString("today_add_event", comment: "Add event"))
+                        Text(eventLabel.isEmpty ? "Event hinzufügen" : eventLabel)
                     }
                     .font(.body)
                     .foregroundColor(ColorTheme.accentBlue)
@@ -316,14 +381,18 @@ struct TodayView: View {
                     .padding(.vertical, 10)
                     .background(
                         RoundedRectangle(cornerRadius: 20)
-                            .stroke(ColorTheme.accentBlue, lineWidth: 1)
+                            .fill(eventLabel.isEmpty ? Color.clear : ColorTheme.accentBlue.opacity(0.1))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 20)
+                                    .stroke(ColorTheme.accentBlue, lineWidth: 1)
+                            )
                     )
                 }
                 
                 Button(action: { showingPhotoPicker = true }) {
                     HStack {
-                        Image(systemName: "camera.fill")
-                        Text(NSLocalizedString("today_add_photo", comment: "Add photo"))
+                        Image(systemName: selectedPhoto != nil ? "checkmark.circle.fill" : "camera.fill")
+                        Text(selectedPhoto != nil ? "Foto ausgewählt" : "Foto hinzufügen")
                     }
                     .font(.body)
                     .foregroundColor(ColorTheme.accentPink)
@@ -331,17 +400,28 @@ struct TodayView: View {
                     .padding(.vertical, 10)
                     .background(
                         RoundedRectangle(cornerRadius: 20)
-                            .stroke(ColorTheme.accentPink, lineWidth: 1)
+                            .fill(selectedPhoto != nil ? ColorTheme.accentPink.opacity(0.1) : Color.clear)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 20)
+                                    .stroke(ColorTheme.accentPink, lineWidth: 1)
+                            )
                     )
                 }
             }
             
             // Save mood button
-            Button(action: saveMoodEntry) {
+            Button(action: {
+                print("🔴 Button pressed - Starting mood save")
+                Task {
+                    print("🔵 Task started")
+                    await saveMoodEntry()
+                    print("🟢 Task completed")
+                }
+            }) {
                 let gradientColors = [selectedMood.color, selectedMood.color.opacity(0.7)]
                 let gradient = LinearGradient(colors: gradientColors, startPoint: .leading, endPoint: .trailing)
                 
-                Text(NSLocalizedString("today_save_mood", comment: "Save mood"))
+                Text("Stimmung speichern")
                     .font(.title3)
                     .fontWeight(.semibold)
                     .foregroundColor(.white)
@@ -443,7 +523,7 @@ struct TodayView: View {
                 
                 Spacer()
                 
-                if gptService.isGenerating {
+                if false { // GPT service removed
                     ProgressView()
                         .scaleEffect(0.8)
                 } else {
@@ -459,7 +539,7 @@ struct TodayView: View {
                     .shadow(color: Color.blue.opacity(0.3), radius: 10, x: 0, y: 5)
             )
         }
-        .disabled(gptService.isGenerating)
+        .disabled(false) // GPT service removed
     }
     
     private var testNotificationButton: some View {
@@ -605,7 +685,12 @@ struct TodayView: View {
         .purpleCard()
     }
     
-    private func saveMoodEntry() {
+    private func saveMoodEntry() async {
+        print("🎯 saveMoodEntry called")
+        print("   Selected mood: \(selectedMood)")
+        print("   Event label: \(eventLabel)")
+        print("   Has photo: \(selectedPhoto != nil)")
+        
         var photoData: Data?
         if let image = selectedPhoto {
             // Add error handling for image processing
@@ -614,18 +699,22 @@ struct TodayView: View {
                 return
             }
             photoData = data
+            print("✅ Photo data created: \(data.count) bytes")
         }
         
-        moodManager.addMoodEntry(
+        print("📝 Calling moodManager.addMoodEntry...")
+        await moodManager.addMoodEntry(
             selectedMood,
             eventLabel: eventLabel.isEmpty ? nil : eventLabel,
             photoData: photoData
         )
+        print("✅ Mood entry saved")
         
         // Sync with partner if connected
         if partnerManager.isConnected {
+            print("🔄 Syncing with partner...")
             let entry = MoodEntry(
-                userId: appState.currentUser?.id ?? UUID(),
+                userId: appState.currentUser?.id ?? "",
                 moodLevel: selectedMood,
                 eventLabel: eventLabel.isEmpty ? nil : eventLabel,
                 photoData: photoData
@@ -636,6 +725,7 @@ struct TodayView: View {
         // Reset form but keep the selected mood
         eventLabel = ""
         selectedPhoto = nil
+        print("✅ Form reset completed")
         // Don't reset selectedMood - keep the saved mood visible
         
         // Use daily insight if not premium
@@ -659,7 +749,7 @@ struct TodayView: View {
         
         Task {
             do {
-                let message = try await gptService.generateLoveMessage(for: user.name, mood: selectedMood)
+                let message = "❤️ Ich denke an dich und wünsche dir einen wundervollen Tag!" // Simple fallback message
                 await MainActor.run {
                     generatedLoveMessage = message
                     customLoveMessage = message
@@ -678,7 +768,7 @@ struct TodayView: View {
         
         Task {
             do {
-                try await loveMessageManager.sendLoveMessage(to: partnerId, message: customLoveMessage)
+                try await loveMessageManager.sendMessage(customLoveMessage, to: partnerId)
                 
                 await MainActor.run {
                     showingLoveMessageEditor = false
@@ -733,8 +823,9 @@ struct TodayView: View {
         Task {
             do {
                 if let imageData = photo.jpegData(compressionQuality: 0.8) {
-                    // Upload to Supabase Storage with folder structure
-                    _ = try await supabaseService.uploadProfilePhoto(userId: userId, imageData: imageData)
+                    // Upload to current service
+                    let dataService = ServiceFactory.shared.getCurrentService()
+                    try await dataService.uploadProfilePhoto(userId: String(userId), imageData: imageData)
                     
                     // Also save locally for offline access
                     UserDefaults.standard.set(imageData, forKey: "userProfilePhoto")
@@ -757,13 +848,14 @@ struct TodayView: View {
         
         Task {
             do {
-                // Try to load from Supabase first
-                if let photoData = try await supabaseService.downloadProfilePhoto(userId: userId),
+                // Try to load from current service first
+                let dataService = ServiceFactory.shared.getCurrentService()
+                if let photoData = try await dataService.downloadProfilePhoto(userId: userId),
                    let image = UIImage(data: photoData) {
                     await MainActor.run {
                         profilePhoto = image
                     }
-                    print("✅ Profile photo loaded from Supabase")
+                    print("✅ Profile photo loaded from current service")
                 } else {
                     // Fallback to local storage
                     await MainActor.run {
@@ -775,7 +867,7 @@ struct TodayView: View {
                     print("📱 Profile photo loaded from local storage")
                 }
             } catch {
-                print("❌ Error loading profile photo from Supabase: \(error)")
+                print("❌ Error loading profile photo from current service: \(error)")
                 
                 // Fallback to local storage
                 await MainActor.run {
@@ -957,6 +1049,5 @@ struct LoveMessageCard: View {
         .environmentObject(MoodManager())
         .environmentObject(PartnerManager.shared)
         .environmentObject(AppState())
-        .environmentObject(GPTService())
         .environmentObject(NotificationService.shared)
 } 

@@ -10,6 +10,7 @@ import SwiftUI
 struct AddCalendarEntryView: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject var appState: AppState
+    @EnvironmentObject var calendarManager: CalendarManager
     
     @State private var title = ""
     @State private var description = ""
@@ -17,163 +18,172 @@ struct AddCalendarEntryView: View {
     @State private var selectedTime = Date()
     @State private var isAllDay = false
     @State private var isSaving = false
+    @State private var shareWithPartner = true  // Share by default
+    @State private var isMemory = false  // Option to create as memory
     
     var body: some View {
         NavigationView {
-            VStack(spacing: 0) {
-                // Header with navigation
-                headerWithNavigation
-                
-                ScrollView {
-                    VStack(spacing: 25) {
-                        // Title input
-                        titleSection
-                        
-                        // Description input
-                        descriptionSection
-                        
-                        // Date and time selection
-                        dateTimeSection
-                        
-                        // All day toggle
-                        allDaySection
-                        
-                        // Action buttons
-                        actionButtonsSection
-                        
-                        Spacer(minLength: 50)
-                    }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 20)
+            ScrollView {
+                VStack(spacing: 30) {
+                    // Header section
+                    headerSection
+                    
+                    // Title input
+                    titleSection
+                    
+                    // Description input
+                    descriptionSection
+                    
+                    // Date and time selection
+                    dateTimeSection
+                    
+                    // All day toggle
+                    allDaySection
+                    
+                    // Sharing options
+                    sharingSection
+                    
+                    // Action buttons
+                    actionButtonsSection
+                    
+                    Spacer(minLength: 50)
                 }
+                .padding(.horizontal, 20)
+                .padding(.top, 20)
             }
             .purpleTheme()
-            .navigationBarHidden(true)
+            .navigationTitle("Neuer Kalendereintrag")
+            .navigationBarTitleDisplayMode(.inline)
+            .navigationBarBackButtonHidden(true)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Abbrechen") {
+                        dismiss()
+                    }
+                    .foregroundColor(ColorTheme.secondaryText)
+                }
+                
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Speichern") {
+                        saveEntry()
+                    }
+                    .fontWeight(.semibold)
+                    .foregroundColor(ColorTheme.accentPink)
+                    .disabled(title.isEmpty || isSaving)
+                }
+            }
         }
     }
     
-    private var headerWithNavigation: some View {
-        HStack {
-            Button("Abbrechen") {
-                dismiss()
-            }
-            .foregroundColor(ColorTheme.accentBlue)
-            .font(.body)
-            
-            Spacer()
-            
-            Text(NSLocalizedString("calendar_add_entry_title", comment: "Add Calendar Entry"))
-                .font(.headline)
-                .fontWeight(.semibold)
-                .foregroundColor(ColorTheme.primaryText)
-            
-            Spacer()
-            
-            Button("Speichern") {
-                saveEntry()
-            }
-            .fontWeight(.semibold)
-            .foregroundColor(ColorTheme.accentBlue)
-            .disabled(title.isEmpty || isSaving)
-        }
-        .padding(.horizontal, 20)
-        .padding(.top, 60)
-        .padding(.bottom, 20)
-        .background(ColorTheme.cardBackground)
-    }
     
     private var headerSection: some View {
         VStack(spacing: 15) {
-            Image(systemName: "calendar.badge.plus")
+            Text("📅")
                 .font(.system(size: 60))
-                .foregroundColor(ColorTheme.accentPink)
             
-            Text(NSLocalizedString("calendar_add_entry_title", comment: "Add Calendar Entry"))
+            Text("Neuer Kalendereintrag")
                 .font(.title2)
                 .fontWeight(.bold)
                 .foregroundColor(ColorTheme.primaryText)
             
-            Text(NSLocalizedString("calendar_add_entry_subtitle", comment: "Create a new calendar entry with date and time"))
+            Text("Erstelle einen neuen Eintrag für deinen Kalender")
+                .font(.body)
                 .foregroundColor(ColorTheme.secondaryText)
                 .multilineTextAlignment(.center)
         }
+        .padding(.vertical, 20)
     }
     
     private var titleSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(NSLocalizedString("calendar_entry_title_label", comment: "Title"))
+        VStack(alignment: .leading, spacing: 15) {
+            Text("Titel")
                 .font(.headline)
                 .foregroundColor(ColorTheme.primaryText)
+                .padding(.horizontal, 5)
             
-            TextField(NSLocalizedString("calendar_entry_title_placeholder", comment: "Enter title"), text: $title)
+            TextField("Gib einen Titel ein...", text: $title)
                 .textFieldStyle(PlainTextFieldStyle())
                 .font(.body)
-                .padding()
-                .background(ColorTheme.cardBackgroundSecondary)
-                .cornerRadius(10)
                 .foregroundColor(ColorTheme.primaryText)
+                .padding(15)
+                .background(
+                    RoundedRectangle(cornerRadius: 15)
+                        .fill(ColorTheme.cardBackgroundSecondary)
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 15)
+                        .stroke(title.isEmpty ? Color.gray.opacity(0.3) : ColorTheme.accentPink, lineWidth: 1)
+                )
         }
         .purpleCard()
     }
     
     private var descriptionSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(NSLocalizedString("calendar_entry_description_label", comment: "Description"))
+        VStack(alignment: .leading, spacing: 15) {
+            Text("Beschreibung")
                 .font(.headline)
                 .foregroundColor(ColorTheme.primaryText)
+                .padding(.horizontal, 5)
             
-            TextField(NSLocalizedString("calendar_entry_description_placeholder", comment: "Enter description"), text: $description, axis: .vertical)
+            TextField("Optionale Beschreibung...", text: $description, axis: .vertical)
                 .textFieldStyle(PlainTextFieldStyle())
                 .font(.body)
-                .lineLimit(3...6)
-                .padding()
-                .background(ColorTheme.cardBackgroundSecondary)
-                .cornerRadius(10)
                 .foregroundColor(ColorTheme.primaryText)
+                .lineLimit(3...6)
+                .padding(15)
+                .background(
+                    RoundedRectangle(cornerRadius: 15)
+                        .fill(ColorTheme.cardBackgroundSecondary)
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 15)
+                        .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                )
         }
         .purpleCard()
     }
     
     private var dateTimeSection: some View {
         VStack(alignment: .leading, spacing: 20) {
-            Text(NSLocalizedString("calendar_entry_datetime_label", comment: "Date & Time"))
+            Text("Datum & Zeit")
                 .font(.headline)
                 .foregroundColor(ColorTheme.primaryText)
+                .padding(.horizontal, 5)
             
-            VStack(spacing: 15) {
+            VStack(spacing: 20) {
                 // Date picker
-                VStack(alignment: .leading, spacing: 8) {
-                    Text(NSLocalizedString("calendar_entry_date_label", comment: "Date"))
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("Datum")
                         .font(.subheadline)
+                        .fontWeight(.medium)
                         .foregroundColor(ColorTheme.secondaryText)
                     
                     DatePicker(
-                        NSLocalizedString("calendar_entry_date_placeholder", comment: "Select date"),
+                        "Datum wählen",
                         selection: $selectedDate,
                         displayedComponents: .date
                     )
-                    .datePickerStyle(WheelDatePickerStyle())
+                    .datePickerStyle(CompactDatePickerStyle())
                     .labelsHidden()
-                    .colorScheme(.dark)
-                    .accentColor(.white)
+                    .accentColor(ColorTheme.accentPink)
                 }
                 
                 if !isAllDay {
                     // Time picker
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text(NSLocalizedString("calendar_entry_time_label", comment: "Time"))
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("Uhrzeit")
                             .font(.subheadline)
+                            .fontWeight(.medium)
                             .foregroundColor(ColorTheme.secondaryText)
                         
                         DatePicker(
-                            NSLocalizedString("calendar_entry_time_placeholder", comment: "Select time"),
+                            "Zeit wählen",
                             selection: $selectedTime,
                             displayedComponents: .hourAndMinute
                         )
-                        .datePickerStyle(WheelDatePickerStyle())
+                        .datePickerStyle(CompactDatePickerStyle())
                         .labelsHidden()
-                        .colorScheme(.dark)
-                        .accentColor(.white)
+                        .accentColor(ColorTheme.accentPink)
                     }
                 }
             }
@@ -182,70 +192,128 @@ struct AddCalendarEntryView: View {
     }
     
     private var allDaySection: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 15) {
             HStack {
-                Text(NSLocalizedString("calendar_entry_allday_label", comment: "All Day"))
-                    .font(.headline)
-                    .foregroundColor(ColorTheme.primaryText)
+                VStack(alignment: .leading, spacing: 5) {
+                    Text("Ganztägig")
+                        .font(.headline)
+                        .foregroundColor(ColorTheme.primaryText)
+                    
+                    if isAllDay {
+                        Text("Dieser Termin dauert den ganzen Tag")
+                            .font(.caption)
+                            .foregroundColor(ColorTheme.secondaryText)
+                    }
+                }
                 
                 Spacer()
                 
                 Toggle("", isOn: $isAllDay)
                     .toggleStyle(SwitchToggleStyle(tint: ColorTheme.accentPink))
             }
-            
-            if isAllDay {
-                Text(NSLocalizedString("calendar_entry_allday_description", comment: "This event will last the entire day"))
-                    .font(.caption)
-                    .foregroundColor(ColorTheme.secondaryText)
-            }
         }
         .purpleCard()
     }
     
-    private var actionButtonsSection: some View {
+    private var sharingSection: some View {
         VStack(spacing: 15) {
+            // Share with partner
+            VStack(alignment: .leading, spacing: 15) {
+                HStack {
+                    VStack(alignment: .leading, spacing: 5) {
+                        Text("👥 Mit Partner teilen")
+                            .font(.headline)
+                            .foregroundColor(ColorTheme.primaryText)
+                        
+                        if shareWithPartner {
+                            Text("Dein Partner sieht diese Erinnerung")
+                                .font(.caption)
+                                .foregroundColor(ColorTheme.secondaryText)
+                        }
+                    }
+                    
+                    Spacer()
+                    
+                    Toggle("", isOn: $shareWithPartner)
+                        .toggleStyle(SwitchToggleStyle(tint: ColorTheme.accentPink))
+                }
+            }
+            .purpleCard()
+            
+            // Save as memory
+            VStack(alignment: .leading, spacing: 15) {
+                HStack {
+                    VStack(alignment: .leading, spacing: 5) {
+                        Text("💖 Als Erinnerung speichern")
+                            .font(.headline)
+                            .foregroundColor(ColorTheme.primaryText)
+                        
+                        if isMemory {
+                            Text("Wird in eurer gemeinsamen Timeline gespeichert")
+                                .font(.caption)
+                                .foregroundColor(ColorTheme.secondaryText)
+                        }
+                    }
+                    
+                    Spacer()
+                    
+                    Toggle("", isOn: $isMemory)
+                        .toggleStyle(SwitchToggleStyle(tint: ColorTheme.accentPink))
+                }
+            }
+            .purpleCard()
+        }
+    }
+    
+    private var actionButtonsSection: some View {
+        VStack(spacing: 20) {
             // Save button
             Button(action: saveEntry) {
                 HStack {
                     if isSaving {
                         ProgressView()
                             .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                            .scaleEffect(0.8)
+                            .scaleEffect(0.9)
                     } else {
                         Image(systemName: "checkmark.circle.fill")
-                            .font(.system(size: 18))
+                            .font(.system(size: 20))
                     }
                     
-                    Text(NSLocalizedString("save", comment: "Save"))
-                        .font(.headline)
+                    Text("Speichern")
+                        .font(.title3)
                         .fontWeight(.semibold)
                 }
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 16)
-                .background(title.isEmpty || isSaving ? ColorTheme.secondaryText : ColorTheme.accentPink)
+                .frame(height: 55)
+                .background(
+                    RoundedRectangle(cornerRadius: 15)
+                        .fill(title.isEmpty || isSaving ? Color.gray.opacity(0.5) : ColorTheme.accentPink)
+                )
                 .foregroundColor(.white)
-                .cornerRadius(12)
+                .shadow(color: title.isEmpty || isSaving ? .clear : ColorTheme.accentPink.opacity(0.3), radius: 8, x: 0, y: 4)
             }
             .disabled(title.isEmpty || isSaving)
             
             // Cancel button
             Button(action: { dismiss() }) {
                 HStack {
-                    Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 18))
+                    Image(systemName: "xmark.circle")
+                        .font(.system(size: 20))
                     
-                    Text(NSLocalizedString("cancel", comment: "Cancel"))
-                        .font(.headline)
+                    Text("Abbrechen")
+                        .font(.title3)
                         .fontWeight(.medium)
                 }
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 16)
-                .background(ColorTheme.cardBackgroundSecondary)
-                .foregroundColor(ColorTheme.primaryText)
-                .cornerRadius(12)
+                .frame(height: 55)
+                .background(
+                    RoundedRectangle(cornerRadius: 15)
+                        .fill(ColorTheme.cardBackgroundSecondary)
+                )
+                .foregroundColor(ColorTheme.secondaryText)
             }
         }
+        .padding(.top, 10)
     }
     
     private func saveEntry() {
@@ -263,8 +331,8 @@ struct AddCalendarEntryView: View {
             
             // Create calendar entry
             let entry = CalendarEntry(
-                id: UUID().uuidString,
-                userId: appState.currentUser?.id ?? UUID(),
+                id: 0, // Will be generated by backend
+                userId: appState.currentUser?.id ?? "",
                 title: title,
                 description: description,
                 date: combinedDate,
@@ -272,8 +340,13 @@ struct AddCalendarEntryView: View {
                 createdAt: Date()
             )
             
-            // Save to Supabase (this would be implemented)
-            print("✅ Calendar entry to save: \(entry)")
+            // Save using CalendarManager
+            await calendarManager.addCalendarEntry(entry)
+            
+            // If sharing with partner or saving as memory
+            if shareWithPartner || isMemory {
+                await saveAsSharedMemory(entry)
+            }
             
             await MainActor.run {
                 isSaving = false
@@ -281,21 +354,87 @@ struct AddCalendarEntryView: View {
             }
         }
     }
+    
+    private func saveAsSharedMemory(_ entry: CalendarEntry) async {
+        print("🔄 Saving as shared memory...")
+        
+        do {
+            // Get partner ID from PartnerManager
+            let partnerManager = PartnerManager.shared
+            let partnerId = partnerManager.partnerProfile?.id
+            
+            // Create memory from calendar entry
+            let memory = Memory(
+                id: nil,
+                user_id: Int(entry.userId) ?? 0,
+                partner_id: partnerId,
+                date: DateFormatter.yyyyMMdd.string(from: entry.date),
+                title: entry.title,
+                description: entry.description,
+                photo_data: nil,
+                location: nil,
+                mood_level: "happy",
+                tags: isMemory ? "memory,calendar" : "calendar",
+                is_shared: shareWithPartner ? "true" : "false",
+                created_at: Date(),
+                updated_at: Date()
+            )
+            
+            // Save memory via BackendService
+            let backendService = BackendService.shared
+            let savedMemory = try await backendService.createMemory(memory)
+            
+            print("✅ Memory created with ID: \(savedMemory.id ?? 0)")
+            
+            // Send notification to partner if shared
+            if shareWithPartner, let partnerId = partnerId {
+                await notifyPartnerAboutSharedMemory(partnerId: partnerId, memory: savedMemory)
+            }
+            
+        } catch {
+            print("❌ Failed to save as memory: \(error)")
+        }
+    }
+    
+    private func notifyPartnerAboutSharedMemory(partnerId: Int, memory: Memory) async {
+        print("📱 Notifying partner about shared memory...")
+        
+        do {
+            let backendService = BackendService.shared
+            
+            // Get current user ID
+            guard let currentUserId = try? await backendService.getCurrentUserId() else {
+                print("❌ No current user ID")
+                return
+            }
+            
+            let title = "💝 Neue gemeinsame Erinnerung"
+            let body = "\(memory.title)"
+            let data = [
+                "type": "shared_memory",
+                "memory_id": String(memory.id ?? 0),
+                "sender_id": currentUserId
+            ]
+            
+            try await backendService.sendPushNotificationToPartner(
+                userId: currentUserId,
+                partnerId: String(partnerId),
+                title: title,
+                body: body,
+                data: data
+            )
+            
+            print("✅ Partner notification sent")
+        } catch {
+            print("❌ Failed to notify partner: \(error)")
+        }
+    }
 }
 
-// MARK: - Calendar Entry Model
-
-struct CalendarEntry: Codable, Identifiable {
-    let id: String
-    let userId: UUID
-    let title: String
-    let description: String
-    let date: Date
-    let isAllDay: Bool
-    let createdAt: Date
-}
+// MARK: - Preview
 
 #Preview {
     AddCalendarEntryView()
         .environmentObject(AppState())
+        .environmentObject(CalendarManager.shared)
 } 

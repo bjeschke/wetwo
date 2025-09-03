@@ -1,11 +1,13 @@
 import Foundation
 import CryptoKit
+import FirebaseAuth
 
 // MARK: - Error Types
 
 enum BackendError: Error, LocalizedError {
     case invalidCredentials
     case signUpFailed
+    case emailAlreadyExists
     case userNotFound
     case networkError
     case databaseError
@@ -22,6 +24,7 @@ enum BackendError: Error, LocalizedError {
     case sessionExpired
     case invalidResponse
     case decodingError
+    case notImplemented
     
     var errorDescription: String? {
         switch self {
@@ -29,6 +32,8 @@ enum BackendError: Error, LocalizedError {
             return "Invalid credentials provided"
         case .signUpFailed:
             return "Failed to create account"
+        case .emailAlreadyExists:
+            return "Ein Account mit dieser Email-Adresse existiert bereits"
         case .userNotFound:
             return "User not found"
         case .networkError:
@@ -61,6 +66,8 @@ enum BackendError: Error, LocalizedError {
             return "Invalid response from server"
         case .decodingError:
             return "Failed to decode server response"
+        case .notImplemented:
+            return "Feature not implemented in backend service"
         }
     }
 }
@@ -78,19 +85,143 @@ struct AuthResponse: Codable {
     let user: BackendUser
     let token: String
     let refreshToken: String
+    let firebaseToken: String?  // Firebase custom token from backend
+    
+    enum CodingKeys: String, CodingKey {
+        case user
+        case token
+        case refreshToken = "refresh_token"
+        case firebaseToken = "firebase_token"
+    }
 }
 
 struct BackendUser: Codable {
-    let id: String
+    let id: Int?  // Backend returns Int for ID
     let email: String
-    let name: String?
-    let birthDate: String?
-    let createdAt: String
+    let name: String
+    let birthDate: String
+    let firebaseUid: String?  // This is the Firebase UID from backend
+    let createdAt: String?
+    let updatedAt: String?
+    let creationTime: String?
+    let modificationTime: String?
     
     enum CodingKeys: String, CodingKey {
-        case id, email, name
-        case birthDate = "birth_date"
+        case id, email, name, birthDate
+        case firebaseUid = "firebaseUid"
         case createdAt = "created_at"
+        case updatedAt = "updated_at"
+        case creationTime = "creationTime"
+        case modificationTime = "modificationTime"
+    }
+}
+
+struct BackendProfile: Codable {
+    let id: Int
+    let name: String
+    let zodiacSign: String
+    let birthDate: String
+    let profilePhotoUrl: String?
+    let relationshipStatus: String?
+    let hasChildren: String?
+    let childrenCount: String?
+    let pushToken: String?
+    let appleUserId: String?
+    let creationTime: String?
+    let modificationTime: String?
+    
+    enum CodingKeys: String, CodingKey {
+        case id, name
+        case zodiacSign = "zodiacSign"
+        case birthDate = "birthDate"
+        case profilePhotoUrl = "profilePhotoUrl"
+        case relationshipStatus = "relationshipStatus"
+        case hasChildren = "hasChildren"
+        case childrenCount = "childrenCount"
+        case pushToken = "pushToken"
+        case appleUserId = "appleUserId"
+        case creationTime = "creationTime"
+        case modificationTime = "modificationTime"
+    }
+}
+
+// Simple Profile structure for BackendService return values
+struct SimpleProfile: Codable {
+    let name: String
+    let birthDate: Date
+    let zodiacSign: ZodiacSign
+    let photoUrl: String?
+    
+    init(name: String, birthDate: Date, zodiacSign: ZodiacSign, photoUrl: String?) {
+        self.name = name
+        self.birthDate = birthDate
+        self.zodiacSign = zodiacSign
+        self.photoUrl = photoUrl
+    }
+}
+
+struct BackendMoodEntry: Codable {
+    let id: Int
+    let date: String
+    let moodLevel: Int
+    let eventLabel: String?
+    let location: String?
+    let photoData: String?
+    let insight: String?
+    let loveMessage: String?
+    let creationTime: String?
+    let modificationTime: String?
+    
+    enum CodingKeys: String, CodingKey {
+        case id, date, location, insight
+        case moodLevel = "moodLevel"
+        case eventLabel = "eventLabel"
+        case photoData = "photoData"
+        case loveMessage = "loveMessage"
+        case creationTime = "creationTime"
+        case modificationTime = "modificationTime"
+    }
+}
+
+struct BackendPartnership: Codable {
+    let id: Int
+    let connectionCode: String
+    let status: String
+    let user: BackendUser?
+    let partner: BackendUser?
+    let creationTime: Date?
+    let modificationTime: Date?
+    
+    enum CodingKeys: String, CodingKey {
+        case id
+        case connectionCode = "connectionCode"
+        case status
+        case user
+        case partner
+        case creationTime = "creationTime"
+        case modificationTime = "modificationTime"
+    }
+}
+
+struct BackendNotification: Codable {
+    let id: Int
+    let title: String
+    let body: String
+    let type: String
+    let data: [String: String]?
+    let isRead: Bool
+    let sentAt: Date?
+    let user: BackendUser?
+    
+    enum CodingKeys: String, CodingKey {
+        case id
+        case title
+        case body
+        case type
+        case data
+        case isRead = "isRead"
+        case sentAt = "sentAt"
+        case user
     }
 }
 
@@ -110,7 +241,7 @@ struct BackendUser: Codable {
  * The service is designed to be thread-safe and follows Swift concurrency best practices.
  * All network operations are performed asynchronously and include proper error handling.
  */
-final class BackendService: @unchecked Sendable {
+final class BackendService: DataServiceProtocol, @unchecked Sendable {
     static let shared = BackendService()
     
     private let session = URLSession.shared
@@ -123,30 +254,88 @@ final class BackendService: @unchecked Sendable {
         print("🔧 Initializing BackendService with URL: \(BackendConfig.baseURL)")
     }
     
-    // MARK: - Authentication
+    // MARK: - Firebase Token Management
     
-    var currentUserId: String? {
-        // TODO: Implement token decoding to get user ID
-        return nil
-    }
-    
-    func getCurrentUserId() async throws -> String? {
-        guard let token = authToken else {
+    private func getFirebaseToken() async throws -> String? {
+        guard let currentUser = Auth.auth().currentUser else {
+            print("⚠️ No Firebase user authenticated")
             return nil
         }
         
-        // Decode JWT token to get user ID
-        // This is a simplified implementation
-        return currentUserId
+        do {
+            let token = try await currentUser.getIDToken()
+            print("✅ Firebase token obtained")
+            return token
+        } catch {
+            print("❌ Failed to get Firebase token: \(error)")
+            throw error
+        }
+    }
+    
+    private func addAuthHeaders(to request: inout URLRequest) async throws {
+        // Always try to get and use Firebase token first
+        if let firebaseToken = try? await getFirebaseToken() {
+            request.setValue("Bearer \(firebaseToken)", forHTTPHeaderField: "Authorization")
+        } else if let authToken = authToken {
+            // Fallback to stored auth token if Firebase token not available
+            request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
+        }
+    }
+    
+    // MARK: - Authentication
+    
+    var currentUserId: String? {
+        return Auth.auth().currentUser?.uid
+    }
+    
+    func getCurrentUserId() async throws -> String? {
+        // Get the current Firebase user's UID
+        guard let uid = Auth.auth().currentUser?.uid else {
+            print("⚠️ No authenticated Firebase user")
+            return nil
+        }
+        return uid
+    }
+    
+    func signInWithFirebaseToken(email: String, password: String) async throws -> (User, String) {
+        let authResponse = try await signInInternal(email: email, password: password)
+        
+        guard let firebaseToken = authResponse.firebaseToken else {
+            print("❌ Backend did not return Firebase custom token")
+            throw BackendError.invalidResponse
+        }
+        
+        let birthDate = authResponse.user.birthDate.isEmpty ? Date() : 
+            DateFormatter.yyyyMMdd.date(from: authResponse.user.birthDate) ?? Date()
+        
+        let user = User(
+            name: authResponse.user.name,
+            birthDate: birthDate
+        )
+        
+        return (user, firebaseToken)
     }
     
     func signIn(email: String, password: String) async throws -> User {
+        let authResponse = try await signInInternal(email: email, password: password)
+        
+        let birthDate = authResponse.user.birthDate.isEmpty ? Date() : 
+            DateFormatter.yyyyMMdd.date(from: authResponse.user.birthDate) ?? Date()
+        
+        return User(
+            name: authResponse.user.name,
+            birthDate: birthDate
+        )
+    }
+    
+    private func signInInternal(email: String, password: String) async throws -> AuthResponse {
         print("🔧 Starting email/password sign-in with Backend")
         
         guard let url = BackendConfig.authURL() else {
             throw BackendError.invalidData
         }
         
+        // Signin endpoint is /api/auth (not /api/auth/signin)
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -157,6 +346,89 @@ final class BackendService: @unchecked Sendable {
         ]
         
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        
+        print("📡 [SIGNIN] Sending request to: \(url) with body: \(body)")
+        
+        do {
+            let (data, response) = try await session.data(for: request)
+            
+            guard let httpResponse = response as? HTTPURLResponse else {
+                throw BackendError.networkError
+            }
+            
+            if httpResponse.statusCode == 200 {
+                // Try to decode as direct AuthResponse first
+                do {
+                    let authResponse = try JSONDecoder().decode(AuthResponse.self, from: data)
+                    
+                    // Store tokens
+                    self.authToken = authResponse.token
+                    self.refreshToken = authResponse.refreshToken
+                    
+                    print("✅ Email/password sign-in successful for user: \(authResponse.user.id)")
+                    if authResponse.firebaseToken != nil {
+                        print("🔑 Firebase custom token received from backend")
+                    }
+                    
+                    return authResponse
+                } catch {
+                    // Fallback: try wrapped response
+                    if let backendResponse = try? JSONDecoder().decode(BackendResponse<AuthResponse>.self, from: data),
+                       backendResponse.success,
+                       let authData = backendResponse.data {
+                        
+                        // Store tokens
+                        self.authToken = authData.token
+                        self.refreshToken = authData.refreshToken
+                        
+                        print("✅ Email/password sign-in successful for user: \(authData.user.id)")
+                        if authData.firebaseToken != nil {
+                            print("🔑 Firebase custom token received from backend")
+                        }
+                        
+                        return authData
+                    } else {
+                        print("❌ Sign-in failed: Unable to decode response")
+                        throw BackendError.invalidCredentials
+                    }
+                }
+            } else {
+                // Try to parse error message from response
+                if let errorResponse = try? JSONDecoder().decode(BackendResponse<AuthResponse>.self, from: data) {
+                    print("❌ Sign-in error: \(errorResponse.error ?? errorResponse.message ?? "Unknown error")")
+                }
+                throw BackendError.invalidCredentials
+            }
+        } catch {
+            print("❌ Email/password sign-in failed: \(error)")
+            throw BackendError.invalidCredentials
+        }
+    }
+    
+    func signInWithApple(idToken: String, nonce: String) async throws -> User {
+        print("🔧 Starting Apple sign-in with Backend")
+        
+        guard let url = BackendConfig.authURL() else {
+            throw BackendError.invalidData
+        }
+        
+        guard let appleURL = URL(string: "\(url.absoluteString)/apple") else {
+            throw BackendError.invalidData
+        }
+        
+        var request = URLRequest(url: appleURL)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        let body = [
+            "id_token": idToken,
+            "nonce": nonce,
+            "provider": "apple"
+        ]
+        
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        
+        print("📡 [APPLE_SIGNIN] Sending request to: \(appleURL) with body: \(body)")
         
         do {
             let (data, response) = try await session.data(for: request)
@@ -172,12 +444,14 @@ final class BackendService: @unchecked Sendable {
                 self.authToken = authResponse.token
                 self.refreshToken = authResponse.refreshToken
                 
-                print("✅ Email/password sign-in successful for user: \(authResponse.user.id)")
+                print("✅ Apple sign-in successful for user: \(authResponse.user.id)")
+                
+                // Firebase UID is managed by FirebaseAuth, no need to store locally
+                print("✅ User authenticated with backend ID: \(authResponse.user.id)")
                 
                 // Create a User with the provided data
-                let birthDate = authResponse.user.birthDate != nil ? 
-                    DateFormatter.yyyyMMdd.date(from: authResponse.user.birthDate!) ?? Date() : 
-                    Date()
+                let birthDate = authResponse.user.birthDate.isEmpty ? Date() : 
+                    DateFormatter.yyyyMMdd.date(from: authResponse.user.birthDate) ?? Date()
                 
                 return User(
                     name: authResponse.user.name ?? "User",
@@ -187,30 +461,57 @@ final class BackendService: @unchecked Sendable {
                 throw BackendError.invalidCredentials
             }
         } catch {
-            print("❌ Email/password sign-in failed: \(error)")
+            print("❌ Apple sign-in failed: \(error)")
             throw BackendError.invalidCredentials
         }
     }
     
+    // Legacy methods - kept for compatibility but use signUpDirectly instead
+    func signUpWithFirebaseToken(email: String, password: String, name: String, birthDate: Date = Date()) async throws -> (User, String) {
+        // This method is deprecated - backend doesn't return Firebase tokens anymore
+        throw BackendError.notImplemented
+    }
+    
     func signUp(email: String, password: String, name: String, birthDate: Date = Date()) async throws -> User {
+        // Use signUpDirectly instead
+        let backendUser = try await signUpDirectly(email: email, password: password, name: name, birthDate: birthDate)
+        return User(
+            name: backendUser.name,
+            birthDate: DateFormatter.yyyyMMdd.date(from: backendUser.birthDate) ?? birthDate
+        )
+    }
+    
+    // For now, signup returns user directly, not AuthResponse with tokens
+    func signUpDirectly(email: String, password: String, name: String, birthDate: Date = Date()) async throws -> BackendUser {
         print("🔧 Starting sign-up with Backend")
         
-        guard let url = BackendConfig.authURL()?.appendingPathComponent("/signup") else {
+        guard let url = BackendConfig.authURL() else {
             throw BackendError.invalidData
         }
         
-        var request = URLRequest(url: url)
+        guard let signupURL = URL(string: "\(url.absoluteString)/signup") else {
+            throw BackendError.invalidData
+        }
+        
+        var request = URLRequest(url: signupURL)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        // Add API key if available
+        if !BackendConfig.apiKey.isEmpty {
+            request.setValue(BackendConfig.apiKey, forHTTPHeaderField: "X-API-Key")
+        }
         
         let body = [
             "email": email,
             "password": password,
             "name": name,
-            "birth_date": DateFormatter.yyyyMMdd.string(from: birthDate)
+            "birthDate": DateFormatter.yyyyMMdd.string(from: birthDate)
         ]
         
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        
+        print("📡 [SIGNUP] Sending request to: \(signupURL) with body: \(body)")
         
         do {
             let (data, response) = try await session.data(for: request)
@@ -219,27 +520,33 @@ final class BackendService: @unchecked Sendable {
                 throw BackendError.networkError
             }
             
-            if httpResponse.statusCode == 201 {
-                let authResponse = try JSONDecoder().decode(AuthResponse.self, from: data)
-                
-                // Store tokens
-                self.authToken = authResponse.token
-                self.refreshToken = authResponse.refreshToken
-                
-                print("✅ Sign-up successful for user: \(authResponse.user.id)")
-                
-                return User(
-                    name: name,
-                    birthDate: birthDate
-                )
+            print("📡 [SIGNUP] Response status: \(httpResponse.statusCode)")
+            
+            if let responseString = String(data: data, encoding: .utf8) {
+                print("📡 [SIGNUP] Response body: \(responseString)")
+            }
+            
+            if httpResponse.statusCode == 200 || httpResponse.statusCode == 201 {
+                // Backend returns user directly on signup
+                let user = try JSONDecoder().decode(BackendUser.self, from: data)
+                print("✅ Sign-up successful, user created with firebaseUid: \(user.firebaseUid ?? "none")")
+                return user
+            } else if httpResponse.statusCode == 409 {
+                throw BackendError.emailAlreadyExists
             } else {
                 throw BackendError.signUpFailed
             }
         } catch {
             print("❌ Sign-up failed: \(error)")
+            
+            if let backendError = error as? BackendError {
+                throw backendError
+            }
+            
             throw BackendError.signUpFailed
         }
     }
+    
     
     func signOut() async throws {
         print("🔧 Signing out from Backend")
@@ -257,6 +564,8 @@ final class BackendService: @unchecked Sendable {
                 request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
             }
             
+            print("📡 [LOGOUT] Sending request to: \(url)")
+            
             do {
                 let (_, response) = try await session.data(for: request)
                 if let httpResponse = response as? HTTPURLResponse {
@@ -270,17 +579,26 @@ final class BackendService: @unchecked Sendable {
     
     // MARK: - Profile Management
     
-    func getUserProfile() async throws -> Profile? {
-        guard let url = BackendConfig.profilesURL() else {
+    func getUserProfile() async throws -> SimpleProfile? {
+        // Get the current user's profile
+        guard let userId = try await getCurrentUserId() else {
+            throw BackendError.userNotFound
+        }
+        
+        return try await getProfile(userId: userId)
+    }
+    
+    func getProfile(userId: String) async throws -> SimpleProfile? {
+        guard let url = BackendConfig.profilesURL()?.appendingPathComponent(userId) else {
             throw BackendError.invalidData
         }
         
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
         
-        if let token = authToken {
-            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        }
+        try await addAuthHeaders(to: &request)
+        
+        print("📡 [GET_PROFILE] Sending request to: \(url)")
         
         do {
             let (data, response) = try await session.data(for: request)
@@ -290,18 +608,85 @@ final class BackendService: @unchecked Sendable {
             }
             
             if httpResponse.statusCode == 200 {
-                let backendResponse = try JSONDecoder().decode(BackendResponse<Profile>.self, from: data)
-                return backendResponse.data
+                // Backend returns Profile entity directly
+                let backendProfile = try JSONDecoder().decode(BackendProfile.self, from: data)
+                
+                // Convert BackendProfile to SimpleProfile
+                let birthDate = DateFormatter.yyyyMMdd.date(from: backendProfile.birthDate) ?? Date()
+                return SimpleProfile(
+                    name: backendProfile.name,
+                    birthDate: birthDate,
+                    zodiacSign: ZodiacSign(rawValue: backendProfile.zodiacSign) ?? .unknown,
+                    photoUrl: backendProfile.profilePhotoUrl
+                )
+            } else if httpResponse.statusCode == 404 {
+                return nil
             } else {
-                throw BackendError.userNotFound
+                throw BackendError.databaseError
             }
         } catch {
-            print("❌ Error getting user profile: \(error)")
-            throw BackendError.userNotFound
+            print("❌ Error getting profile: \(error)")
+            throw error
         }
     }
     
     func updateProfile(userId: String, name: String, birthDate: Date?) async throws {
+        // Use the more detailed updateProfile method
+        try await updateProfile(userId: userId, name: name, bio: nil, avatarUrl: nil)
+    }
+    
+    func updateProfile(userId: String, name: String? = nil, bio: String? = nil, avatarUrl: String? = nil) async throws {
+        guard let url = BackendConfig.profilesURL()?.appendingPathComponent(userId) else {
+            throw BackendError.invalidData
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "PUT"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        try await addAuthHeaders(to: &request)
+        
+        // Backend expects UpdateProfileRequestDto: name, bio, avatarUrl
+        var body: [String: Any] = [:] 
+        if let name = name {
+            body["name"] = name
+        }
+        if let bio = bio {
+            body["bio"] = bio
+        }
+        if let avatarUrl = avatarUrl {
+            body["avatarUrl"] = avatarUrl
+        }
+        
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        
+        print("📡 [UPDATE_PROFILE] Sending request to: \(url) with body: \(body)")
+        
+        do {
+            let (data, response) = try await session.data(for: request)
+            
+            guard let httpResponse = response as? HTTPURLResponse else {
+                throw BackendError.networkError
+            }
+            
+            print("📡 Profile update response: \(httpResponse.statusCode)")
+            if let responseString = String(data: data, encoding: .utf8) {
+                print("📄 Response body: \(responseString)")
+            }
+            
+            if httpResponse.statusCode == 200 || httpResponse.statusCode == 204 {
+                print("✅ Profile updated successfully")
+            } else {
+                print("❌ Profile update failed with status: \(httpResponse.statusCode)")
+                throw BackendError.databaseError
+            }
+        } catch {
+            print("❌ Error updating profile: \(error)")
+            throw error
+        }
+    }
+    
+    func updateProfilePushToken(userId: String, pushToken: String) async throws {
         guard let url = BackendConfig.profilesURL() else {
             throw BackendError.invalidData
         }
@@ -310,20 +695,13 @@ final class BackendService: @unchecked Sendable {
         request.httpMethod = "PUT"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         
-        if let token = authToken {
-            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        }
+        try await addAuthHeaders(to: &request)
         
-        let actualBirthDate = birthDate ?? Date()
-        let zodiacSign = ZodiacSign.calculate(from: actualBirthDate).rawValue
-        
-        let body = [
-            "name": name,
-            "birth_date": DateFormatter.yyyyMMdd.string(from: actualBirthDate),
-            "zodiac_sign": zodiacSign
-        ]
-        
+        // Backend expects camelCase
+        let body = ["pushToken": pushToken]
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        
+        print("📡 [UPDATE_PUSH_TOKEN] Sending request to: \(url) with body: \(body)")
         
         do {
             let (_, response) = try await session.data(for: request)
@@ -336,7 +714,44 @@ final class BackendService: @unchecked Sendable {
                 throw BackendError.databaseError
             }
         } catch {
-            print("❌ Error updating profile: \(error)")
+            print("❌ Error updating push token: \(error)")
+            throw BackendError.databaseError
+        }
+    }
+    
+    func updateRelationshipData(userId: String, relationshipStatus: String, hasChildren: String, childrenCount: String) async throws {
+        guard let url = BackendConfig.profilesURL() else {
+            throw BackendError.invalidData
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "PUT"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        try await addAuthHeaders(to: &request)
+        
+        // Backend expects camelCase fields
+        let body = [
+            "relationshipStatus": relationshipStatus,
+            "hasChildren": hasChildren,
+            "childrenCount": childrenCount
+        ]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        
+        print("📡 [UPDATE_RELATIONSHIP_DATA] Sending request to: \(url) with body: \(body)")
+        
+        do {
+            let (_, response) = try await session.data(for: request)
+            
+            guard let httpResponse = response as? HTTPURLResponse else {
+                throw BackendError.networkError
+            }
+            
+            if httpResponse.statusCode != 200 {
+                throw BackendError.databaseError
+            }
+        } catch {
+            print("❌ Error updating relationship data: \(error)")
             throw BackendError.databaseError
         }
     }
@@ -353,13 +768,13 @@ final class BackendService: @unchecked Sendable {
         print("✅ Profile existence ensured for backend service")
     }
     
-    func completeOnboarding(email: String, password: String, name: String, birthDate: Date) async throws -> SupabaseUser {
+    func completeOnboarding(email: String, password: String, name: String, birthDate: Date) async throws -> DatabaseUser {
         // For backend service, this is the same as signup
         let user = try await signUp(email: email, password: password, name: name, birthDate: birthDate)
         
-        // Create a SupabaseUser from the User
-        return SupabaseUser(
-            id: try await getCurrentUserId() ?? "",
+        // Create a DatabaseUser from the User
+        return DatabaseUser(
+            id: Int(try await getCurrentUserId() ?? "0") ?? 0,
             email: email,
             createdAt: Date()
         )
@@ -376,11 +791,17 @@ final class BackendService: @unchecked Sendable {
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         
-        if let token = authToken {
-            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        }
+        try await addAuthHeaders(to: &request)
         
-        request.httpBody = try JSONEncoder().encode(memory)
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        request.httpBody = try encoder.encode(memory)
+        
+        print("📡 [CREATE_MEMORY] Sending request to: \(url)")
+        if let bodyData = request.httpBody,
+           let bodyString = String(data: bodyData, encoding: .utf8) {
+            print("📡 [CREATE_MEMORY] Request body: \(bodyString)")
+        }
         
         do {
             let (data, response) = try await session.data(for: request)
@@ -389,13 +810,27 @@ final class BackendService: @unchecked Sendable {
                 throw BackendError.networkError
             }
             
-            if httpResponse.statusCode == 201 {
-                let backendResponse = try JSONDecoder().decode(BackendResponse<Memory>.self, from: data)
-                guard let createdMemory = backendResponse.data else {
-                    throw BackendError.decodingError
+            print("📡 [CREATE_MEMORY] Response status: \(httpResponse.statusCode)")
+            if let responseString = String(data: data, encoding: .utf8) {
+                print("📡 [CREATE_MEMORY] Response body: \(responseString)")
+            }
+            
+            if httpResponse.statusCode == 200 || httpResponse.statusCode == 201 {
+                // Try to decode as direct Memory first
+                do {
+                    let createdMemory = try JSONDecoder().decode(Memory.self, from: data)
+                    print("✅ Memory created with ID: \(createdMemory.id ?? 0)")
+                    return createdMemory
+                } catch {
+                    // Fallback: try wrapped response
+                    let backendResponse = try JSONDecoder().decode(BackendResponse<Memory>.self, from: data)
+                    guard let createdMemory = backendResponse.data else {
+                        throw BackendError.decodingError
+                    }
+                    return createdMemory
                 }
-                return createdMemory
             } else {
+                print("❌ Memory creation failed with status: \(httpResponse.statusCode)")
                 throw BackendError.databaseError
             }
         } catch {
@@ -412,9 +847,9 @@ final class BackendService: @unchecked Sendable {
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
         
-        if let token = authToken {
-            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        }
+        try await addAuthHeaders(to: &request)
+        
+        print("📡 [GET_MEMORIES] Sending request to: \(url)")
         
         do {
             let (data, response) = try await session.data(for: request)
@@ -436,8 +871,7 @@ final class BackendService: @unchecked Sendable {
     }
     
     func updateMemory(_ memory: Memory) async throws -> Memory {
-        guard let memoryId = memory.id,
-              let url = BackendConfig.memoriesURL()?.appendingPathComponent(memoryId.uuidString) else {
+        guard let url = BackendConfig.memoriesURL()?.appendingPathComponent(String(memory.id ?? 0)) else {
             throw BackendError.invalidData
         }
         
@@ -445,11 +879,11 @@ final class BackendService: @unchecked Sendable {
         request.httpMethod = "PUT"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         
-        if let token = authToken {
-            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        }
+        try await addAuthHeaders(to: &request)
         
         request.httpBody = try JSONEncoder().encode(memory)
+        
+        print("📡 [UPDATE_MEMORY] Sending request to: \(url)")
         
         do {
             let (data, response) = try await session.data(for: request)
@@ -473,17 +907,17 @@ final class BackendService: @unchecked Sendable {
         }
     }
     
-    func deleteMemory(_ memoryId: UUID) async throws {
-        guard let url = BackendConfig.memoriesURL()?.appendingPathComponent(memoryId.uuidString) else {
+    func deleteMemory(_ memoryId: Int) async throws {
+        guard let url = BackendConfig.memoriesURL()?.appendingPathComponent(String(memoryId)) else {
             throw BackendError.invalidData
         }
         
         var request = URLRequest(url: url)
         request.httpMethod = "DELETE"
         
-        if let token = authToken {
-            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        }
+        try await addAuthHeaders(to: &request)
+        
+        print("📡 [DELETE_MEMORY] Sending request to: \(url)")
         
         do {
             let (_, response) = try await session.data(for: request)
@@ -503,7 +937,23 @@ final class BackendService: @unchecked Sendable {
     
     // MARK: - Partnership Management
     
+    private func generateConnectionCode() -> String {
+        // Generate a unique 6-character alphanumeric code
+        let characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+        return String((0..<6).map { _ in characters.randomElement()! })
+    }
+    
     func createPartnership(userId: String, partnerId: String, connectionCode: String) async throws -> Partnership {
+        // Legacy method - create partnership with IDs
+        // The backend now expects email, so this is deprecated
+        throw BackendError.notImplemented
+    }
+    
+    func connectWithPartner(email: String, message: String? = nil) async throws -> Partnership {
+        return try await createPartnership(partnerEmail: email, message: message)
+    }
+    
+    func createPartnership(partnerEmail: String, message: String?, connectionCode: String? = nil) async throws -> Partnership {
         guard let url = BackendConfig.partnershipsURL() else {
             throw BackendError.invalidData
         }
@@ -512,18 +962,21 @@ final class BackendService: @unchecked Sendable {
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         
-        if let token = authToken {
-            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        }
+        try await addAuthHeaders(to: &request)
         
-        let body = [
-            "user_id": userId,
-            "partner_id": partnerId,
-            "connection_code": connectionCode,
-            "status": "active"
+        // Generate connection code if not provided
+        let code = connectionCode ?? generateConnectionCode()
+        
+        // Backend expects CreatePartnershipRequestDto: partnerEmail, message, connectionCode
+        let body: [String: Any] = [
+            "partnerEmail": partnerEmail,
+            "message": message ?? "",
+            "connectionCode": code
         ]
         
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        
+        print("📡 [CREATE_PARTNERSHIP] Sending request to: \(url) with body: \(body)")
         
         do {
             let (data, response) = try await session.data(for: request)
@@ -532,12 +985,19 @@ final class BackendService: @unchecked Sendable {
                 throw BackendError.networkError
             }
             
-            if httpResponse.statusCode == 201 {
-                let backendResponse = try JSONDecoder().decode(BackendResponse<Partnership>.self, from: data)
-                guard let partnership = backendResponse.data else {
-                    throw BackendError.decodingError
-                }
-                return partnership
+            if httpResponse.statusCode == 200 || httpResponse.statusCode == 201 {
+                // Backend returns Partnership entity directly
+                let partnership = try JSONDecoder().decode(BackendPartnership.self, from: data)
+                // Convert to our Partnership model
+                return Partnership(
+                    id: partnership.id,
+                    user_id: partnership.user?.id ?? 0,
+                    partner_id: partnership.partner?.id ?? 0,
+                    connection_code: partnership.connectionCode,
+                    status: partnership.status,
+                    created_at: partnership.creationTime,
+                    updated_at: partnership.modificationTime
+                )
             } else {
                 throw BackendError.databaseError
             }
@@ -547,17 +1007,17 @@ final class BackendService: @unchecked Sendable {
         }
     }
     
-    func findPartnershipByCode(_ code: String) async throws -> Partnership? {
-        guard let url = BackendConfig.partnershipsURL()?.appendingPathComponent("code/\(code)") else {
+    func getPartnerships() async throws -> [Partnership] {
+        guard let url = BackendConfig.partnershipsURL() else {
             throw BackendError.invalidData
         }
         
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
         
-        if let token = authToken {
-            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        }
+        try await addAuthHeaders(to: &request)
+        
+        print("📡 [GET_PARTNERSHIPS] Sending request to: \(url)")
         
         do {
             let (data, response) = try await session.data(for: request)
@@ -567,50 +1027,40 @@ final class BackendService: @unchecked Sendable {
             }
             
             if httpResponse.statusCode == 200 {
-                let backendResponse = try JSONDecoder().decode(BackendResponse<Partnership>.self, from: data)
-                return backendResponse.data
-            } else if httpResponse.statusCode == 404 {
-                return nil
+                // Backend returns array of Partnership entities
+                let partnerships = try JSONDecoder().decode([BackendPartnership].self, from: data)
+                // Convert to our Partnership model
+                return partnerships.map { partnership in
+                    Partnership(
+                        id: partnership.id,
+                        user_id: partnership.user?.id ?? 0,
+                        partner_id: partnership.partner?.id ?? 0,
+                        connection_code: partnership.connectionCode,
+                        status: partnership.status,
+                        created_at: partnership.creationTime,
+                        updated_at: partnership.modificationTime
+                    )
+                }
             } else {
                 throw BackendError.databaseError
             }
         } catch {
-            print("❌ Error finding partnership: \(error)")
-            throw BackendError.databaseError
+            print("❌ Error getting partnerships: \(error)")
+            throw error
         }
     }
     
+    func findPartnershipByCode(_ code: String) async throws -> Partnership? {
+        // Since the backend doesn't have a specific endpoint for finding by code,
+        // we get all partnerships and filter locally
+        let partnerships = try await getPartnerships()
+        return partnerships.first { $0.connection_code == code }
+    }
+    
     func partnership(userId: String) async throws -> Partnership? {
-        guard let url = BackendConfig.partnershipsURL()?.appendingPathComponent("user/\(userId)") else {
-            throw BackendError.invalidData
-        }
-        
-        var request = URLRequest(url: url)
-        request.httpMethod = "GET"
-        
-        if let token = authToken {
-            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        }
-        
-        do {
-            let (data, response) = try await session.data(for: request)
-            
-            guard let httpResponse = response as? HTTPURLResponse else {
-                throw BackendError.networkError
-            }
-            
-            if httpResponse.statusCode == 200 {
-                let backendResponse = try JSONDecoder().decode(BackendResponse<Partnership>.self, from: data)
-                return backendResponse.data
-            } else if httpResponse.statusCode == 404 {
-                return nil
-            } else {
-                throw BackendError.databaseError
-            }
-        } catch {
-            print("❌ Error getting partnership: \(error)")
-            throw BackendError.databaseError
-        }
+        // Get all partnerships and find the one for this user
+        let partnerships = try await getPartnerships()
+        return partnerships.first { String($0.user_id) == userId || String($0.partner_id) == userId }
     }
     
     // MARK: - Love Message Management
@@ -624,16 +1074,17 @@ final class BackendService: @unchecked Sendable {
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         
-        if let token = authToken {
-            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        }
+        try await addAuthHeaders(to: &request)
         
+        // Backend expects: message and recipientId
         let body = [
-            "receiver_id": partnerId,
-            "message": text
+            "message": text,
+            "recipientId": partnerId
         ]
         
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        
+        print("📡 [SEND_LOVE_MESSAGE] Sending request to: \(url) with body: \(body)")
         
         do {
             let (data, response) = try await session.data(for: request)
@@ -642,32 +1093,31 @@ final class BackendService: @unchecked Sendable {
                 throw BackendError.networkError
             }
             
-            if httpResponse.statusCode == 201 {
-                let backendResponse = try JSONDecoder().decode(BackendResponse<LoveMessage>.self, from: data)
-                guard let message = backendResponse.data else {
-                    throw BackendError.decodingError
-                }
-                return message
+            if httpResponse.statusCode == 200 || httpResponse.statusCode == 201 {
+                // Backend returns LoveMessage directly, not wrapped in BackendResponse
+                let loveMessage = try JSONDecoder().decode(LoveMessage.self, from: data)
+                return loveMessage
             } else {
+                print("❌ Error sending love message: HTTP \(httpResponse.statusCode)")
                 throw BackendError.databaseError
             }
         } catch {
             print("❌ Error sending love message: \(error)")
-            throw BackendError.databaseError
+            throw error
         }
     }
     
-    func conversation(with partnerId: String) async throws -> [LoveMessage] {
-        guard let url = BackendConfig.loveMessagesURL()?.appendingPathComponent("conversation/\(partnerId)") else {
+    func getLoveMessages() async throws -> [LoveMessage] {
+        guard let url = BackendConfig.loveMessagesURL() else {
             throw BackendError.invalidData
         }
         
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
         
-        if let token = authToken {
-            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        }
+        try await addAuthHeaders(to: &request)
+        
+        print("📡 [GET_LOVE_MESSAGES] Sending request to: \(url)")
         
         do {
             let (data, response) = try await session.data(for: request)
@@ -677,20 +1127,48 @@ final class BackendService: @unchecked Sendable {
             }
             
             if httpResponse.statusCode == 200 {
-                let backendResponse = try JSONDecoder().decode(BackendResponse<[LoveMessage]>.self, from: data)
-                return backendResponse.data ?? []
+                // Backend returns array of LoveMessage directly
+                let messages = try JSONDecoder().decode([LoveMessage].self, from: data)
+                return messages
             } else {
+                print("❌ Error getting love messages: HTTP \(httpResponse.statusCode)")
                 throw BackendError.databaseError
             }
         } catch {
-            print("❌ Error getting conversation: \(error)")
-            throw BackendError.databaseError
+            print("❌ Error getting love messages: \(error)")
+            throw error
+        }
+    }
+    
+    func conversation(with partnerId: String) async throws -> [LoveMessage] {
+        // For now, get all messages and filter client-side
+        // Later the backend can provide a filtered endpoint
+        let allMessages = try await getLoveMessages()
+        
+        // Filter messages between current user and partner
+        // Use the current authenticated user ID from the backend
+        guard let currentUserId = try await getCurrentUserId() else {
+            throw BackendError.userNotFound
+        }
+        
+        // Backend uses numeric IDs, so we need to match on those
+        return allMessages.filter { message in
+            // Check if current user is sender or receiver, and partner is the other party
+            if let senderId = message.sender?.id,
+               let receiverId = message.receiver?.id {
+                let currentId = Int(currentUserId) ?? -1
+                let partnerId = Int(partnerId) ?? -1
+                
+                return (senderId == currentId && receiverId == partnerId) ||
+                       (senderId == partnerId && receiverId == currentId)
+            }
+            return false
         }
     }
     
     // MARK: - Mood Entry Management
     
-    func createMoodEntry(_ moodEntry: SupabaseMoodEntry) async throws -> SupabaseMoodEntry {
+    func createMoodEntry(_ moodEntry: DatabaseMoodEntry) async throws -> DatabaseMoodEntry {
         guard let url = BackendConfig.moodEntriesURL() else {
             throw BackendError.invalidData
         }
@@ -699,11 +1177,19 @@ final class BackendService: @unchecked Sendable {
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         
-        if let token = authToken {
-            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        }
+        try await addAuthHeaders(to: &request)
         
-        request.httpBody = try JSONEncoder().encode(moodEntry)
+        // Backend expects camelCase fields matching our mood entry structure
+        let body = [
+            "date": moodEntry.date,
+            "moodLevel": moodEntry.mood_level,  // camelCase
+            "eventLabel": moodEntry.event_label ?? NSNull(),  // camelCase
+            "location": moodEntry.location ?? NSNull()
+        ] as [String: Any]
+        
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        
+        print("📡 [CREATE_MOOD_ENTRY] Sending request to: \(url) with body: \(body)")
         
         do {
             let (data, response) = try await session.data(for: request)
@@ -712,22 +1198,25 @@ final class BackendService: @unchecked Sendable {
                 throw BackendError.networkError
             }
             
-            if httpResponse.statusCode == 201 {
-                let backendResponse = try JSONDecoder().decode(BackendResponse<SupabaseMoodEntry>.self, from: data)
-                guard let createdEntry = backendResponse.data else {
-                    throw BackendError.decodingError
-                }
-                return createdEntry
+            print("📡 Mood entry creation response: \(httpResponse.statusCode)")
+            if let responseString = String(data: data, encoding: .utf8) {
+                print("📄 Response body: \(responseString)")
+            }
+            
+            if httpResponse.statusCode == 200 || httpResponse.statusCode == 201 {
+                // Backend currently returns empty response, so we return the input entry
+                // When backend is fully implemented, parse the actual response here
+                return moodEntry
             } else {
                 throw BackendError.databaseError
             }
         } catch {
             print("❌ Error creating mood entry: \(error)")
-            throw BackendError.databaseError
+            throw error
         }
     }
     
-    func getMoodEntries(userId: String, startDate: Date? = nil, endDate: Date? = nil) async throws -> [SupabaseMoodEntry] {
+    func getMoodEntries(userId: String, startDate: Date? = nil, endDate: Date? = nil) async throws -> [DatabaseMoodEntry] {
         guard var urlComponents = URLComponents(url: BackendConfig.moodEntriesURL()!, resolvingAgainstBaseURL: false) else {
             throw BackendError.invalidData
         }
@@ -751,9 +1240,9 @@ final class BackendService: @unchecked Sendable {
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
         
-        if let token = authToken {
-            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        }
+        try await addAuthHeaders(to: &request)
+        
+        print("📡 [GET_MOOD_ENTRIES] Sending request to: \(url)")
         
         do {
             let (data, response) = try await session.data(for: request)
@@ -762,19 +1251,25 @@ final class BackendService: @unchecked Sendable {
                 throw BackendError.networkError
             }
             
+            print("📡 Get mood entries response: \(httpResponse.statusCode)")
+            if let responseString = String(data: data, encoding: .utf8) {
+                print("📄 Response body: \(responseString)")
+            }
+            
             if httpResponse.statusCode == 200 {
-                let backendResponse = try JSONDecoder().decode(BackendResponse<[SupabaseMoodEntry]>.self, from: data)
-                return backendResponse.data ?? []
+                // For now, the backend returns empty response, so we return empty array
+                // In a real implementation, we'd parse the backend response
+                return []
             } else {
                 throw BackendError.databaseError
             }
         } catch {
             print("❌ Error getting mood entries: \(error)")
-            throw BackendError.databaseError
+            throw error
         }
     }
     
-    func getTodayMoodEntry(userId: String) async throws -> SupabaseMoodEntry? {
+    func getTodayMoodEntry(userId: String) async throws -> DatabaseMoodEntry? {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd"
         formatter.locale = Locale(identifier: "en_US_POSIX")
@@ -795,9 +1290,90 @@ final class BackendService: @unchecked Sendable {
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
         
-        if let token = authToken {
-            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        try await addAuthHeaders(to: &request)
+        
+        print("📡 [GET_TODAY_MOOD_ENTRY] Sending request to: \(url)")
+        
+        do {
+            let (data, response) = try await session.data(for: request)
+            
+            guard let httpResponse = response as? HTTPURLResponse else {
+                throw BackendError.networkError
+            }
+            
+            print("📡 Get today's mood entry response: \(httpResponse.statusCode)")
+            if let responseString = String(data: data, encoding: .utf8) {
+                print("📄 Response body: \(responseString)")
+            }
+            
+            if httpResponse.statusCode == 200 {
+                // For now, the backend returns empty response, so we return nil
+                // In a real implementation, we'd parse the backend response
+                return nil
+            } else {
+                throw BackendError.databaseError
+            }
+        } catch {
+            print("❌ Error getting today's mood entry: \(error)")
+            throw error
         }
+    }
+    
+    // MARK: - Photo Storage
+    
+    func uploadProfilePhoto(userId: String, imageData: Data) async throws {
+        // First upload the photo to storage
+        guard let url = BackendConfig.storageURL()?.appendingPathComponent("profile-photo") else {
+            throw BackendError.invalidData
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("image/jpeg", forHTTPHeaderField: "Content-Type")
+        
+        try await addAuthHeaders(to: &request)
+        
+        request.httpBody = imageData
+        
+        print("📡 [UPLOAD_PROFILE_PHOTO] Sending request to: \(url)")
+        
+        do {
+            let (data, response) = try await session.data(for: request)
+            
+            guard let httpResponse = response as? HTTPURLResponse else {
+                throw BackendError.networkError
+            }
+            
+            if httpResponse.statusCode == 200 || httpResponse.statusCode == 201 {
+                // If we get a URL back, update the profile with the new avatar URL
+                if let responseData = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                   let photoUrl = responseData["url"] as? String {
+                    // Update the profile with the new photo URL
+                    try await updateProfile(userId: userId, name: nil, bio: nil, avatarUrl: photoUrl)
+                }
+                print("✅ Profile photo uploaded successfully")
+            } else {
+                throw BackendError.photoUploadFailed
+            }
+        } catch {
+            print("❌ Error uploading profile photo: \(error)")
+            throw BackendError.photoUploadFailed
+        }
+    }
+    
+    // MARK: - Notifications
+    
+    func getNotifications() async throws -> [BackendNotification] {
+        guard let url = BackendConfig.notificationsURL() else {
+            throw BackendError.invalidData
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        
+        try await addAuthHeaders(to: &request)
+        
+        print("📡 [GET_NOTIFICATIONS] Sending request to: \(url)")
         
         do {
             let (data, response) = try await session.data(for: request)
@@ -807,33 +1383,29 @@ final class BackendService: @unchecked Sendable {
             }
             
             if httpResponse.statusCode == 200 {
-                let backendResponse = try JSONDecoder().decode(BackendResponse<[SupabaseMoodEntry]>.self, from: data)
-                return backendResponse.data?.first
+                // Backend returns array of Notification entities
+                let notifications = try JSONDecoder().decode([BackendNotification].self, from: data)
+                return notifications
             } else {
                 throw BackendError.databaseError
             }
         } catch {
-            print("❌ Error getting today's mood entry: \(error)")
-            throw BackendError.databaseError
+            print("❌ Error getting notifications: \(error)")
+            throw error
         }
     }
     
-    // MARK: - Photo Storage
-    
-    func uploadProfilePhoto(userId: String, imageData: Data) async throws {
-        guard let url = BackendConfig.storageURL()?.appendingPathComponent("profile-photo") else {
+    func markNotificationAsRead(notificationId: String) async throws {
+        guard let url = BackendConfig.notificationsURL()?.appendingPathComponent("\(notificationId)/read") else {
             throw BackendError.invalidData
         }
         
         var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("image/jpeg", forHTTPHeaderField: "Content-Type")
+        request.httpMethod = "PUT"
         
-        if let token = authToken {
-            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        }
+        try await addAuthHeaders(to: &request)
         
-        request.httpBody = imageData
+        print("📡 [MARK_NOTIFICATION_READ] Sending request to: \(url)")
         
         do {
             let (_, response) = try await session.data(for: request)
@@ -842,51 +1414,31 @@ final class BackendService: @unchecked Sendable {
                 throw BackendError.networkError
             }
             
-            if httpResponse.statusCode != 200 && httpResponse.statusCode != 201 {
-                throw BackendError.photoUploadFailed
+            if httpResponse.statusCode == 200 || httpResponse.statusCode == 204 {
+                print("✅ Notification marked as read")
+            } else {
+                throw BackendError.databaseError
             }
         } catch {
-            print("❌ Error uploading profile photo: \(error)")
-            throw BackendError.photoUploadFailed
+            print("❌ Error marking notification as read: \(error)")
+            throw error
         }
     }
     
     func sendPushNotificationToPartner(userId: String, partnerId: String, title: String, body: String, data: [String: String]) async throws {
-        guard let url = BackendConfig.baseURL?.appendingPathComponent("/api/notifications/push") else {
-            throw BackendError.invalidData
-        }
+        // Note: The backend notifications controller doesn't have a push endpoint yet
+        // Push notifications are typically handled through Firebase Cloud Messaging or similar services
+        // This is a placeholder implementation
         
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        print("⚠️ Push notification sending not fully implemented in backend")
         
-        if let token = authToken {
-            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        }
+        // When backend supports push notifications, this would create a notification
+        // and trigger a push through FCM or similar service
+        // For now, we could create a regular notification that will be fetched on next app open
         
-        let body = [
-            "partner_id": partnerId,
-            "title": title,
-            "body": body,
-            "data": data
-        ]
-        
-        request.httpBody = try JSONSerialization.data(withJSONObject: body)
-        
-        do {
-            let (_, response) = try await session.data(for: request)
-            
-            guard let httpResponse = response as? HTTPURLResponse else {
-                throw BackendError.networkError
-            }
-            
-            if httpResponse.statusCode != 200 && httpResponse.statusCode != 201 {
-                throw BackendError.databaseError
-            }
-        } catch {
-            print("❌ Error sending push notification: \(error)")
-            throw BackendError.databaseError
-        }
+        // Future implementation would be:
+        // POST /api/notifications with type: "push"
+        // The backend would then trigger the actual push notification
     }
     
     // MARK: - Utility Methods
@@ -901,8 +1453,11 @@ final class BackendService: @unchecked Sendable {
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         
-        let body = ["refresh_token": refreshToken]
+        // Backend expects camelCase
+        let body = ["refreshToken": refreshToken]
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        
+        print("📡 [REFRESH_TOKEN] Sending request to: \(url) with body: \(body)")
         
         do {
             let (data, response) = try await session.data(for: request)
@@ -924,17 +1479,16 @@ final class BackendService: @unchecked Sendable {
     }
     
     func checkConnectionHealth() async throws -> Bool {
-        guard let url = BackendConfig.baseURL else {
-            print("❌ No base URL configured")
+        guard let healthURL = BackendConfig.healthURL() else {
+            print("❌ No health URL configured")
             return false
         }
         
-        let healthURL = URL(string: "\(url)/health") ?? URL(string: "\(url)/")!
         var request = URLRequest(url: healthURL)
         request.httpMethod = "GET"
         request.timeoutInterval = 10.0
         
-        print("🔍 Testing connection to: \(healthURL)")
+        print("📡 [HEALTH_CHECK] Sending request to: \(healthURL)")
         
         do {
             let (data, response) = try await session.data(for: request)
@@ -955,6 +1509,16 @@ final class BackendService: @unchecked Sendable {
             print("❌ Connection error: \(error)")
             return false
         }
+    }
+    
+    func isConnected() async throws -> Bool {
+        return try await checkConnectionHealth()
+    }
+    
+    func logout() async throws {
+        // Clear stored tokens
+        authToken = nil
+        refreshToken = nil
     }
     
     func testBackendConnection() async {
@@ -988,6 +1552,8 @@ final class BackendService: @unchecked Sendable {
         request.httpMethod = "GET"
         request.timeoutInterval = 10.0
         
+        print("📡 [TEST_AUTH] Sending request to: \(url)")
+        
         do {
             let (data, response) = try await session.data(for: request)
             
@@ -1017,6 +1583,8 @@ final class BackendService: @unchecked Sendable {
         request.httpMethod = "GET"
         request.timeoutInterval = 10.0
         
+        print("📡 [TEST_PROFILES] Sending request to: \(url)")
+        
         do {
             let (data, response) = try await session.data(for: request)
             
@@ -1034,23 +1602,228 @@ final class BackendService: @unchecked Sendable {
             print("❌ Profiles endpoint error: \(error)")
         }
     }
-}
-
-// MARK: - Extensions
-
-extension BackendService {
-    // MARK: - Convenience Methods
     
-    func isConnected() async throws -> Bool {
-        return try await checkConnectionHealth()
-    }
+    // MARK: - Convenience Methods
     
     func getCurrentUserEmail() async throws -> String? {
         // TODO: Implement token decoding to get email
         return nil
     }
     
-    func logout() async throws {
-        try await signOut()
+    // MARK: - DataServiceProtocol Required Methods
+    
+    func subscribeToPartnerUpdates(userId: String, completion: @escaping (Profile) -> Void) async throws {
+        throw BackendError.notImplemented
+    }
+    
+    func unsubscribeFromPartnerUpdates(userId: String) async throws {
+        throw BackendError.notImplemented
+    }
+    
+    func disconnectPartner(userId: String) async throws {
+        // Find the partnership and delete/deactivate it
+        guard let _ = try await partnership(userId: userId) else {
+            throw BackendError.partnerNotFound
+        }
+        
+        // For now, we'll just update the status to "disconnected"
+        // The backend would need a DELETE or PUT endpoint for this
+        print("⚠️ Partnership disconnect not fully implemented in backend")
+        // When backend is ready, this would be:
+        // DELETE /api/partnerships/{id} or
+        // PUT /api/partnerships/{id} with status: "disconnected"
+    }
+    
+    func getPartnershipStatus(userId: String) async throws -> PartnershipStatus {
+        // Get the partnership and determine its status
+        guard let partnership = try await partnership(userId: userId) else {
+            return .notConnected
+        }
+        
+        switch partnership.status?.lowercased() {
+        case "active":
+            return .connected
+        case "pending":
+            return .pending
+        case "disconnected":
+            return .notConnected
+        default:
+            return .notConnected
+        }
+    }
+    
+    func getPartnerProfile(userId: String) async throws -> Profile? {
+        // First get the partner ID from partnership
+        guard let partnership = try await partnership(userId: userId) else {
+            return nil
+        }
+        
+        // Find the partner ID - it's stored in partner_id field
+        let partnerIdString = partnership.partner_id
+        
+        if partnerIdString == 0 {
+            return nil
+        }
+        
+        // Get the partner's profile
+        guard let simpleProfile = try await getProfile(userId: String(partnerIdString)) else {
+            return nil
+        }
+        
+        // Convert SimpleProfile to Profile (database model)
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM-dd"
+        let birthDateString = dateFormatter.string(from: simpleProfile.birthDate)
+        
+        return Profile(
+            id: 0,  // Use 0 as default ID for new profile
+            name: simpleProfile.name,
+            zodiac_sign: simpleProfile.zodiacSign.rawValue,
+            birth_date: birthDateString,
+            profile_photo_url: simpleProfile.photoUrl,
+            relationship_status: nil,
+            has_children: nil,
+            children_count: nil,
+            push_token: nil,
+            created_at: Date(),
+            updated_at: Date()
+        )
+    }
+    
+    func updateSharedProfile(userId: String, updates: [String: Any]) async throws {
+        throw BackendError.notImplemented
+    }
+    
+    func downloadProfilePhoto(userId: String) async throws -> Data? {
+        throw BackendError.notImplemented
+    }
+    
+    // MARK: - Calendar Entry Management
+    
+    func getCalendarEntries() async throws -> [CalendarEntry] {
+        guard let url = BackendConfig.url(for: "/api/calendar-entries") else {
+            throw BackendError.invalidData
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        
+        try await addAuthHeaders(to: &request)
+        
+        print("📡 [GET_CALENDAR_ENTRIES] Sending request to: \(url)")
+        
+        do {
+            let (data, response) = try await session.data(for: request)
+            
+            guard let httpResponse = response as? HTTPURLResponse else {
+                throw BackendError.networkError
+            }
+            
+            if httpResponse.statusCode == 200 {
+                let backendResponse = try JSONDecoder().decode(BackendResponse<[CalendarEntry]>.self, from: data)
+                return backendResponse.data ?? []
+            } else {
+                throw BackendError.databaseError
+            }
+        } catch {
+            print("❌ Error getting calendar entries: \(error)")
+            throw BackendError.databaseError
+        }
+    }
+    
+    func createCalendarEntry(_ entry: CalendarEntry) async throws {
+        guard let url = BackendConfig.url(for: "/api/calendar-entries") else {
+            throw BackendError.invalidData
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        try await addAuthHeaders(to: &request)
+        
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        request.httpBody = try encoder.encode(entry)
+        
+        print("📡 [CREATE_CALENDAR_ENTRY] Sending request to: \(url)")
+        
+        do {
+            let (_, response) = try await session.data(for: request)
+            
+            guard let httpResponse = response as? HTTPURLResponse else {
+                throw BackendError.networkError
+            }
+            
+            if httpResponse.statusCode != 201 {
+                throw BackendError.databaseError
+            }
+        } catch {
+            print("❌ Error creating calendar entry: \(error)")
+            throw BackendError.databaseError
+        }
+    }
+    
+    func updateCalendarEntry(_ entry: CalendarEntry) async throws {
+        guard let url = BackendConfig.url(for: "/api/calendar-entries/\(entry.id)") else {
+            throw BackendError.invalidData
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "PUT"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        try await addAuthHeaders(to: &request)
+        
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        request.httpBody = try encoder.encode(entry)
+        
+        print("📡 [UPDATE_CALENDAR_ENTRY] Sending request to: \(url)")
+        
+        do {
+            let (_, response) = try await session.data(for: request)
+            
+            guard let httpResponse = response as? HTTPURLResponse else {
+                throw BackendError.networkError
+            }
+            
+            if httpResponse.statusCode != 200 {
+                throw BackendError.databaseError
+            }
+        } catch {
+            print("❌ Error updating calendar entry: \(error)")
+            throw BackendError.databaseError
+        }
+    }
+    
+    func deleteCalendarEntry(_ entryId: String) async throws {
+        guard let url = BackendConfig.url(for: "/api/calendar-entries/\(entryId)") else {
+            throw BackendError.invalidData
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "DELETE"
+        
+        try await addAuthHeaders(to: &request)
+        
+        print("📡 [DELETE_CALENDAR_ENTRY] Sending request to: \(url)")
+        
+        do {
+            let (_, response) = try await session.data(for: request)
+            
+            guard let httpResponse = response as? HTTPURLResponse else {
+                throw BackendError.networkError
+            }
+            
+            if httpResponse.statusCode != 200 && httpResponse.statusCode != 204 {
+                throw BackendError.databaseError
+            }
+        } catch {
+            print("❌ Error deleting calendar entry: \(error)")
+            throw BackendError.databaseError
+        }
     }
 }
+
+

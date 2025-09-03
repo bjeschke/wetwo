@@ -10,44 +10,39 @@ import Foundation
 
 class AppState: ObservableObject {
     @Published var isOnboarding: Bool = true
+    @Published var isOnboarded: Bool = false
     @Published var currentUser: User?
     @Published var isPremium: Bool = false
     @Published var dailyInsightsRemaining: Int = 3
     @Published var photoMissionsRemaining: Int = 1
+    @Published var firebaseIdToken: String?
     
     private let dataService = ServiceFactory.shared.getCurrentService()
-    private let securityService = SecurityService.shared
     
     init() {
         loadUserData()
     }
     
     private func loadUserData() {
-        print("🔄 Loading user data from secure storage...")
+        print("🔄 Loading user data from UserDefaults...")
         
-        // Load from secure storage
-        if let userData = try? securityService.secureLoad(forKey: "currentUser"),
+        // Load from UserDefaults
+        if let userData = UserDefaults.standard.data(forKey: "currentUser"),
            let user = try? JSONDecoder().decode(User.self, from: userData) {
-            print("✅ User found in secure storage: \(user.name)")
+            print("✅ User found in UserDefaults: \(user.name)")
             self.currentUser = user
             
-            // Check if we have Supabase credentials and can sign in
+            // Check if we have credentials and can sign in
             Task {
-                if let email = try? securityService.secureLoadString(forKey: "userEmail"),
-                   let password = try? securityService.secureLoadString(forKey: "userPassword") {
+                if let email = UserDefaults.standard.string(forKey: "userEmail"),
+                   let password = UserDefaults.standard.string(forKey: "userPassword") {
                     print("🔄 Auto-signing in with email/password...")
                     do {
-                        let supabaseUser = try await dataService.signIn(email: email, password: password)
-                        print("✅ Auto-sign in successful for user: \(supabaseUser.name)")
+                        let databaseUser = try await dataService.signIn(email: email, password: password)
+                        print("✅ Auto-sign in successful for user: \(databaseUser.name)")
                         
-                        // Get the current Supabase user ID
-                        if let userId = try? await dataService.getCurrentUserId() {
-                            print("🔧 Storing Supabase user ID: \(userId)")
-                            try? securityService.secureStore(userId, forKey: "currentUserId")
-                            
-                            // Ensure profile exists
-                            try? await dataService.ensureProfileExists()
-                        }
+                        // Ensure profile exists
+                        try? await dataService.ensureProfileExists()
                         
                         // Only complete onboarding if we can successfully sign in
                         DispatchQueue.main.async {
@@ -63,9 +58,8 @@ class AppState: ObservableObject {
                            error.localizedDescription.contains("Invalid") {
                             print("🔄 Clearing invalid credentials due to refresh token error")
                             // Clear the stored credentials since they're invalid
-                            try? securityService.secureDelete(forKey: "userEmail")
-                            try? securityService.secureDelete(forKey: "userPassword")
-                            try? securityService.secureDelete(forKey: "currentUserId")
+                            UserDefaults.standard.removeObject(forKey: "userEmail")
+                            UserDefaults.standard.removeObject(forKey: "userPassword")
                             
                             // Show onboarding again since credentials are invalid
                             DispatchQueue.main.async {
@@ -73,7 +67,7 @@ class AppState: ObservableObject {
                                 print("🔄 Onboarding set to true - invalid credentials")
                             }
                         } else {
-                            // For other errors (like email not confirmed), stay in onboarding
+                            // For other errors, stay in onboarding
                             DispatchQueue.main.async {
                                 self.isOnboarding = true
                                 print("🔄 Onboarding set to true - sign in failed")
@@ -81,7 +75,7 @@ class AppState: ObservableObject {
                         }
                     }
                 } else {
-                    print("⚠️ No email/password found in secure storage")
+                    print("⚠️ No email/password found in UserDefaults")
                     // No credentials found, stay in onboarding
                     DispatchQueue.main.async {
                         self.isOnboarding = true
@@ -90,7 +84,7 @@ class AppState: ObservableObject {
                 }
             }
         } else {
-            print("❌ No user found in secure storage - showing onboarding")
+            print("❌ No user found in UserDefaults - showing onboarding")
             self.isOnboarding = true
             self.currentUser = nil
         }
@@ -100,14 +94,6 @@ class AppState: ObservableObject {
         self.dailyInsightsRemaining = UserDefaults.standard.integer(forKey: "dailyInsightsRemaining")
         self.photoMissionsRemaining = UserDefaults.standard.integer(forKey: "photoMissionsRemaining")
         
-        // Validate security
-        let securityValidation = securityService.validateSecurity()
-        if !securityValidation.isValid {
-            print("⚠️ Sicherheitsprobleme gefunden:")
-            for issue in securityValidation.issues {
-                print("  - \(issue.description)")
-            }
-        }
         
         print("📱 App state loaded - isOnboarding: \(self.isOnboarding), currentUser: \(self.currentUser?.name ?? "nil")")
     }
@@ -118,13 +104,13 @@ class AppState: ObservableObject {
         
         // Save to secure storage
         if let encoded = try? JSONEncoder().encode(user) {
-            try? securityService.secureStore(encoded, forKey: "currentUser")
+            UserDefaults.standard.set(encoded, forKey: "currentUser")
         }
         
         // Store Apple ID securely
-        try? securityService.secureStore(appleUserID, forKey: "appleUserID")
+        UserDefaults.standard.set(appleUserID, forKey: "appleUserID")
         
-        // Create user profile in Supabase with Apple ID
+        // Create user profile with Apple ID
         Task {
             do {
                 // Generate a unique email based on Apple ID and timestamp
@@ -135,23 +121,23 @@ class AppState: ObservableObject {
                 print("🔄 Creating user profile with Apple ID: \(appleUserID)")
                 
                 // First, try to sign up the user
-                let supabaseUser = try await supabaseService.signUp(email: email, password: password, name: user.name)
-                let userId = supabaseUser.id
+                let dataService = ServiceFactory.shared.getCurrentService()
+                let databaseUser = try await dataService.signUp(email: email, password: password, name: user.name, birthDate: user.birthDate)
+                let userId = databaseUser.id
                 
-                // Save the user ID and credentials securely
-                try? securityService.secureStore(userId.uuidString, forKey: "currentUserId")
-                try? securityService.secureStore(email, forKey: "userEmail")
-                try? securityService.secureStore(password, forKey: "userPassword")
+                // Save the credentials securely
+                UserDefaults.standard.set(email, forKey: "userEmail")
+                UserDefaults.standard.set(password, forKey: "userPassword")
                 
                 // Update the profile with Apple ID (created automatically by trigger)
-                try await supabaseService.updateProfile(
-                    userId: userId.uuidString, 
+                try await dataService.updateProfile(
+                    userId: String(userId), 
                     name: user.name, 
                     birthDate: user.birthDate
                 )
                 
                 // Update the auth user's display name in userMetadata
-                try await supabaseService.updateAuthUserDisplayName(name: user.name)
+                try await dataService.updateAuthUserDisplayName(name: user.name)
                 
                 print("✅ User profile updated with Apple ID successfully")
                 print("📧 Email: \(email)")
@@ -161,23 +147,22 @@ class AppState: ObservableObject {
                 print("❌ Error creating user profile with Apple ID: \(error)")
                 
                 // If signup fails, try to sign in with existing credentials
-                if let existingEmail = try? securityService.secureLoadString(forKey: "userEmail"),
-                   let existingPassword = try? securityService.secureLoadString(forKey: "userPassword") {
+                if let existingEmail = UserDefaults.standard.string(forKey: "userEmail"),
+                   let existingPassword = UserDefaults.standard.string(forKey: "userPassword") {
                     do {
                         print("🔄 Attempting to sign in with existing credentials...")
-                        let supabaseUser = try await supabaseService.signIn(email: existingEmail, password: existingPassword)
-                        let userId = supabaseUser.id
-                        try? securityService.secureStore(userId.uuidString, forKey: "currentUserId")
+                        let databaseUser = try await dataService.signIn(email: existingEmail, password: existingPassword)
+                        let userId = databaseUser.id
                         
                         // Update the profile with Apple ID
-                        try await supabaseService.updateProfile(
-                            userId: userId.uuidString, 
+                        try await dataService.updateProfile(
+                            userId: String(userId), 
                             name: user.name, 
                             birthDate: user.birthDate
                         )
                         
                         // Update the auth user's display name in userMetadata
-                        try await supabaseService.updateAuthUserDisplayName(name: user.name)
+                        try await dataService.updateAuthUserDisplayName(name: user.name)
                         
                         print("✅ User signed in and profile updated with Apple ID successfully")
                     } catch {
@@ -194,20 +179,29 @@ class AppState: ObservableObject {
         
         // Save to secure storage
         if let encoded = try? JSONEncoder().encode(user) {
-            try? securityService.secureStore(encoded, forKey: "currentUser")
+            UserDefaults.standard.set(encoded, forKey: "currentUser")
         }
         
-        // Note: Supabase profile creation is now handled in the UI layer
-        // to properly handle email confirmation requirements
+        // Note: Profile creation is now handled in the UI layer
+
     }
     
-    func completeOnboardingWithSupabase(user: User) {
-        // Create user profile in Supabase using the new robust method
+    func completeOnboardingWithCurrentService(user: User) {
+        // Set the current user immediately
+        self.currentUser = user
+        self.isOnboarding = false
+        
+        // Save to secure storage
+        if let encoded = try? JSONEncoder().encode(user) {
+            UserDefaults.standard.set(encoded, forKey: "currentUser")
+        }
+        
+        // Create user profile in current service using the new robust method
         Task {
             do {
                 // Get the email and password from secure storage (set during signup)
-                guard let email = try? securityService.secureLoadString(forKey: "userEmail"),
-                      let password = try? securityService.secureLoadString(forKey: "userPassword") else {
+                guard let email = UserDefaults.standard.string(forKey: "userEmail"),
+                      let password = UserDefaults.standard.string(forKey: "userPassword") else {
                     print("❌ No email/password found in secure storage")
                     return
                 }
@@ -215,7 +209,7 @@ class AppState: ObservableObject {
                 print("🔄 Attempting to create user with email: \(email)")
                 
                 // Use the new robust completeOnboarding method
-                let supabaseUser = try await supabaseService.completeOnboarding(
+                let databaseUser = try await dataService.completeOnboarding(
                     email: email,
                     password: password,
                     name: user.name,
@@ -223,34 +217,32 @@ class AppState: ObservableObject {
                 )
                 
                 // Update the auth user's display name in userMetadata
-                try await supabaseService.updateAuthUserDisplayName(name: user.name)
+                try await dataService.updateAuthUserDisplayName(name: user.name)
                 
-                // Save the user ID and credentials securely
-                try? securityService.secureStore(supabaseUser.id, forKey: "currentUserId")
-                try? securityService.secureStore(email, forKey: "userEmail")
-                try? securityService.secureStore(password, forKey: "userPassword")
+                // Save the credentials securely
+                UserDefaults.standard.set(email, forKey: "userEmail")
+                UserDefaults.standard.set(password, forKey: "userPassword")
                 
-                print("✅ User profile created in Supabase successfully")
+                print("✅ User profile created in current service successfully")
                 print("📧 Email: \(email)")
                 print("🔑 Password: \(password)")
                 
             } catch {
-                print("❌ Error creating user profile in Supabase: \(error)")
+                print("❌ Error creating user profile in current service: \(error)")
                 
                 // If signup fails, try to sign in with existing credentials
-                if let existingEmail = try? securityService.secureLoadString(forKey: "userEmail"),
-                   let existingPassword = try? securityService.secureLoadString(forKey: "userPassword") {
+                if let existingEmail = UserDefaults.standard.string(forKey: "userEmail"),
+                   let existingPassword = UserDefaults.standard.string(forKey: "userPassword") {
                     do {
                         print("🔄 Attempting to sign in with existing credentials...")
-                        let supabaseUser = try await supabaseService.signIn(email: existingEmail, password: existingPassword)
-                        let userId = supabaseUser.id
-                        try? securityService.secureStore(userId.uuidString, forKey: "currentUserId")
+                        let databaseUser = try await dataService.signIn(email: existingEmail, password: existingPassword)
+                        let userId = databaseUser.id
                         
                         // Update the profile
-                        try await supabaseService.updateProfile(userId: userId.uuidString, name: user.name, birthDate: user.birthDate)
+                        try await dataService.updateProfile(userId: String(userId), name: user.name, birthDate: user.birthDate)
                         
                         // Update the auth user's display name in userMetadata
-                        try await supabaseService.updateAuthUserDisplayName(name: user.name)
+                        try await dataService.updateAuthUserDisplayName(name: user.name)
                         
                         print("✅ User signed in and profile updated successfully")
                     } catch {
@@ -292,11 +284,10 @@ class AppState: ObservableObject {
         self.currentUser = nil
         
         // Clear secure storage
-        try? securityService.secureDelete(forKey: "currentUser")
-        try? securityService.secureDelete(forKey: "currentUserId")
-        try? securityService.secureDelete(forKey: "userEmail")
-        try? securityService.secureDelete(forKey: "userPassword")
-        try? securityService.secureDelete(forKey: "appleUserID")
+        UserDefaults.standard.removeObject(forKey: "currentUser")
+        UserDefaults.standard.removeObject(forKey: "userEmail")
+        UserDefaults.standard.removeObject(forKey: "userPassword")
+        UserDefaults.standard.removeObject(forKey: "appleUserID")
         
         print("✅ Onboarding reset complete")
     }
@@ -307,11 +298,10 @@ class AppState: ObservableObject {
         self.currentUser = nil
         
         // Clear secure storage
-        try? securityService.secureDelete(forKey: "currentUser")
-        try? securityService.secureDelete(forKey: "currentUserId")
-        try? securityService.secureDelete(forKey: "userEmail")
-        try? securityService.secureDelete(forKey: "userPassword")
-        try? securityService.secureDelete(forKey: "appleUserID")
+        UserDefaults.standard.removeObject(forKey: "currentUser")
+        UserDefaults.standard.removeObject(forKey: "userEmail")
+        UserDefaults.standard.removeObject(forKey: "userPassword")
+        UserDefaults.standard.removeObject(forKey: "appleUserID")
         
         print("✅ Logout complete")
     }

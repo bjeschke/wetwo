@@ -11,6 +11,7 @@ struct CalendarView: View {
     @EnvironmentObject var moodManager: MoodManager
     @EnvironmentObject var partnerManager: PartnerManager
     @EnvironmentObject var appState: AppState
+    @StateObject private var calendarManager = CalendarManager.shared
     
     @State private var relationshipData: [String: Any] = [:]
     @State private var isLoadingRelationshipData = true
@@ -18,6 +19,7 @@ struct CalendarView: View {
     @State private var selectedWeek: Date = Date()
 
     @State private var showingAddEntry = false
+    @State private var showingWeekSummary = false
     
     private let calendar = Calendar.current
     private let dateFormatter: DateFormatter = {
@@ -45,7 +47,11 @@ struct CalendarView: View {
                     // Mood calendar grid
                     moodCalendarGrid
                     
-
+                    // Calendar entries for selected week
+                    calendarEntriesSection
+                    
+                    // Week summary button
+                    weekSummaryButton
                     
                     // Add new entry button
                     addEntryButton
@@ -65,6 +71,15 @@ struct CalendarView: View {
 
             .sheet(isPresented: $showingAddEntry) {
                 AddCalendarEntryView()
+                    .environmentObject(calendarManager)
+            }
+            .sheet(isPresented: $showingWeekSummary) {
+                WeekSummaryView(
+                    weekSummary: calendarManager.generateWeeklyMoodSummary(
+                        for: selectedWeek,
+                        moodManager: moodManager
+                    )
+                )
             }
             .onAppear {
                 loadRelationshipData()
@@ -227,6 +242,57 @@ struct CalendarView: View {
         .purpleCard()
     }
     
+    private var calendarEntriesSection: some View {
+        VStack(spacing: 15) {
+            // Header
+            HStack {
+                Text("📅")
+                    .font(.title2)
+                
+                Text(NSLocalizedString("calendar_entries", comment: "Calendar Entries"))
+                    .font(.title2)
+                    .fontWeight(.bold)
+                    .foregroundColor(ColorTheme.primaryText)
+                
+                Spacer()
+                
+                Text("\(calendarManager.getEntriesForWeek(selectedWeek).count)")
+                    .font(.caption)
+                    .foregroundColor(ColorTheme.secondaryText)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(ColorTheme.accentPink.opacity(0.2))
+                    )
+            }
+            
+            // Calendar entries list
+            let weekEntries = calendarManager.getEntriesForWeek(selectedWeek)
+            
+            if weekEntries.isEmpty {
+                VStack(spacing: 10) {
+                    Text("📝")
+                        .font(.system(size: 40))
+                        .foregroundColor(ColorTheme.secondaryText)
+                    
+                    Text(NSLocalizedString("calendar_no_entries", comment: "No calendar entries this week"))
+                        .font(.body)
+                        .foregroundColor(ColorTheme.secondaryText)
+                        .multilineTextAlignment(.center)
+                }
+                .padding(.vertical, 20)
+            } else {
+                VStack(spacing: 12) {
+                    ForEach(weekEntries.sorted { $0.date < $1.date }) { entry in
+                        CalendarEntryRow(entry: entry)
+                    }
+                }
+            }
+        }
+        .padding(25)
+        .purpleCard()
+    }
 
     
     private var partnerWeekSection: some View {
@@ -413,6 +479,33 @@ struct CalendarView: View {
                 }
             }
         }
+    }
+    
+    private var weekSummaryButton: some View {
+        Button(action: {
+            showingWeekSummary = true
+        }) {
+            HStack {
+                Image(systemName: "chart.bar.fill")
+                    .font(.title2)
+                    .foregroundColor(ColorTheme.accentBlue)
+                
+                Text(NSLocalizedString("calendar_week_summary", comment: "Week Summary"))
+                    .font(.headline)
+                    .fontWeight(.semibold)
+                    .foregroundColor(ColorTheme.primaryText)
+                
+                Spacer()
+                
+                Image(systemName: "chevron.right")
+                    .font(.caption)
+                    .foregroundColor(ColorTheme.secondaryText)
+            }
+            .padding(.horizontal, 20)
+            .padding(.vertical, 15)
+            .purpleCard()
+        }
+        .buttonStyle(PlainButtonStyle())
     }
     
     private var addEntryButton: some View {

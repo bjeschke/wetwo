@@ -7,6 +7,7 @@
 
 import Foundation
 import SwiftUI
+import FirebaseAuth
 
 @MainActor
 class MoodManager: ObservableObject {
@@ -26,26 +27,25 @@ class MoodManager: ObservableObject {
         loadPartnerMoodData()
     }
     
-    func addMoodEntry(_ mood: MoodLevel, eventLabel: String? = nil, location: String? = nil, photoData: Data? = nil) {
-        guard let userId = getCurrentUserId() else { 
-            print("❌ Cannot add mood entry: No current user ID found")
-            return 
-        }
+        func addMoodEntry(_ mood: MoodLevel, eventLabel: String? = nil, location: String? = nil, photoData: Data? = nil) async {
+        print("🎯 MoodManager.addMoodEntry called")
         
-        print("🔧 Adding mood entry for user: \(userId)")
+        // Firebase token will be sent in headers, no need for user ID
+        print("🔧 Adding mood entry")
         print("   Mood: \(mood.description) (\(mood.rawValue))")
         print("   Event: \(eventLabel ?? "none")")
         print("   Location: \(location ?? "none")")
         
-        let entry = MoodEntry(userId: userId, moodLevel: mood, eventLabel: eventLabel, location: location, photoData: photoData)
+        // Create entry without userId - backend will determine from token
+        let entry = MoodEntry(userId: "", moodLevel: mood, eventLabel: eventLabel, location: location, photoData: photoData)
         todayMood = entry
         
         // Add to weekly moods
         weeklyMoods.append(entry)
         
-        // Save to Supabase
+        // Save to current service
         Task {
-            await saveMoodEntryToSupabase(entry)
+            await saveMoodEntryToCurrentService(entry)
         }
         
         // Generate insight if available
@@ -69,17 +69,17 @@ class MoodManager: ObservableObject {
     
     private func generateInsightText(for entry: MoodEntry) -> String {
         let moodDescriptions = [
-            MoodLevel.veryHappy: "feels absolutely amazing today",
-            MoodLevel.happy: "is in a good mood",
-            MoodLevel.neutral: "feels calm and balanced",
-            MoodLevel.sad: "could use some extra love",
-            MoodLevel.verySad: "needs your support today"
+            MoodLevel.veryHappy: "fühlt sich heute absolut großartig",
+            MoodLevel.happy: "ist gut gelaunt",
+            MoodLevel.neutral: "fühlt sich ruhig und ausgeglichen",
+            MoodLevel.sad: "könnte etwas extra Liebe gebrauchen",
+            MoodLevel.verySad: "braucht heute deine Unterstützung"
         ]
         
-        let baseText = moodDescriptions[entry.moodLevel] ?? "is feeling okay"
+        let baseText = moodDescriptions[entry.moodLevel] ?? "fühlt sich okay"
         
         if let event = entry.eventLabel {
-            return "\(getCurrentUserName()) \(baseText) after \(event.lowercased())"
+            return "\(getCurrentUserName()) \(baseText) nach \(event.lowercased())"
         } else {
             return "\(getCurrentUserName()) \(baseText)"
         }
@@ -87,23 +87,23 @@ class MoodManager: ObservableObject {
     
     private func generateLoveMessage() -> String {
         let messages = [
-            "Sending you a virtual hug! 🤗",
-            "You're doing amazing! 💫",
-            "I'm here for you always 💕",
-            "You make my world brighter ✨",
-            "Sending love your way 💖"
+            "Sende dir eine virtuelle Umarmung! 🤗",
+            "Du machst das großartig! 💫",
+            "Ich bin immer für dich da 💕",
+            "Du machst meine Welt heller ✨",
+            "Sende dir Liebe 💖"
         ]
-        return messages.randomElement() ?? "Thinking of you! 💭"
+        return messages.randomElement() ?? "Denke an dich! 💭"
     }
     
     private func getAstrologicalInfluence() -> String {
         let influences = [
-            "The moon is in a loving phase tonight 🌙",
-            "Venus is bringing extra romance today 💫",
-            "Mercury retrograde might affect communication 📱",
-            "Jupiter brings good fortune to relationships 🍀"
+            "Der Mond ist heute Nacht in einer liebevollen Phase 🌙",
+            "Venus bringt heute extra Romantik 💫",
+            "Merkur rückläufig könnte die Kommunikation beeinflussen 📱",
+            "Jupiter bringt Glück für Beziehungen 🍀"
         ]
-        return influences.randomElement() ?? "The stars are aligned for love ⭐"
+        return influences.randomElement() ?? "Die Sterne stehen günstig für die Liebe ⭐"
     }
     
     private func calculateCompatibilityScore() -> Int {
@@ -139,87 +139,82 @@ class MoodManager: ObservableObject {
             averageMood: averageMood,
             moodTrend: moodTrend,
             mostFrequentMood: mostFrequentMood,
-            insights: ["You've been more positive this week!", "Great communication with your partner"]
+            insights: ["Du warst diese Woche positiver!", "Großartige Kommunikation mit deinem Partner"]
         )
     }
     
-    private func getCurrentUserId() -> UUID? {
-        // First try to get from SupabaseService (most reliable)
-        if let supabaseUserId = try? await dataService.getCurrentUserId() {
-            print("✅ Got user ID from SupabaseService: \(supabaseUserId)")
-            return supabaseUserId
-        }
-        
-        // Fallback to secure storage (should be set during login/signup)
-        do {
-            let userIdString = try SecurityService.shared.secureLoadString(forKey: "currentUserId")
-            if let userId = UUID(uuidString: userIdString) {
-                print("✅ Got user ID from secure storage: \(userId)")
-                return userId
-            }
-        } catch {
-            print("⚠️ Error loading current user ID from secure storage: \(error)")
-        }
-        
-        print("❌ No current user ID found in SupabaseService or secure storage")
-        return nil
-    }
     
     private func getCurrentUserName() -> String {
         // This would come from AppState
-        return "Your partner"
+        return "Dein Partner"
     }
     
-    private func saveMoodEntryToSupabase(_ entry: MoodEntry) async {
+    private func saveMoodEntryToCurrentService(_ entry: MoodEntry) async {
         do {
-            print("🔧 Saving mood entry to Supabase for user: \(entry.userId)")
+            print("🔧 Saving mood entry to backend")
             
-            // Convert local MoodEntry to Supabase MoodEntry
-            let supabaseEntry = SupabaseMoodEntry(
-                user_id: entry.userId,
-                date: entry.date.formatted(date: .numeric, time: .omitted),
-                mood_level: entry.moodLevel.rawValue,
-                event_label: entry.eventLabel,
-                location: entry.location,
-                photo_data: entry.photoData,
-                insight: entry.insight,
-                love_message: entry.loveMessage
-            )
+            // Get Firebase token
+            guard let token = try? await Auth.auth().currentUser?.getIDToken() else {
+                print("❌ No Firebase token available")
+                print("   Current user: \(Auth.auth().currentUser?.uid ?? "nil")")
+                return
+            }
             
-            // Try to create the entry (will handle unique constraint automatically)
-            _ = try await dataService.createMoodEntry(supabaseEntry)
-            print("✅ Mood entry saved successfully")
+            print("🔑 Got Firebase token: \(String(token.prefix(20)))...")
+            
+            // Create request with token in header
+            let url = URL(string: "http://localhost:8080/api/mood-entries")!
+            var request = URLRequest(url: url)
+            request.httpMethod = "POST"
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+            
+            // Create mood entry data (backend will determine user from token)
+            let dateFormatter = DateFormatter()
+            dateFormatter.dateFormat = "yyyy-MM-dd"
+            let dateString = dateFormatter.string(from: entry.date)
+            
+            // Backend expects camelCase field names
+            let moodData: [String: Any] = [
+                "date": dateString,
+                "moodLevel": entry.moodLevel.rawValue,  // camelCase
+                "eventLabel": entry.eventLabel ?? NSNull(),  // camelCase
+                "location": entry.location ?? NSNull()
+            ]
+            
+            print("📤 Sending mood data: \(moodData)")
+            
+            request.httpBody = try JSONSerialization.data(withJSONObject: moodData)
+            
+            let (data, response) = try await URLSession.shared.data(for: request)
+            
+            if let httpResponse = response as? HTTPURLResponse {
+                print("📨 Response status code: \(httpResponse.statusCode)")
+                
+                if let responseString = String(data: data, encoding: .utf8) {
+                    print("📨 Response body: \(responseString)")
+                }
+                
+                if httpResponse.statusCode == 200 || httpResponse.statusCode == 201 {
+                    print("✅ Mood entry saved successfully")
+                } else {
+                    print("❌ Failed to save mood entry: HTTP \(httpResponse.statusCode)")
+                }
+            } else {
+                print("❌ Invalid HTTP response")
+            }
             
             // Send push notification to partner
             await notifyPartnerAboutMoodUpdate(entry)
         } catch {
-            print("❌ Failed to save mood entry to Supabase: \(error)")
+            print("❌ Failed to save mood entry to current service: \(error)")
         }
     }
     
     private func notifyPartnerAboutMoodUpdate(_ entry: MoodEntry) async {
-        guard let currentUserId = getCurrentUserId(),
-              let partnerId = await getPartnerId(for: currentUserId) else { return }
-        
-        do {
-            let title = "💕 Neue Stimmung von deinem Partner"
-            let body = "Dein Partner hat seine Stimmung auf \(entry.moodLevel.description) gesetzt"
-            let data = [
-                "type": "mood_update",
-                "mood_level": String(entry.moodLevel.rawValue),
-                "date": entry.date.formatted(date: .numeric, time: .omitted)
-            ]
-            
-            try await dataService.sendPushNotificationToPartner(
-                userId: currentUserId,
-                partnerId: partnerId,
-                title: title,
-                body: body,
-                data: data
-            )
-        } catch {
-            print("Failed to send push notification to partner: \(error)")
-        }
+        // Partner notification will be handled by backend when it receives the mood entry
+        // Backend knows the partnership and can send notification to partner
+        print("📱 Partner notification will be handled by backend")
     }
     
     // MARK: - Partner Mood Management
@@ -232,19 +227,30 @@ class MoodManager: ObservableObject {
     }
     
     private func loadPartnerTodayMood() async {
-        guard let currentUserId = getCurrentUserId(),
-              let partnerId = await getPartnerId(for: currentUserId) else { return }
-        
+        // Partner data will be fetched from backend with token authentication
         do {
-            if let partnerMoodEntry = try await dataService.getTodayMoodEntry(userId: partnerId) {
+            guard let token = try? await Auth.auth().currentUser?.getIDToken() else {
+                print("❌ No Firebase token available")
+                return
+            }
+            
+            let url = URL(string: "http://localhost:8080/api/partner/mood/today")!
+            var request = URLRequest(url: url)
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+            
+            let (data, response) = try await URLSession.shared.data(for: request)
+            
+            if let httpResponse = response as? HTTPURLResponse,
+               httpResponse.statusCode == 200,
+               let moodData = try? JSONDecoder().decode(DatabaseMoodEntry.self, from: data) {
+                
                 await MainActor.run {
-                    // Convert Supabase MoodEntry to local MoodEntry
                     let localEntry = MoodEntry(
-                        userId: partnerMoodEntry.user_id,
-                        moodLevel: MoodLevel(rawValue: partnerMoodEntry.mood_level) ?? .neutral,
-                        eventLabel: partnerMoodEntry.event_label,
-                        location: partnerMoodEntry.location,
-                        photoData: partnerMoodEntry.photo_data
+                        userId: String(moodData.user_id),
+                        moodLevel: MoodLevel(rawValue: moodData.mood_level) ?? .neutral,
+                        eventLabel: moodData.event_label,
+                        location: moodData.location,
+                        photoData: moodData.photo_data
                     )
                     partnerTodayMood = localEntry
                 }
@@ -255,32 +261,46 @@ class MoodManager: ObservableObject {
     }
     
     private func loadPartnerWeeklyMoods() async {
-        guard let currentUserId = getCurrentUserId(),
-              let partnerId = await getPartnerId(for: currentUserId) else { return }
-        
         do {
+            guard let token = try? await Auth.auth().currentUser?.getIDToken() else {
+                print("❌ No Firebase token available")
+                return
+            }
+            
             // Get partner moods for the last 7 days
             let endDate = Date()
             let startDate = Calendar.current.date(byAdding: .day, value: -6, to: endDate) ?? endDate
             
-            let partnerMoodEntries = try await dataService.getMoodEntries(
-                userId: partnerId,
-                startDate: startDate,
-                endDate: endDate
-            )
+            let url = URL(string: "http://localhost:8080/api/partner/mood/weekly")!
+            var request = URLRequest(url: url)
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
             
-            await MainActor.run {
-                // Convert Supabase MoodEntries to local MoodEntries
-                partnerWeeklyMoods = partnerMoodEntries.compactMap { supabaseEntry in
-                    guard let moodLevel = MoodLevel(rawValue: supabaseEntry.mood_level) else { return nil }
-                    
-                    return MoodEntry(
-                        userId: supabaseEntry.user_id,
-                        moodLevel: moodLevel,
-                        eventLabel: supabaseEntry.event_label,
-                        location: supabaseEntry.location,
-                        photoData: supabaseEntry.photo_data
-                    )
+            // Add date range as query parameters
+            var components = URLComponents(url: url, resolvingAgainstBaseURL: false)
+            components?.queryItems = [
+                URLQueryItem(name: "startDate", value: startDate.formatted(date: .numeric, time: .omitted)),
+                URLQueryItem(name: "endDate", value: endDate.formatted(date: .numeric, time: .omitted))
+            ]
+            request.url = components?.url
+            
+            let (data, response) = try await URLSession.shared.data(for: request)
+            
+            if let httpResponse = response as? HTTPURLResponse,
+               httpResponse.statusCode == 200,
+               let moodEntries = try? JSONDecoder().decode([DatabaseMoodEntry].self, from: data) {
+                
+                await MainActor.run {
+                    partnerWeeklyMoods = moodEntries.compactMap { databaseEntry in
+                        guard let moodLevel = MoodLevel(rawValue: databaseEntry.mood_level) else { return nil }
+                        
+                        return MoodEntry(
+                            userId: String(databaseEntry.user_id),
+                            moodLevel: moodLevel,
+                            eventLabel: databaseEntry.event_label,
+                            location: databaseEntry.location,
+                            photoData: databaseEntry.photo_data
+                        )
+                    }
                 }
             }
         } catch {
@@ -288,20 +308,6 @@ class MoodManager: ObservableObject {
         }
     }
     
-    private func getPartnerId(for userId: UUID) async -> UUID? {
-        do {
-            if let partnership = try await dataService.partnership(userId: userId) {
-                // Determine which ID is the partner's ID
-                // If user_id matches the current user, then partner_id is the partner
-                // If partner_id matches the current user, then user_id is the partner
-                let partnerIdString = partnership.user_id == userId.uuidString ? partnership.partner_id : partnership.user_id
-                return UUID(uuidString: partnerIdString)
-            }
-        } catch {
-            print("❌ Failed to get partnership for user \(userId): \(error)")
-        }
-        return nil
-    }
     
     private func loadMoodData() {
         if let data = userDefaults.data(forKey: "weeklyMoods"),

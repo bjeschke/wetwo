@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct MemoryCard: View {
-    let memory: MemoryEntry
+    let memory: Memory
     let onTap: () -> Void
     
     private let dateFormatter: DateFormatter = {
@@ -38,8 +38,9 @@ struct MemoryCard: View {
     
     private var photoSection: some View {
         ZStack(alignment: .topTrailing) {
-            if let photoData = memory.photoData, 
-               !photoData.isEmpty,
+            if let photoDataString = memory.photo_data, 
+               !photoDataString.isEmpty,
+               let photoData = Data(base64Encoded: photoDataString),
                let uiImage = UIImage(data: photoData),
                uiImage.size.width > 0 && uiImage.size.height > 0 {
                 Image(uiImage: uiImage)
@@ -64,7 +65,7 @@ struct MemoryCard: View {
             
             // Mood indicator
             VStack(spacing: 5) {
-                Text(memory.moodLevel.emoji)
+                Text(MoodLevel(rawValue: Int(memory.mood_level) ?? 3)?.emoji ?? "😐")
                     .font(.title2)
                     .padding(8)
                     .background(
@@ -73,7 +74,7 @@ struct MemoryCard: View {
                             .shadow(color: Color.black.opacity(0.1), radius: 5, x: 0, y: 2)
                     )
                 
-                if memory.isShared {
+                if memory.is_shared == "true" {
                     Text("💕")
                         .font(.body)
                         .padding(6)
@@ -101,7 +102,7 @@ struct MemoryCard: View {
                         .foregroundColor(ColorTheme.primaryText)
                         .lineLimit(2)
                     
-                    Text(dateFormatter.string(from: memory.date))
+                    Text(memory.date)
                         .font(.caption)
                         .foregroundColor(ColorTheme.secondaryText)
                 }
@@ -109,9 +110,9 @@ struct MemoryCard: View {
                 Spacer()
                 
                 // Tags
-                if !memory.tags.isEmpty {
+                if let tagsString = memory.tags, !tagsString.isEmpty {
                     HStack(spacing: 4) {
-                        ForEach(memory.tags.prefix(2), id: \.self) { tag in
+                        ForEach(tagsString.components(separatedBy: ",").prefix(2), id: \.self) { tag in
                             Text(tag)
                                 .font(.caption2)
                                 .foregroundColor(.white)
@@ -123,8 +124,8 @@ struct MemoryCard: View {
                                 )
                         }
                         
-                        if memory.tags.count > 2 {
-                            Text("+\(memory.tags.count - 2)")
+                        if let tagsString = memory.tags, tagsString.components(separatedBy: ",").count > 2 {
+                            Text("+\(tagsString.components(separatedBy: ",").count - 2)")
                                 .font(.caption2)
                                 .foregroundColor(ColorTheme.secondaryText)
                         }
@@ -159,7 +160,7 @@ struct MemoryCard: View {
                 
                 // Additional info
                 HStack(spacing: 8) {
-                    if memory.isShared {
+                    if memory.is_shared == "true" {
                         HStack(spacing: 4) {
                             Image(systemName: "heart.fill")
                                 .font(.caption)
@@ -171,14 +172,14 @@ struct MemoryCard: View {
                         }
                     }
                     
-                    Text(memory.moodLevel.description)
+                    Text(MoodLevel(rawValue: Int(memory.mood_level) ?? 3)?.description ?? "Neutral")
                         .font(.caption)
-                        .foregroundColor(memory.moodLevel.color)
+                        .foregroundColor(MoodLevel(rawValue: Int(memory.mood_level) ?? 3)?.color ?? .gray)
                         .padding(.horizontal, 8)
                         .padding(.vertical, 2)
                         .background(
                             RoundedRectangle(cornerRadius: 8)
-                                .fill(memory.moodLevel.color.opacity(0.1))
+                                .fill((MoodLevel(rawValue: Int(memory.mood_level) ?? 3)?.color ?? .gray).opacity(0.1))
                         )
                 }
             }
@@ -189,13 +190,14 @@ struct MemoryCard: View {
 
 #Preview {
     MemoryCard(
-        memory: MemoryEntry(
-            userId: UUID(),
+        memory: Memory(
+            user_id: 0,
+            date: "2023-08-15",
             title: "Unser erster Urlaub zusammen",
             description: "Ein wunderschöner Tag am Strand mit Sonnenuntergang. Wir haben den ganzen Tag gelacht und neue Erinnerungen geschaffen.",
             location: "Mallorca, Spanien",
-            moodLevel: .veryHappy,
-            tags: ["Urlaub", "Strand", "favorite"]
+            mood_level: "5",
+            tags: "Urlaub,Strand,favorite"
         )
     ) {
         print("Memory tapped")

@@ -8,29 +8,56 @@
 import Foundation
 
 struct User: Codable, Identifiable {
-    let id = UUID()
+    let id: String  // Changed to String to store Firebase UID
+    var email: String
     var name: String
     var zodiacSign: ZodiacSign
     var birthDate: Date
     var partnerCode: String?
-    var partnerId: UUID?
+    var partnerId: String?  // Changed to String for consistency
     var profileImageData: Data?
+    var profilePictureUrl: String?
+    var connectionCode: String?
+    var isConnected: Bool = false
+    var relationshipStartDate: Date?
+    var relationshipStatus: RelationshipStatus = .single
+    var notificationSettings: NotificationSettings = NotificationSettings()
+    var isPremium: Bool = false
     var preferences: UserPreferences
     
-    init(name: String, birthDate: Date) {
+    init(name: String, birthDate: Date, id: String = "") {
+        self.id = id
+        self.email = ""
         self.name = name
         self.birthDate = birthDate
         self.zodiacSign = ZodiacSign.calculate(from: birthDate)
         self.preferences = UserPreferences()
     }
     
+    init(id: String, email: String, name: String) {
+        self.id = id
+        self.email = email
+        self.name = name
+        self.birthDate = Date()
+        self.zodiacSign = .aries
+        self.preferences = UserPreferences()
+    }
+    
     // Legacy initializer for backward compatibility
     init(name: String, zodiacSign: ZodiacSign, birthDate: Date) {
+        self.id = ""
+        self.email = ""
         self.name = name
         self.zodiacSign = zodiacSign
         self.birthDate = birthDate
         self.preferences = UserPreferences()
     }
+}
+
+struct NotificationSettings: Codable {
+    var dailyReminders: Bool = true
+    var loveMessages: Bool = true
+    var moodUpdates: Bool = true
 }
 
 struct UserPreferences: Codable {
@@ -53,6 +80,7 @@ enum ZodiacSign: String, CaseIterable, Codable {
     case capricorn = "Capricorn"
     case aquarius = "Aquarius"
     case pisces = "Pisces"
+    case unknown = "unknown"
     
     var emoji: String {
         switch self {
@@ -68,6 +96,7 @@ enum ZodiacSign: String, CaseIterable, Codable {
         case .capricorn: return "♑️"
         case .aquarius: return "♒️"
         case .pisces: return "♓️"
+        case .unknown: return "❓"
         }
     }
     
@@ -77,6 +106,7 @@ enum ZodiacSign: String, CaseIterable, Codable {
         case .taurus, .virgo, .capricorn: return "Earth"
         case .gemini, .libra, .aquarius: return "Air"
         case .cancer, .scorpio, .pisces: return "Water"
+        case .unknown: return "Unknown"
         }
     }
     

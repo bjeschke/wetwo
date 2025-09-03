@@ -7,18 +7,28 @@
 
 import SwiftUI
 import UserNotifications
+import FirebaseCore
+import FirebaseAuth
 
 @main
 struct WeTwoApp: App {
+    @StateObject private var appState = AppState()
     @StateObject private var notificationService = NotificationService.shared
     @StateObject private var deepLinkHandler = DeepLinkHandler()
+    @StateObject private var authService = FirebaseAuthService.shared
+    
+    init() {
+        FirebaseApp.configure()
+    }
     
     var body: some Scene {
         WindowGroup {
             MainAppView()
                 .environment(\.locale, Locale.current)
+                .environmentObject(appState)
                 .environmentObject(notificationService)
                 .environmentObject(deepLinkHandler)
+                .environmentObject(authService)
                 .onAppear {
                     setupNotifications()
                     setupBackendService()
@@ -60,7 +70,7 @@ struct WeTwoApp: App {
                 print("✅ Backend service is healthy")
             } else {
                 print("⚠️ Backend service validation failed, attempting fallback")
-                await ServiceFactory.shared.fallbackToSupabaseIfNeeded()
+                await ServiceFactory.shared.fallbackToBackendIfNeeded()
             }
         }
     }

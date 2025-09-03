@@ -75,12 +75,7 @@
 "signup_back" = "Back";
 "signup_next" = "Next";
 "signup_create_account" = "Create Account";
-"signup_email_confirmation_required" = "Please check your email and confirm your account before continuing";
-"signup_email_confirmation_title" = "Confirm your email";
-"signup_email_confirmation_subtitle" = "We sent a confirmation email to";
-"signup_email_confirmation_instructions" = "Please check your email and click the confirmation link, then return here to continue";
-"signup_email_confirmation_continue" = "I've confirmed my email";
-"signup_email_confirmation_resend" = "Resend confirmation email";
+
 
 // MARK: - Partner Connection
 "partner_connection_generate_code" = "Generate Connection Code";
@@ -253,12 +248,7 @@
 "premium_feature_3" = "Relationship Analysis";
 "premium_feature_4" = "No Ads";
 
-// MARK: - Email Confirmation
-"email_confirmation_title" = "Confirm your email";
-"email_confirmation_subtitle" = "We sent a confirmation email to";
-"email_confirmation_instructions" = "Please check your email and click the confirmation link, then return here to continue";
-"email_confirmation_continue" = "I've confirmed my email";
-"email_confirmation_resend" = "Resend confirmation email";
+
 
 // MARK: - Tab Navigation
 "tab_today" = "Today";
@@ -636,4 +626,48 @@
 "signup_confirm_password_label" = "Confirm Password";
 "signup_confirm_password_placeholder" = "Confirm your password";
 "signup_back" = "Back";
-"signup_create_account" = "Create Account"; 
+"signup_create_account" = "Create Account";
+
+// MARK: - Calendar Week Summary
+"calendar_week_summary" = "Week Summary";
+"weekly_mood_summary" = "Weekly Mood Summary";
+"mood_statistics" = "Mood Statistics";
+"average_mood" = "Average Mood:";
+"most_common" = "Most Common:";
+"mood_range" = "Mood Range:";
+"mood_trend" = "Mood Trend";
+"overall_trend" = "Overall Trend:";
+"weekly_insights" = "Weekly Insights";
+"recommendations" = "Recommendations";
+
+// MARK: - Mood Trends
+"mood_trend_improving" = "Improving";
+"mood_trend_stable" = "Stable";
+"mood_trend_declining" = "Declining";
+"improving" = "Improving";
+"stable" = "Stable";
+"declining" = "Declining";
+"mood_improving_explanation" = "Your mood has been trending upward this week. Keep up the positive momentum!";
+"mood_stable_explanation" = "Your mood has remained relatively stable this week.";
+"mood_declining_explanation" = "Your mood has been declining this week. Consider what might be affecting your wellbeing.";
+
+// MARK: - Mood Insights
+"no_mood_data" = "No mood data available for this week";
+"no_mood_entries" = "No mood entries recorded this week";
+"consistent_mood" = "Your mood has been very consistent this week";
+"variable_mood" = "Your mood has varied significantly this week";
+"consecutive_positive" = "You've had consecutive positive days!";
+"better_weekends" = "Your mood is significantly better on weekends";
+"better_weekdays" = "Your mood is better during weekdays";
+"excellent_week" = "You've had an excellent week emotionally!";
+"challenging_week" = "This week has been emotionally challenging";
+
+// MARK: - Recommendations
+"recommendation_quality_time" = "Consider scheduling some quality time together";
+"recommendation_new_activity" = "Try a new shared activity or hobby";
+"recommendation_keep_up" = "You're doing great! Keep maintaining your positive habits";
+"recommendation_share_success" = "Share what's working well with your partner";
+"recommendation_brighten_day" = "Look for small ways to brighten each other's day";
+"recommendation_check_ins" = "Regular check-ins can help strengthen your connection";
+"recommendation_open_conversation" = "Have an open conversation about any concerns";
+"recommendation_identify_stressors" = "Consider what stressors might be impacting your relationship"; 

@@ -12,35 +12,45 @@ import Foundation
 protocol DataServiceProtocol {
     // Authentication
     func signIn(email: String, password: String) async throws -> User
+    func signInWithApple(idToken: String, nonce: String) async throws -> User
     func signUp(email: String, password: String, name: String, birthDate: Date) async throws -> User
     func signOut() async throws
     func getCurrentUserId() async throws -> String?
     
     // Profile Management
-    func getUserProfile() async throws -> Profile?
+    func getUserProfile() async throws -> SimpleProfile?
     func updateProfile(userId: String, name: String, birthDate: Date?) async throws
     func updateAuthUserDisplayName(name: String) async throws
     func ensureProfileExists() async throws
+    func updateProfilePushToken(userId: String, pushToken: String) async throws
+    func updateRelationshipData(userId: String, relationshipStatus: String, hasChildren: String, childrenCount: String) async throws
     
     // Memory Management
     func createMemory(_ memory: Memory) async throws -> Memory
     func memories(userId: String) async throws -> [Memory]
     func updateMemory(_ memory: Memory) async throws -> Memory
-    func deleteMemory(_ memoryId: UUID) async throws
+    func deleteMemory(_ memoryId: Int) async throws
     
     // Partnership Management
     func createPartnership(userId: String, partnerId: String, connectionCode: String) async throws -> Partnership
     func findPartnershipByCode(_ code: String) async throws -> Partnership?
     func partnership(userId: String) async throws -> Partnership?
+    func subscribeToPartnerUpdates(userId: String, completion: @escaping (Profile) -> Void) async throws
+    func unsubscribeFromPartnerUpdates(userId: String) async throws
+    func disconnectPartner(userId: String) async throws
+    func getPartnershipStatus(userId: String) async throws -> PartnershipStatus
+    func getPartnerProfile(userId: String) async throws -> Profile?
+    func updateSharedProfile(userId: String, updates: [String: Any]) async throws
+    func downloadProfilePhoto(userId: String) async throws -> Data?
     
     // Love Message Management
     func sendLoveMessage(to partnerId: String, text: String) async throws -> LoveMessage
     func conversation(with partnerId: String) async throws -> [LoveMessage]
     
     // Mood Entry Management
-    func createMoodEntry(_ moodEntry: SupabaseMoodEntry) async throws -> SupabaseMoodEntry
-    func getMoodEntries(userId: String, startDate: Date?, endDate: Date?) async throws -> [SupabaseMoodEntry]
-    func getTodayMoodEntry(userId: String) async throws -> SupabaseMoodEntry?
+    func createMoodEntry(_ moodEntry: DatabaseMoodEntry) async throws -> DatabaseMoodEntry
+    func getMoodEntries(userId: String, startDate: Date?, endDate: Date?) async throws -> [DatabaseMoodEntry]
+    func getTodayMoodEntry(userId: String) async throws -> DatabaseMoodEntry?
     
     // Photo Storage
     func uploadProfilePhoto(userId: String, imageData: Data) async throws
@@ -49,7 +59,7 @@ protocol DataServiceProtocol {
     func sendPushNotificationToPartner(userId: String, partnerId: String, title: String, body: String, data: [String: String]) async throws
     
     // Onboarding
-    func completeOnboarding(email: String, password: String, name: String, birthDate: Date) async throws -> SupabaseUser
+    func completeOnboarding(email: String, password: String, name: String, birthDate: Date) async throws -> DatabaseUser
     
     // Utility
     func checkConnectionHealth() async throws -> Bool
@@ -60,14 +70,13 @@ protocol DataServiceProtocol {
 // MARK: - Service Factory
 
 enum ServiceType {
-    case supabase
     case backend
 }
 
 final class ServiceFactory {
     static let shared = ServiceFactory()
     
-    private var currentServiceType: ServiceType = .backend // Default to backend
+    private var currentServiceType: ServiceType = .backend
     private var currentService: DataServiceProtocol?
     
     private init() {
@@ -79,8 +88,6 @@ final class ServiceFactory {
     
     func createService(type: ServiceType) -> DataServiceProtocol {
         switch type {
-        case .supabase:
-            return SupabaseService.shared
         case .backend:
             return BackendService.shared
         }
@@ -109,13 +116,16 @@ final class ServiceFactory {
     
     func configureForEnvironment() {
         #if DEBUG
-        // In debug mode, you can choose which service to use
-        // For now, default to backend
+        // In debug mode, use backend
         switchToService(.backend)
         #else
         // In production, use backend
         switchToService(.backend)
         #endif
+        
+        // Ensure we're using backend for everything
+        currentServiceType = .backend
+        currentService = createService(type: .backend)
     }
     
     // MARK: - Service Validation
@@ -129,102 +139,11 @@ final class ServiceFactory {
         }
     }
     
-    func fallbackToSupabaseIfNeeded() async {
-        if currentServiceType == .backend {
-            let isHealthy = await validateCurrentService()
-            if !isHealthy {
-                print("⚠️ Backend service unhealthy, falling back to Supabase")
-                switchToService(.supabase)
-            }
+    func fallbackToBackendIfNeeded() async {
+        let isHealthy = await validateCurrentService()
+        if !isHealthy {
+            print("⚠️ Current service unhealthy, switching to Backend")
+            switchToService(.backend)
         }
     }
-}
-
-// MARK: - Service Extensions
-
-extension SupabaseService: DataServiceProtocol {
-    func memories(userId: String) async throws -> [Memory] {
-        guard let userIdUUID = UUID(uuidString: userId) else {
-            throw AuthError.invalidData
-        }
-        return try await memories(userId: userIdUUID)
-    }
-    
-    func createPartnership(userId: String, partnerId: String, connectionCode: String) async throws -> Partnership {
-        guard let userIdUUID = UUID(uuidString: userId),
-              let partnerIdUUID = UUID(uuidString: partnerId) else {
-            throw AuthError.invalidData
-        }
-        return try await createOrActivatePartnership(userId: userIdUUID, partnerId: partnerIdUUID, code: connectionCode)
-    }
-    
-    func findPartnershipByCode(_ code: String) async throws -> Partnership? {
-        return try await findPartnershipByCode(code)
-    }
-    
-    func partnership(userId: String) async throws -> Partnership? {
-        guard let userIdUUID = UUID(uuidString: userId) else {
-            throw AuthError.invalidData
-        }
-        return try await partnership(userId: userIdUUID)
-    }
-    
-    func sendLoveMessage(to partnerId: String, text: String) async throws -> LoveMessage {
-        guard let partnerIdUUID = UUID(uuidString: partnerId) else {
-            throw AuthError.invalidData
-        }
-        return try await sendLoveMessage(to: partnerIdUUID, text: text)
-    }
-    
-    func conversation(with partnerId: String) async throws -> [LoveMessage] {
-        guard let partnerIdUUID = UUID(uuidString: partnerId) else {
-            throw AuthError.invalidData
-        }
-        return try await conversation(with: partnerIdUUID)
-    }
-    
-    func getMoodEntries(userId: String, startDate: Date?, endDate: Date?) async throws -> [SupabaseMoodEntry] {
-        guard let userIdUUID = UUID(uuidString: userId) else {
-            throw AuthError.invalidData
-        }
-        return try await getMoodEntries(userId: userIdUUID, startDate: startDate, endDate: endDate)
-    }
-    
-    func getTodayMoodEntry(userId: String) async throws -> SupabaseMoodEntry? {
-        guard let userIdUUID = UUID(uuidString: userId) else {
-            throw AuthError.invalidData
-        }
-        return try await getTodayMoodEntry(userId: userIdUUID)
-    }
-    
-    func uploadProfilePhoto(userId: String, imageData: Data) async throws {
-        guard let userIdUUID = UUID(uuidString: userId) else {
-            throw AuthError.invalidData
-        }
-        try await uploadProfilePhoto(userId: userIdUUID, imageData: imageData)
-    }
-    
-    func sendPushNotificationToPartner(userId: String, partnerId: String, title: String, body: String, data: [String: String]) async throws {
-        guard let userIdUUID = UUID(uuidString: userId),
-              let partnerIdUUID = UUID(uuidString: partnerId) else {
-            throw AuthError.invalidData
-        }
-        try await sendPushNotificationToPartner(userId: userIdUUID, partnerId: partnerIdUUID, title: title, body: body, data: data)
-    }
-    
-    func updateAuthUserDisplayName(name: String) async throws {
-        try await updateAuthUserDisplayName(name: name)
-    }
-    
-    func ensureProfileExists() async throws {
-        try await ensureProfileExists()
-    }
-    
-    func completeOnboarding(email: String, password: String, name: String, birthDate: Date) async throws -> SupabaseUser {
-        return try await completeOnboarding(email: email, password: password, name: name, birthDate: birthDate)
-    }
-}
-
-extension BackendService: DataServiceProtocol {
-    // BackendService already implements all required methods
 }

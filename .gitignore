@@ -1,1 +1,17 @@
 Archiv.zip
+amavo_backend/
+
+# Build directories
+.build/
+build/
+DerivedData/
+
+# Swift Package Manager
+.swiftpm/
+Package.resolved
+
+# Xcode
+*.xcuserstate
+xcuserdata/
+*.xccheckout
+*.xcscmblueprint

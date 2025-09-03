@@ -600,19 +600,7 @@
 "signup_confirm_password_placeholder" = "Confirma tu contraseña";
 "signup_back" = "Atrás";
 "signup_create_account" = "Crear cuenta";
-"signup_email_confirmation_required" = "Por favor revisa tu correo electrónico y confirma tu cuenta antes de continuar";
-"signup_email_confirmation_title" = "Confirma tu correo electrónico";
-"signup_email_confirmation_subtitle" = "Enviamos un correo de confirmación a";
-"signup_email_confirmation_instructions" = "Por favor revisa tu correo electrónico y haz clic en el enlace de confirmación, luego regresa aquí para continuar";
-"signup_email_confirmation_continue" = "He confirmado mi correo electrónico";
-"signup_email_confirmation_resend" = "Reenviar correo de confirmación";
 
-// MARK: - Email Confirmation
-"email_confirmation_title" = "Confirma tu correo electrónico";
-"email_confirmation_subtitle" = "Enviamos un correo de confirmación a";
-"email_confirmation_instructions" = "Por favor revisa tu correo electrónico y haz clic en el enlace de confirmación, luego regresa aquí para continuar";
-"email_confirmation_continue" = "He confirmado mi correo electrónico";
-"email_confirmation_resend" = "Reenviar correo de confirmación";
 
 // MARK: - Onboarding Relationship Step
 "onboarding_relationship_title" = "Tu relación";

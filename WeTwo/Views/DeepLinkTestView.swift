@@ -25,7 +25,7 @@ struct DeepLinkTestView: View {
                         .fontWeight(.bold)
                         .multilineTextAlignment(.center)
                     
-                    Text("Test the email confirmation deep link functionality")
+                    Text("Test the deep link functionality")
                         .font(.body)
                         .multilineTextAlignment(.center)
                         .foregroundColor(ColorTheme.secondaryText)
@@ -37,27 +37,15 @@ struct DeepLinkTestView: View {
                         Text("Deep Link Status:")
                             .font(.headline)
                         Spacer()
-                        Text(deepLinkHandler.pendingEmailConfirmation ? "Processing" : "Ready")
+                        Text("Ready")
                             .font(.body)
-                            .foregroundColor(deepLinkHandler.pendingEmailConfirmation ? .orange : .green)
+                            .foregroundColor(.green)
                     }
                     .padding()
                     .background(ColorTheme.cardBackgroundSecondary)
                     .cornerRadius(12)
                     
-                    if let confirmationData = deepLinkHandler.emailConfirmationData {
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Confirmation Data:")
-                                .font(.headline)
-                            Text("Email: \(confirmationData.email)")
-                                .font(.body)
-                            Text("Name: \(confirmationData.name)")
-                                .font(.body)
-                        }
-                        .padding()
-                        .background(ColorTheme.cardBackgroundSecondary)
-                        .cornerRadius(12)
-                    }
+
                 }
                 
                 // Test buttons
@@ -71,8 +59,8 @@ struct DeepLinkTestView: View {
                     .foregroundColor(.white)
                     .cornerRadius(25)
                     
-                    Button("Clear Pending Data") {
-                        deepLinkHandler.clearPendingConfirmation()
+                    Button("Clear Data") {
+                        // Clear any pending data
                     }
                     .frame(maxWidth: .infinity)
                     .padding()
@@ -98,8 +86,8 @@ struct DeepLinkTestView: View {
     }
     
     private func testDeepLink() {
-        // Simulate a Supabase email confirmation link
-        let testURL = URL(string: "wetwo://email-confirmation?access_token=test_token&type=signup&token_hash=test_hash")!
+        // Simulate a deep link
+        let testURL = URL(string: "wetwo://test?data=test_data")!
         deepLinkHandler.handleDeepLink(testURL)
     }
 }

@@ -15,7 +15,7 @@ class NotificationService: NSObject, ObservableObject {
     @Published var isAuthorized = false
     @Published var pushToken: String?
     
-    private let supabaseService = SupabaseService.shared
+    private let dataService = ServiceFactory.shared.getCurrentService()
     
     override init() {
         super.init()
@@ -66,21 +66,21 @@ class NotificationService: NSObject, ObservableObject {
         // Save token to UserDefaults
         UserDefaults.standard.set(token, forKey: "pushToken")
         
-        // Send token to Supabase
+        // Send token to current service
         Task {
-            await sendPushTokenToSupabase(token)
+            await sendPushTokenToCurrentService(token)
         }
     }
     
-    private func sendPushTokenToSupabase(_ token: String) async {
-        guard let userId = supabaseService.currentUserId else { return }
+    private func sendPushTokenToCurrentService(_ token: String) async {
+        guard let userId = try? await dataService.getCurrentUserId() else { return }
         
         do {
             // Update user's push token in profiles table
-            try await supabaseService.updateProfilePushToken(userId: userId, pushToken: token)
-            print("✅ Push token sent to Supabase successfully")
+            try await dataService.updateProfilePushToken(userId: userId, pushToken: token)
+            print("✅ Push token sent to backend successfully")
         } catch {
-            print("❌ Failed to send push token to Supabase: \(error)")
+            print("❌ Failed to send push token to backend: \(error)")
         }
     }
     
@@ -162,6 +162,93 @@ class NotificationService: NSObject, ObservableObject {
     
     func removeDailyReminder() {
         UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: ["dailyMoodReminder"])
+    }
+    
+    // MARK: - Calendar Reminders
+    
+    func scheduleCalendarReminder(for entry: CalendarEntry, minutesBefore: Int = 60) {
+        let reminderTime = entry.date.addingTimeInterval(-Double(minutesBefore * 60))
+        
+        guard reminderTime > Date() else {
+            print("⚠️ Cannot schedule reminder for past event")
+            return
+        }
+        
+        let content = UNMutableNotificationContent()
+        content.title = "📅 Erinnerung: \(entry.title)"
+        content.body = entry.description.isEmpty ? "Dein Termin beginnt in \(minutesBefore) Minuten" : entry.description
+        content.sound = .default
+        content.categoryIdentifier = "calendar_reminder"
+        content.userInfo = [
+            "calendar_entry_id": entry.id,
+            "entry_title": entry.title,
+            "entry_date": entry.date.timeIntervalSince1970
+        ]
+        
+        let trigger = UNTimeIntervalNotificationTrigger(
+            timeInterval: reminderTime.timeIntervalSinceNow,
+            repeats: false
+        )
+        
+        let request = UNNotificationRequest(
+            identifier: "calendar_\(entry.id)",
+            content: content,
+            trigger: trigger
+        )
+        
+        UNUserNotificationCenter.current().add(request) { error in
+            if let error = error {
+                print("❌ Failed to schedule calendar reminder: \(error)")
+            } else {
+                print("✅ Calendar reminder scheduled for: \(entry.title) at \(reminderTime)")
+            }
+        }
+    }
+    
+    func cancelCalendarReminder(for entryId: String) {
+        UNUserNotificationCenter.current().removePendingNotificationRequests(
+            withIdentifiers: ["calendar_\(entryId)"]
+        )
+    }
+    
+    func scheduleCustomReminder(title: String, body: String, at date: Date, identifier: String) {
+        guard date > Date() else {
+            print("⚠️ Cannot schedule reminder for past date")
+            return
+        }
+        
+        let content = UNMutableNotificationContent()
+        content.title = title
+        content.body = body
+        content.sound = .default
+        content.categoryIdentifier = "custom_reminder"
+        
+        let trigger = UNTimeIntervalNotificationTrigger(
+            timeInterval: date.timeIntervalSinceNow,
+            repeats: false
+        )
+        
+        let request = UNNotificationRequest(
+            identifier: identifier,
+            content: content,
+            trigger: trigger
+        )
+        
+        UNUserNotificationCenter.current().add(request) { error in
+            if let error = error {
+                print("❌ Failed to schedule custom reminder: \(error)")
+            } else {
+                print("✅ Custom reminder scheduled: \(title)")
+            }
+        }
+    }
+    
+    func getAllPendingReminders() async -> [UNNotificationRequest] {
+        return await withCheckedContinuation { continuation in
+            UNUserNotificationCenter.current().getPendingNotificationRequests { requests in
+                continuation.resume(returning: requests)
+            }
+        }
     }
 }
 

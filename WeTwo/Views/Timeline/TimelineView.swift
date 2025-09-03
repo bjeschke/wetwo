@@ -12,7 +12,7 @@ struct TimelineView: View {
     @EnvironmentObject var appState: AppState
     @EnvironmentObject var partnerManager: PartnerManager
     @State private var showingAddMemory = false
-    @State private var selectedMemory: MemoryEntry?
+    @State private var selectedMemory: Memory?
     @State private var showingMemoryDetail = false
     
     var body: some View {
@@ -112,7 +112,7 @@ struct TimelineView: View {
     }
     
     private var timelineContent: some View {
-        let filteredMemories = memoryManager.getFilteredMemories()
+        let filteredMemories = memoryManager.getFilteredMemories(filter: memoryManager.selectedFilter)
         
         return LazyVStack(spacing: 20) {
             if filteredMemories.isEmpty {

@@ -18,12 +18,12 @@ struct PartnerConnectionView: View {
                         .font(.system(size: 60))
                         .foregroundColor(ColorTheme.accentBlue)
                     
-                    Text("partner_connection_title".localized)
+                    Text("Partner verbinden")
                         .font(.title)
                         .fontWeight(.bold)
                         .multilineTextAlignment(.center)
                     
-                    Text("partner_connection_subtitle".localized)
+                    Text("Verbinde dich mit deinem Partner")
                         .font(.body)
                         .multilineTextAlignment(.center)
                         .foregroundColor(ColorTheme.secondaryText)
@@ -35,7 +35,7 @@ struct PartnerConnectionView: View {
                     Button(action: generateConnectionCode) {
                         HStack {
                             Image(systemName: "qrcode")
-                            Text("partner_generate_code".localized)
+                            Text("Code generieren")
                         }
                         .frame(maxWidth: .infinity)
                         .padding()
@@ -52,7 +52,7 @@ struct PartnerConnectionView: View {
                         Rectangle()
                             .frame(height: 1)
                             .foregroundColor(.gray.opacity(0.3))
-                        Text("partner_or".localized)
+                        Text("ODER")
                             .font(.caption)
                             .foregroundColor(ColorTheme.secondaryText)
                             .padding(.horizontal, 10)
@@ -63,11 +63,11 @@ struct PartnerConnectionView: View {
                     
                     // Enter code section
                     VStack(spacing: 15) {
-                        Text("partner_enter_code".localized)
+                        Text("Code eingeben")
                             .font(.headline)
                             .foregroundColor(ColorTheme.primaryText)
                         
-                        TextField("partner_code_placeholder".localized, text: $connectionCode)
+                        TextField("Partner-Code eingeben", text: $connectionCode)
                             .textFieldStyle(RoundedBorderTextFieldStyle())
                             .textInputAutocapitalization(.never)
                             .disableAutocorrection(true)
@@ -81,7 +81,7 @@ struct PartnerConnectionView: View {
                                 } else {
                                     Image(systemName: "link")
                                 }
-                                Text("partner_connect".localized)
+                                Text("Verbinden")
                             }
                             .frame(maxWidth: .infinity)
                             .padding()
@@ -104,11 +104,11 @@ struct PartnerConnectionView: View {
                 Spacer()
             }
             .padding()
-            .navigationTitle("partner_connection_nav_title".localized)
+            .navigationTitle("Partner")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("partner_close".localized) {
+                    Button("Schließen") {
                         dismiss()
                     }
                 }
@@ -137,20 +137,62 @@ struct PartnerConnectionView: View {
         isConnecting = true
         errorMessage = ""
         
+        print("🔗 Attempting to connect with code: \(connectionCode)")
+        
         Task {
             do {
-                try await partnerManager.connectWithPartner(using: connectionCode)
+                // The backend expects partnerEmail
+                // In a real app, the connection code would map to a partner email
+                // For now, we use the entered code as the partner email if it contains @
+                let partnerEmail: String
+                if connectionCode.contains("@") {
+                    partnerEmail = connectionCode
+                } else {
+                    // For testing: map specific codes to test emails
+                    switch connectionCode {
+                    case "TEST1":
+                        partnerEmail = "partner2_1756932268@test.de"
+                    case "TEST2":
+                        partnerEmail = "partner1_1756932267@test.de"
+                    default:
+                        // If it's a numeric code, assume it's a test user ID
+                        partnerEmail = "test\(connectionCode)@test.de"
+                    }
+                }
+                
+                print("📧 Connecting with partner email: \(partnerEmail)")
+                
+                let backendService = BackendService.shared
+                
+                // Generate connection code for this partnership
+                let connectionCode = String((0..<6).map { _ in "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".randomElement()! })
+                
+                let partnership = try await backendService.createPartnership(
+                    partnerEmail: partnerEmail,
+                    message: "Let's connect!",
+                    connectionCode: connectionCode
+                )
+                
+                print("✅ Partnership created successfully: \(partnership)")
+                
                 await MainActor.run {
                     isConnecting = false
-                    dismiss()
+                    errorMessage = "Partnership created! ID: \(partnership.id ?? 0)"
+                    // Don't dismiss yet so user can see the message
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                        dismiss()
+                    }
                 }
             } catch {
+                print("❌ Partnership connection failed: \(error)")
                 await MainActor.run {
                     isConnecting = false
                     if let partnerError = error as? PartnerError {
                         errorMessage = partnerError.localizedDescription
+                    } else if let backendError = error as? BackendError {
+                        errorMessage = backendError.localizedDescription
                     } else {
-                        errorMessage = NSLocalizedString("partner_error_unknown", comment: "An unknown error occurred")
+                        errorMessage = "Connection failed: \(error.localizedDescription)"
                     }
                 }
             }
@@ -182,12 +224,12 @@ struct QRCodeView: View {
                     )
                 
                 VStack(spacing: 15) {
-                    Text("partner_qr_title".localized)
+                    Text("Dein QR-Code")
                         .font(.title2)
                         .fontWeight(.bold)
                         .multilineTextAlignment(.center)
                     
-                    Text("partner_qr_subtitle".localized)
+                    Text("Lass deinen Partner diesen Code scannen")
                         .font(.body)
                         .multilineTextAlignment(.center)
                         .foregroundColor(ColorTheme.secondaryText)
@@ -196,11 +238,11 @@ struct QRCodeView: View {
                 Spacer()
             }
             .padding()
-            .navigationTitle("partner_qr_nav_title".localized)
+            .navigationTitle("QR-Code")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("partner_close".localized) {
+                    Button("Schließen") {
                         dismiss()
                     }
                 }

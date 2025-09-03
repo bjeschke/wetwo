@@ -4,11 +4,13 @@ import CryptoKit
 
 extension Notification.Name {
     static let signupCompleted = Notification.Name("signupCompleted")
+    static let showLogin = Notification.Name("showLogin")
 }
 
 struct SignupView: View {
     @EnvironmentObject var appState: AppState
     @EnvironmentObject var deepLinkHandler: DeepLinkHandler
+    @EnvironmentObject var authService: FirebaseAuthService
     @State private var email = ""
     @State private var password = ""
     @State private var confirmPassword = ""
@@ -16,7 +18,10 @@ struct SignupView: View {
     @State private var isLoading = false
     @State private var showError = false
     @State private var errorMessage = ""
-    @State private var showingEmailConfirmation = false
+    @State private var showEmailExistsAlert = false
+    @State private var showLogin = false
+    @State private var prefillEmail = ""
+
     
     var body: some View {
         NavigationView {
@@ -103,6 +108,20 @@ struct SignupView: View {
                             .padding(.horizontal, 20)
                     }
                     
+                    // Already have an account?
+                    HStack {
+                        Text("Bereits registriert?")
+                            .font(.system(size: 14, weight: .regular))
+                            .foregroundColor(Color(.systemGray))
+                        
+                        Button("Zur Anmeldung") {
+                            showLogin = true
+                        }
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(.accentColor)
+                    }
+                    .padding(.top, 16)
+                    
                     // Terms and Privacy
                     VStack(spacing: 8) {
                         Text("By creating an account, you agree to our")
@@ -134,10 +153,26 @@ struct SignupView: View {
             }
             .background(Color(.systemBackground))
             .navigationBarHidden(true)
-            .sheet(isPresented: $showingEmailConfirmation) {
-                EmailConfirmationView()
-                    .environmentObject(appState)
+            .alert("Account bereits vorhanden", isPresented: $showEmailExistsAlert) {
+                Button("Zur Anmeldung") {
+                    prefillEmail = email
+                    showLogin = true
+                }
+                Button("Abbrechen", role: .cancel) { }
+            } message: {
+                Text("Ein Account mit der Email-Adresse '\(email)' existiert bereits. Möchtest du dich stattdessen anmelden?")
             }
+            .sheet(isPresented: $showLogin) {
+                LoginView(prefillEmail: prefillEmail)
+                    .environmentObject(appState)
+                    .environmentObject(deepLinkHandler)
+            }
+            .alert("Fehler", isPresented: $showError) {
+                Button("OK", role: .cancel) { }
+            } message: {
+                Text(errorMessage)
+            }
+
         }
     }
     
@@ -189,78 +224,86 @@ struct SignupView: View {
             return
         }
         
-        // Store credentials securely for later use
+        // Backend handles complete registration including Firebase
         Task {
             do {
-                print("🔧 Storing credentials securely...")
-                try SecurityService.shared.secureStore(email, forKey: "userEmail")
-                try SecurityService.shared.secureStore(password, forKey: "userPassword")
+                print("🔧 Creating user account via backend service...")
                 
-                // Verify storage was successful
-                let storedEmail = try SecurityService.shared.secureLoadString(forKey: "userEmail")
-                let storedPassword = try SecurityService.shared.secureLoadString(forKey: "userPassword")
-                print("✅ Credentials stored and verified:")
-                print("   Email: \(storedEmail)")
-                print("   Password: \(String(repeating: "*", count: storedPassword.count))")
+                // Register user through BackendService - backend creates Firebase user
+                let backendService = BackendService.shared
+                let backendUser = try await backendService.signUpDirectly(
+                    email: email,
+                    password: password,
+                    name: fullName,
+                    birthDate: Date()
+                )
                 
-                print("🔧 Attempting to complete signup with Supabase...")
+                print("✅ Backend registration successful")
+                print("🔑 Firebase UID from backend: \(backendUser.firebaseUid ?? "none")")
                 
-                // Try to complete signup with Supabase
+                // Now sign in to Firebase with email/password
+                // The backend already created the Firebase user with the same credentials
                 do {
-                    let _ = try await SupabaseService.shared.completeOnboarding(
+                    let firebaseUser = try await authService.signIn(
                         email: email,
-                        password: password,
-                        name: fullName,
-                        birthDate: Date() // Using current date as fallback since we don't have birth date in this view
+                        password: password
+                    )
+                    print("✅ Firebase authentication successful: \(firebaseUser.uid)")
+                    
+                    // Get the Firebase ID token for future backend calls
+                    let idToken = try await authService.getIDToken()
+                    print("🔑 Firebase ID Token obtained for future API calls")
+                    
+                    // Create the user object with Firebase UID
+                    let appUser = User(
+                        id: firebaseUser.uid,
+                        email: email,
+                        name: fullName
                     )
                     
-                    print("✅ Signup completed successfully without email confirmation")
-                    
-                    // If we get here, email confirmation was not required
-                    // Create user and complete signup
-                    let user = User(name: fullName, birthDate: Date())
-                    appState.completeOnboarding(user: user)
-                    appState.completeOnboardingWithSupabase(user: user)
-                    
-                    DispatchQueue.main.async {
+                    // Update app state with authenticated user
+                    await MainActor.run {
+                        appState.currentUser = appUser
+                        appState.firebaseIdToken = idToken
+                        appState.isOnboarded = true
+                        appState.isOnboarding = false
                         isLoading = false
                         NotificationCenter.default.post(name: .signupCompleted, object: nil)
                     }
                     
-                } catch AuthError.validationError {
-                    print("⚠️ Email confirmation required - showing email confirmation screen")
-                    // Email confirmation required
-                    DispatchQueue.main.async {
-                        isLoading = false
-                        showingEmailConfirmation = true
-                    }
                 } catch {
-                    print("❌ Error during signup: \(error)")
-                    print("❌ Error type: \(type(of: error))")
-                    
-                    // For debugging: if no specific error is caught, still show email confirmation
-                    // This helps if Supabase project doesn't require email confirmation but we want to test the flow
-                    if error.localizedDescription.contains("validation") || error.localizedDescription.contains("confirm") {
-                        print("⚠️ Assuming email confirmation required based on error message")
-                        DispatchQueue.main.async {
-                            isLoading = false
-                            showingEmailConfirmation = true
-                        }
-                    } else {
-                        DispatchQueue.main.async {
-                            isLoading = false
-                            showError = true
-                            errorMessage = "Error creating account: \(error.localizedDescription)"
-                        }
+                    print("❌ Firebase authentication with custom token failed: \(error)")
+                    // This should not happen if backend properly created the Firebase user
+                    await MainActor.run {
+                        isLoading = false
+                        showError = true
+                        errorMessage = "Authentication failed. Please try logging in."
+                        // Redirect to login
+                        prefillEmail = email
+                        showLogin = true
                     }
                 }
                 
             } catch {
-                print("❌ Error storing credentials: \(error)")
-                DispatchQueue.main.async {
-                    isLoading = false
-                    showError = true
-                    errorMessage = "Error storing credentials: \(error.localizedDescription)"
+                print("❌ Registration error: \(error)")
+                
+                // Handle specific backend errors
+                if let backendError = error as? BackendError {
+                    await MainActor.run {
+                        isLoading = false
+                        if backendError == BackendError.emailAlreadyExists {
+                            showEmailExistsAlert = true
+                        } else {
+                            showError = true
+                            errorMessage = backendError.localizedDescription
+                        }
+                    }
+                } else {
+                    await MainActor.run {
+                        isLoading = false
+                        showError = true
+                        errorMessage = "Error creating account: \(error.localizedDescription)"
+                    }
                 }
             }
         }

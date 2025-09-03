@@ -3,7 +3,10 @@ import AuthenticationServices
 
 struct LoginView: View {
     @EnvironmentObject var appState: AppState
+    @EnvironmentObject var authService: FirebaseAuthService
     @Environment(\.dismiss) private var dismiss
+    
+    let prefillEmail: String
     
     @State private var email = ""
     @State private var password = ""
@@ -11,6 +14,11 @@ struct LoginView: View {
     @State private var showError = false
     @State private var errorMessage = ""
     @State private var showForgotPassword = false
+    
+    // Initialize with optional prefill email
+    init(prefillEmail: String = "") {
+        self.prefillEmail = prefillEmail
+    }
     
     var body: some View {
         NavigationView {
@@ -173,6 +181,11 @@ struct LoginView: View {
             } message: {
                 Text("Wir senden dir eine E-Mail mit einem Link zum Zurücksetzen deines Passworts.")
             }
+            .onAppear {
+                if !prefillEmail.isEmpty {
+                    email = prefillEmail
+                }
+            }
         }
     }
     
@@ -182,32 +195,35 @@ struct LoginView: View {
         
         Task {
             do {
-                print("🔄 Attempting to sign in with email: \(email)")
+                print("🔄 Attempting login directly with Firebase using email: \(email)")
                 
-                // Try to sign in with Supabase
-                let user = try await SupabaseService.shared.signIn(email: email, password: password)
+                // For login, we authenticate directly with Firebase
+                // The backend has already created the Firebase user during signup
+                let firebaseUser = try await authService.signIn(
+                    email: email,
+                    password: password
+                )
                 
-                // Store credentials securely for future use
-                try SecurityService.shared.secureStore(email, forKey: "userEmail")
-                try SecurityService.shared.secureStore(password, forKey: "userPassword")
+                print("✅ Firebase authentication successful: \(firebaseUser.uid)")
                 
-                // Get the current Supabase user ID
-                if let userId = try? await SupabaseService.shared.getCurrentUserId() {
-                    try? SecurityService.shared.secureStore(userId, forKey: "currentUserId")
-                    print("✅ User ID saved: \(userId)")
-                }
+                // Get the Firebase ID token for future backend API calls
+                let idToken = try await authService.getIDToken()
+                print("🔑 Firebase ID Token obtained for future API calls")
                 
-                // Ensure profile exists
-                try? await SupabaseService.shared.ensureProfileExists()
+                // Create user object with Firebase UID
+                let appUser = User(
+                    id: firebaseUser.uid,
+                    email: email,
+                    name: firebaseUser.displayName ?? email.components(separatedBy: "@").first ?? "User"
+                )
                 
-                DispatchQueue.main.async {
+                // Update app state with authenticated user
+                await MainActor.run {
+                    appState.currentUser = appUser
+                    appState.firebaseIdToken = idToken
+                    appState.isOnboarded = true
+                    appState.isOnboarding = false
                     isLoading = false
-                    
-                    // Create a User object and complete onboarding
-                    let appUser = User(name: user.name, birthDate: user.birthDate)
-                    appState.completeOnboarding(user: appUser)
-                    appState.completeOnboardingWithSupabase(user: appUser)
-                    
                     dismiss()
                 }
                 
@@ -215,25 +231,40 @@ struct LoginView: View {
                 
             } catch {
                 print("❌ Login failed: \(error)")
-                DispatchQueue.main.async {
+                
+                // Handle specific backend and Firebase auth errors
+                let errorMsg: String
+                
+                if let backendError = error as? BackendError {
+                    switch backendError {
+                    case .invalidCredentials:
+                        errorMsg = "Falsches Passwort oder E-Mail-Adresse."
+                    case .userNotFound:
+                        errorMsg = "Benutzer nicht gefunden. Bitte registriere dich zuerst."
+                    case .networkError:
+                        errorMsg = "Netzwerkfehler. Bitte überprüfe deine Internetverbindung."
+                    default:
+                        errorMsg = "Anmeldung fehlgeschlagen: \(backendError.localizedDescription)"
+                    }
+                } else {
+                    // Handle Firebase auth errors
+                    let errorCode = (error as NSError).code
+                    switch errorCode {
+                    case 17009: // Wrong password
+                        errorMsg = "Falsches Passwort. Bitte überprüfe deine Anmeldedaten."
+                    case 17011: // User not found
+                        errorMsg = "Benutzer nicht gefunden. Bitte registriere dich zuerst."
+                    case 17020: // Network error
+                        errorMsg = "Netzwerkfehler. Bitte überprüfe deine Internetverbindung."
+                    default:
+                        errorMsg = "Anmeldung fehlgeschlagen: \(error.localizedDescription)"
+                    }
+                }
+                
+                await MainActor.run {
                     isLoading = false
                     showError = true
-                    
-                    // Provide specific error messages
-                    if let authError = error as? AuthError {
-                        switch authError {
-                        case .invalidCredentials:
-                            errorMessage = "Falsche E-Mail oder Passwort. Bitte überprüfe deine Anmeldedaten."
-                        case .userNotFound:
-                            errorMessage = "Benutzer nicht gefunden. Bitte registriere dich zuerst."
-                        case .networkError:
-                            errorMessage = "Netzwerkfehler. Bitte überprüfe deine Internetverbindung."
-                        default:
-                            errorMessage = "Anmeldung fehlgeschlagen. Bitte versuche es erneut."
-                        }
-                    } else {
-                        errorMessage = "Anmeldung fehlgeschlagen. Bitte überprüfe deine Anmeldedaten."
-                    }
+                    errorMessage = errorMsg
                 }
             }
         }
@@ -247,20 +278,17 @@ struct LoginView: View {
                     do {
                         guard let idToken = appleIDCredential.identityToken,
                               let idTokenString = String(data: idToken, encoding: .utf8) else {
-                            throw AuthError.invalidCredentials
+                            throw BackendError.invalidCredentials
                         }
                         
-                        let nonce = SecurityService.generateNonce()
-                        let hashedNonce = SecurityService.sha256(nonce)
                         
-                        let user = try await SupabaseService.shared.signInWithApple(
+                        let user = try await ServiceFactory.shared.getCurrentService().signInWithApple(
                             idToken: idTokenString,
-                            nonce: hashedNonce
+                            nonce: UUID().uuidString
                         )
                         
                         // Store Apple User ID
                         let appleUserID = appleIDCredential.user
-                        try? SecurityService.shared.secureStore(appleUserID, forKey: "appleUserID")
                         
                         DispatchQueue.main.async {
                             let appUser = User(name: user.name, birthDate: user.birthDate)
@@ -293,15 +321,15 @@ struct LoginView: View {
         
         Task {
             do {
-                try await SupabaseService.shared.signIn(email: email)
-                DispatchQueue.main.async {
+                try await authService.sendPasswordResetEmail(to: email)
+                await MainActor.run {
                     showError = true
                     errorMessage = "E-Mail zum Zurücksetzen des Passworts wurde gesendet. Bitte überprüfe deinen Posteingang."
                 }
             } catch {
-                DispatchQueue.main.async {
+                await MainActor.run {
                     showError = true
-                    errorMessage = "Fehler beim Senden der E-Mail. Bitte versuche es erneut."
+                    errorMessage = "Fehler beim Senden der E-Mail: \(error.localizedDescription)"
                 }
             }
         }

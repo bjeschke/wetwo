@@ -1,32 +1,32 @@
 import SwiftUI
 
 struct MainAppView: View {
-    @StateObject private var appState = AppState()
+    @EnvironmentObject var appState: AppState
+    @EnvironmentObject var authService: FirebaseAuthService
+    @EnvironmentObject var notificationService: NotificationService
+    @EnvironmentObject var deepLinkHandler: DeepLinkHandler
     @StateObject private var partnerManager = PartnerManager.shared
     @StateObject private var moodManager = MoodManager()
     @StateObject private var memoryManager = MemoryManager()
-    @StateObject private var gptService = GPTService()
-    @StateObject private var notificationService = NotificationService.shared
-    @StateObject private var deepLinkHandler = DeepLinkHandler()
     
     var body: some View {
         Group {
             if appState.isOnboarding {
                 OnboardingView()
                     .environmentObject(appState)
+                    .environmentObject(authService)
                     .environmentObject(partnerManager)
                     .environmentObject(moodManager)
                     .environmentObject(memoryManager)
-                    .environmentObject(gptService)
                     .environmentObject(notificationService)
                     .environmentObject(deepLinkHandler)
             } else {
                 MainTabView()
                     .environmentObject(appState)
+                    .environmentObject(authService)
                     .environmentObject(partnerManager)
                     .environmentObject(moodManager)
                     .environmentObject(memoryManager)
-                    .environmentObject(gptService)
                     .environmentObject(notificationService)
                     .environmentObject(deepLinkHandler)
             }
@@ -34,7 +34,7 @@ struct MainAppView: View {
         .purpleTheme()
         .accentColor(ColorTheme.primaryPurple)
         .environment(\.locale, Locale.current)
-        .onReceive(NotificationCenter.default.publisher(for: .emailConfirmed)) { _ in
+        .onReceive(NotificationCenter.default.publisher(for: Notification.Name("emailConfirmed"))) { _ in
             // Email was confirmed, complete onboarding
             DispatchQueue.main.async {
                 appState.isOnboarding = false
@@ -45,37 +45,65 @@ struct MainAppView: View {
 
 struct MainTabView: View {
     @EnvironmentObject var appState: AppState
+    @EnvironmentObject var moodManager: MoodManager
+    @EnvironmentObject var memoryManager: MemoryManager
+    @EnvironmentObject var partnerManager: PartnerManager
+    @EnvironmentObject var notificationService: NotificationService
     
     var body: some View {
         TabView {
             TodayView()
+                .environmentObject(moodManager)
+                .environmentObject(partnerManager)
+                .environmentObject(appState)
+                .environmentObject(notificationService)
                 .tabItem {
                     Image(systemName: "heart.fill")
-                    Text(NSLocalizedString("tab_today", comment: "Today tab"))
-                }
-            
-            TimelineView()
-                .tabItem {
-                    Image(systemName: "clock.fill")
-                    Text(NSLocalizedString("tab_timeline", comment: "Timeline tab"))
+                    Text("Today")
                 }
             
             CalendarView()
+                .environmentObject(moodManager)
+                .environmentObject(partnerManager)
+                .environmentObject(appState)
                 .tabItem {
                     Image(systemName: "calendar")
-                    Text(NSLocalizedString("tab_calendar", comment: "Calendar tab"))
+                    Text("Kalender")
+                }
+            
+            TimelineView()
+                .environmentObject(moodManager)
+                .environmentObject(partnerManager)
+                .environmentObject(appState)
+                .environmentObject(memoryManager)
+                .tabItem {
+                    Image(systemName: "clock")
+                    Text("Timeline")
                 }
             
             ActivityView()
+                .environmentObject(moodManager)
+                .environmentObject(partnerManager)
+                .environmentObject(appState)
                 .tabItem {
-                    Image(systemName: "gamecontroller.fill")
-                    Text(NSLocalizedString("tab_activity", comment: "Activity tab"))
+                    Image(systemName: "gamecontroller")
+                    Text("Activity")
+                }
+            
+            RemindersView()
+                .environmentObject(notificationService)
+                .environmentObject(appState)
+                .tabItem {
+                    Image(systemName: "bell")
+                    Text("Erinnerungen")
                 }
             
             ProfileView()
+                .environmentObject(appState)
+                .environmentObject(partnerManager)
                 .tabItem {
                     Image(systemName: "person.circle.fill")
-                    Text(NSLocalizedString("tab_profile", comment: "Profile tab"))
+                    Text("Profile")
                 }
         }
         .accentColor(ColorTheme.primaryPurple)

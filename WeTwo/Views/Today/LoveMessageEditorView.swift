@@ -9,10 +9,13 @@ import SwiftUI
 
 struct LoveMessageEditorView: View {
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject var loveMessageManager: LoveMessageManager
     @State private var message = ""
     @State private var selectedMood: MoodLevel = .happy
     @State private var isPrivate = false
     @State private var isLoading = false
+    @State private var errorMessage = ""
+    @State private var showError = false
     
     var body: some View {
         NavigationView {
@@ -129,6 +132,11 @@ struct LoveMessageEditorView: View {
             }
             .background(Color(.systemBackground))
             .navigationBarTitleDisplayMode(.inline)
+            .alert("Fehler", isPresented: $showError) {
+                Button("OK") { showError = false }
+            } message: {
+                Text(errorMessage)
+            }
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Cancel") {
@@ -142,11 +150,50 @@ struct LoveMessageEditorView: View {
     
     private func sendMessage() {
         isLoading = true
+        errorMessage = ""
+        showError = false
         
-        // Simulate API call
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-            isLoading = false
-            dismiss()
+        print("💌 Sending love message...")
+        
+        Task {
+            do {
+                // Get partner ID from PartnerManager
+                let partnerManager = PartnerManager.shared
+                guard let partnerId = partnerManager.partnerProfile?.id else {
+                    await MainActor.run {
+                        isLoading = false
+                        errorMessage = "Kein Partner verbunden. Bitte verbinde dich zuerst mit deinem Partner."
+                        showError = true
+                    }
+                    return
+                }
+                
+                print("📤 Sending to partner ID: \(partnerId)")
+                
+                // Send love message using the manager
+                try await loveMessageManager.sendMessage(message, to: partnerId)
+                
+                print("✅ Love message sent successfully!")
+                
+                // Add mood context to the message (optional)
+                let fullMessage = "\(selectedMood.emoji) \(message)"
+                
+                await MainActor.run {
+                    isLoading = false
+                    // Show success feedback
+                    let generator = UINotificationFeedbackGenerator()
+                    generator.notificationOccurred(.success)
+                    dismiss()
+                }
+                
+            } catch {
+                print("❌ Failed to send love message: \(error)")
+                await MainActor.run {
+                    isLoading = false
+                    errorMessage = "Nachricht konnte nicht gesendet werden: \(error.localizedDescription)"
+                    showError = true
+                }
+            }
         }
     }
 }

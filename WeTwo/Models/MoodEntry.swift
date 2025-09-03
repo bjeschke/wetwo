@@ -9,8 +9,8 @@ import Foundation
 import SwiftUI
 
 struct MoodEntry: Codable, Identifiable {
-    let id = UUID()
-    let userId: UUID
+    let id: String
+    let userId: String  // Changed to String for Firebase UID
     let date: Date
     let moodLevel: MoodLevel
     let eventLabel: String?
@@ -19,7 +19,8 @@ struct MoodEntry: Codable, Identifiable {
     let insight: String?
     let loveMessage: String?
     
-    init(userId: UUID, moodLevel: MoodLevel, eventLabel: String? = nil, location: String? = nil, photoData: Data? = nil) {
+    init(userId: String, moodLevel: MoodLevel, eventLabel: String? = nil, location: String? = nil, photoData: Data? = nil, id: String? = nil) {
+        self.id = id ?? UUID().uuidString
         self.userId = userId
         self.date = Date()
         self.moodLevel = moodLevel
@@ -50,11 +51,11 @@ enum MoodLevel: Int, CaseIterable, Codable {
     
     var description: String {
         switch self {
-        case .veryHappy: return "Ecstatic"
-        case .happy: return "Happy"
+        case .veryHappy: return "Überwältigt"
+        case .happy: return "Glücklich"
         case .neutral: return "Neutral"
-        case .sad: return "Sad"
-        case .verySad: return "Very Sad"
+        case .sad: return "Traurig"
+        case .verySad: return "Sehr traurig"
         }
     }
     
@@ -84,16 +85,4 @@ struct WeeklyMoodSummary: Codable {
     let insights: [String]
 }
 
-enum MoodTrend: String, Codable {
-    case improving = "improving"
-    case declining = "declining"
-    case stable = "stable"
-    
-    var emoji: String {
-        switch self {
-        case .improving: return "📈"
-        case .declining: return "📉"
-        case .stable: return "➡️"
-        }
-    }
-} 
+ 

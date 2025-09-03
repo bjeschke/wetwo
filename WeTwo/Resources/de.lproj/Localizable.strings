@@ -76,19 +76,7 @@
 "signup_back" = "Zurück";
 "signup_next" = "Weiter";
 "signup_create_account" = "Konto erstellen";
-"signup_email_confirmation_required" = "Bitte überprüfe deine E-Mails und bestätige dein Konto, bevor du fortfährst";
-"signup_email_confirmation_title" = "Bestätige deine E-Mail";
-"signup_email_confirmation_subtitle" = "Wir haben eine Bestätigungs-E-Mail an gesendet";
-"signup_email_confirmation_instructions" = "Bitte überprüfe deine E-Mails und klicke auf den Bestätigungslink, dann kehre hierher zurück, um fortzufahren";
-"signup_email_confirmation_continue" = "Ich habe meine E-Mail bestätigt";
-"signup_email_confirmation_resend" = "Bestätigungs-E-Mail erneut senden";
 
-// MARK: - Email Confirmation
-"email_confirmation_title" = "Bestätige deine E-Mail";
-"email_confirmation_subtitle" = "Wir haben eine Bestätigungs-E-Mail an gesendet";
-"email_confirmation_instructions" = "Bitte überprüfe deine E-Mails und klicke auf den Bestätigungslink, dann kehre hierher zurück, um fortzufahren";
-"email_confirmation_continue" = "Ich habe meine E-Mail bestätigt";
-"email_confirmation_resend" = "Bestätigungs-E-Mail erneut senden";
 
 // MARK: - Tab Navigation
 "tab_today" = "Heute";

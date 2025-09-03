@@ -220,7 +220,7 @@ struct RelationshipStatusView: View {
                 }
                 
                 // For now, just save locally and show success
-                // TODO: Implement proper Supabase relationship data saving
+                // TODO: Implement proper relationship data saving
                 
                 await MainActor.run {
                     isLoading = false

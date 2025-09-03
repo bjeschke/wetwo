@@ -61,13 +61,7 @@ struct OnboardingView: View {
             SimplePartnerConnectionView()
                 .environmentObject(partnerManager)
         }
-        .sheet(isPresented: $showingEmailConfirmation) {
-            EmailConfirmationView()
-                .environmentObject(appState)
-        }
-        .onAppear {
-            checkEmailConfirmationStatus()
-        }
+
     }
     
     // MARK: - Step Views
@@ -273,19 +267,13 @@ struct OnboardingView: View {
     }
     
     private var registrationStep: some View {
-        RegistrationView(
-            name: viewModel.name,
-            birthDate: viewModel.birthDate,
-            relationshipStatus: viewModel.relationshipStatus,
-            hasChildren: viewModel.hasChildren,
-            childrenCount: viewModel.childrenCount
-        )
-        .environmentObject(appState)
-        .onReceive(NotificationCenter.default.publisher(for: .registrationCompleted)) { _ in
-            withAnimation {
-                completeOnboarding()
+        SignupView()
+            .environmentObject(appState)
+            .onReceive(NotificationCenter.default.publisher(for: .signupCompleted)) { _ in
+                withAnimation {
+                    completeOnboarding()
+                }
             }
-        }
     }
     
     // MARK: - Navigation
@@ -346,8 +334,8 @@ struct OnboardingView: View {
             print("   Birth Date: \(viewModel.birthDate)")
             
             // Profile wird automatisch durch Trigger erstellt, nur Update nötig
-            try await SupabaseService.shared.updateProfile(
-                userId: userId.uuidString,
+            try await ServiceFactory.shared.getCurrentService().updateProfile(
+                userId: String(userId),
                 name: viewModel.name,
                 birthDate: viewModel.birthDate
             )
@@ -375,8 +363,8 @@ struct OnboardingView: View {
             print("   Children Count: \(viewModel.childrenCount)")
             
             // Save relationship data to database
-            try await SupabaseService.shared.updateRelationshipData(
-                userId: userId.uuidString,
+            try await ServiceFactory.shared.getCurrentService().updateRelationshipData(
+                userId: String(userId),
                 relationshipStatus: viewModel.relationshipStatus.rawValue,
                 hasChildren: viewModel.hasChildren ? "true" : "false",
                 childrenCount: String(viewModel.childrenCount)
@@ -389,19 +377,7 @@ struct OnboardingView: View {
         }
     }
     
-    private func checkEmailConfirmationStatus() {
-        // Check if user exists but email might not be confirmed
-        if appState.currentUser != nil {
-            // Check if we have email/password but no current user ID (indicating email not confirmed)
-            if let _ = try? SecurityService.shared.secureLoadString(forKey: "userEmail"),
-               let _ = try? SecurityService.shared.secureLoadString(forKey: "userPassword"),
-               (try? SecurityService.shared.secureLoadString(forKey: "currentUserId")) == nil {
-                
-                print("🔄 User exists but email not confirmed - showing email confirmation")
-                showingEmailConfirmation = true
-            }
-        }
-    }
+
 }
 
 // MARK: - Onboarding ViewModel
@@ -452,7 +428,7 @@ struct RegistrationView: View {
     @EnvironmentObject var appState: AppState
     @State private var showingEmailSignup = false
     @State private var showingAppleSignIn = false
-    @State private var showingEmailConfirmation = false
+
     @State private var showingLogin = false
     @State private var isLoginMode = false
     
@@ -577,10 +553,7 @@ struct RegistrationView: View {
             )
             .environmentObject(appState)
         }
-        .sheet(isPresented: $showingEmailConfirmation) {
-            EmailConfirmationView()
-                .environmentObject(appState)
-        }
+
     }
 }
 
@@ -594,7 +567,7 @@ struct EmailSignupView: View {
     @State private var isLoading = false
     @State private var showError = false
     @State private var errorMessage = ""
-    @State private var showingEmailConfirmation = false
+
     
     let name: String
     let birthDate: Date
@@ -719,10 +692,7 @@ struct EmailSignupView: View {
                     }
                 }
             }
-            .sheet(isPresented: $showingEmailConfirmation) {
-                EmailConfirmationView()
-                    .environmentObject(appState)
-            }
+
         }
     }
     
@@ -741,18 +711,7 @@ struct EmailSignupView: View {
         
         print("🔧 Starting signup process for email: \(email)")
         
-        // TEMPORARY: For testing email confirmation flow
-        // Set this to true to force email confirmation screen
-        let forceEmailConfirmation = false
-        
-        if forceEmailConfirmation {
-            print("🧪 FORCED: Showing email confirmation screen for testing")
-            DispatchQueue.main.async {
-                isLoading = false
-                showingEmailConfirmation = true
-            }
-            return
-        }
+
         
         // Validate passwords match
         if password != confirmPassword {
@@ -782,14 +741,12 @@ struct EmailSignupView: View {
         Task {
             do {
                 print("🔧 Storing credentials securely...")
-                try SecurityService.shared.secureStore(email, forKey: "userEmail")
-                try SecurityService.shared.secureStore(password, forKey: "userPassword")
                 
-                print("🔧 Attempting to complete onboarding with Supabase...")
+                print("🔧 Attempting to complete onboarding with current service...")
                 
-                // Try to complete onboarding with Supabase
+                // Try to complete onboarding with current service
                 do {
-                    let _ = try await SupabaseService.shared.completeOnboarding(
+                    let _ = try await ServiceFactory.shared.getCurrentService().completeOnboarding(
                         email: email,
                         password: password,
                         name: name,
@@ -802,7 +759,7 @@ struct EmailSignupView: View {
                     // Create user and complete onboarding
                     let user = User(name: name, birthDate: birthDate)
                     appState.completeOnboarding(user: user)
-                    appState.completeOnboardingWithSupabase(user: user)
+                    appState.completeOnboardingWithCurrentService(user: user)
                     
                     // Save relationship data
                     await saveRelationshipData()
@@ -813,31 +770,14 @@ struct EmailSignupView: View {
                         NotificationCenter.default.post(name: .registrationCompleted, object: nil)
                     }
                     
-                } catch AuthError.validationError {
-                    print("⚠️ Email confirmation required - showing email confirmation screen")
-                    // Email confirmation required
-                    DispatchQueue.main.async {
-                        isLoading = false
-                        showingEmailConfirmation = true
-                    }
                 } catch {
                     print("❌ Error during onboarding: \(error)")
                     print("❌ Error type: \(type(of: error))")
                     
-                    // For debugging: if no specific error is caught, still show email confirmation
-                    // This helps if Supabase project doesn't require email confirmation but we want to test the flow
-                    if error.localizedDescription.contains("validation") || error.localizedDescription.contains("confirm") {
-                        print("⚠️ Assuming email confirmation required based on error message")
-                        DispatchQueue.main.async {
-                            isLoading = false
-                            showingEmailConfirmation = true
-                        }
-                    } else {
-                        DispatchQueue.main.async {
-                            isLoading = false
-                            showError = true
-                            errorMessage = "Fehler beim Erstellen des Kontos: \(error.localizedDescription)"
-                        }
+                    DispatchQueue.main.async {
+                        isLoading = false
+                        showError = true
+                        errorMessage = "Fehler beim Erstellen des Kontos: \(error.localizedDescription)"
                     }
                 }
                 
@@ -856,8 +796,8 @@ struct EmailSignupView: View {
         do {
             guard let userId = appState.currentUser?.id else { return }
             
-            try await SupabaseService.shared.updateRelationshipData(
-                userId: userId.uuidString,
+            try await ServiceFactory.shared.getCurrentService().updateRelationshipData(
+                userId: String(userId),
                 relationshipStatus: relationshipStatus.rawValue,
                 hasChildren: hasChildren ? "true" : "false",
                 childrenCount: String(childrenCount)
@@ -983,8 +923,9 @@ struct AppleSignInView: View {
         do {
             guard let userId = appState.currentUser?.id else { return }
             
-            try await SupabaseService.shared.updateRelationshipData(
-                userId: userId.uuidString,
+            let dataService = ServiceFactory.shared.getCurrentService()
+            try await dataService.updateRelationshipData(
+                userId: String(userId),
                 relationshipStatus: relationshipStatus.rawValue,
                 hasChildren: hasChildren ? "true" : "false",
                 childrenCount: String(childrenCount)
