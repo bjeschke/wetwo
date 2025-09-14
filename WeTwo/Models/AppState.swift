@@ -44,6 +44,15 @@ class AppState: ObservableObject {
                         // Ensure profile exists
                         try? await dataService.ensureProfileExists()
                         
+                        // Try to load partner code from backend if not stored locally
+                        if UserDefaults.standard.string(forKey: "userPartnerCode") == nil {
+                            if let backendService = dataService as? BackendService,
+                               let partnerCode = try? await backendService.getUserPartnerCode() {
+                                UserDefaults.standard.set(partnerCode, forKey: "userPartnerCode")
+                                print("✅ Partner code loaded during auto-sign-in: \(partnerCode)")
+                            }
+                        }
+                        
                         // Only complete onboarding if we can successfully sign in
                         DispatchQueue.main.async {
                             self.isOnboarding = false

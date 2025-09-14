@@ -14,6 +14,9 @@ struct LoginView: View {
     @State private var showError = false
     @State private var errorMessage = ""
     @State private var showForgotPassword = false
+    @State private var showPartnerCodeInput = false
+    @State private var partnerCode = ""
+    @State private var authenticatedUser: User?
     
     // Initialize with optional prefill email
     init(prefillEmail: String = "") {
@@ -186,6 +189,26 @@ struct LoginView: View {
                     email = prefillEmail
                 }
             }
+            .sheet(isPresented: $showPartnerCodeInput) {
+                PartnerCodeInputSheet(
+                    partnerCode: $partnerCode,
+                    authenticatedUser: authenticatedUser,
+                    onComplete: {
+                        // Complete login process
+                        appState.currentUser = authenticatedUser
+                        appState.isOnboarded = true
+                        appState.isOnboarding = false
+                        dismiss()
+                    },
+                    onSkip: {
+                        // Skip partner code and complete login
+                        appState.currentUser = authenticatedUser
+                        appState.isOnboarded = true
+                        appState.isOnboarding = false
+                        dismiss()
+                    }
+                )
+            }
         }
     }
     
@@ -217,14 +240,23 @@ struct LoginView: View {
                     name: firebaseUser.displayName ?? email.components(separatedBy: "@").first ?? "User"
                 )
                 
-                // Update app state with authenticated user
+                // Try to fetch the user's partner code from backend
+                do {
+                    let backendService = BackendService.shared
+                    if let partnerCode = try await backendService.getUserPartnerCode() {
+                        UserDefaults.standard.set(partnerCode, forKey: "userPartnerCode")
+                        print("✅ Partner code retrieved and stored: \(partnerCode)")
+                    }
+                } catch {
+                    print("⚠️ Could not fetch partner code from backend: \(error)")
+                }
+                
+                // Store authenticated user and show partner code input
                 await MainActor.run {
-                    appState.currentUser = appUser
+                    authenticatedUser = appUser
                     appState.firebaseIdToken = idToken
-                    appState.isOnboarded = true
-                    appState.isOnboarding = false
                     isLoading = false
-                    dismiss()
+                    showPartnerCodeInput = true
                 }
                 
                 print("✅ Login successful")

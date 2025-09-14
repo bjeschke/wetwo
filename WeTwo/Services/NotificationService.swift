@@ -164,6 +164,42 @@ class NotificationService: NSObject, ObservableObject {
         UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: ["dailyMoodReminder"])
     }
     
+    // MARK: - Invitation Notifications
+    
+    func handleInvitationNotification(from userName: String, code: String) {
+        // Schedule a local notification for the invitation
+        let content = UNMutableNotificationContent()
+        content.title = "💕 Neue Partner-Einladung!"
+        content.body = "\(userName) möchte sich mit dir verbinden."
+        content.sound = .default
+        content.categoryIdentifier = "partner_invitation"
+        content.userInfo = [
+            "type": "partner_invitation",
+            "from_user": userName,
+            "connection_code": code
+        ]
+        
+        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
+        let request = UNNotificationRequest(
+            identifier: "invitation_\(code)",
+            content: content,
+            trigger: trigger
+        )
+        
+        UNUserNotificationCenter.current().add(request) { error in
+            if let error = error {
+                print("❌ Failed to show invitation notification: \(error)")
+            } else {
+                print("✅ Invitation notification scheduled")
+            }
+        }
+        
+        // Also trigger a check for pending invitations
+        Task {
+            await PartnerManager.shared.checkForPendingInvitations()
+        }
+    }
+    
     // MARK: - Calendar Reminders
     
     func scheduleCalendarReminder(for entry: CalendarEntry, minutesBefore: Int = 60) {
@@ -271,10 +307,18 @@ extension NotificationService: UNUserNotificationCenterDelegate {
     ) {
         // Handle notification tap
         let identifier = response.notification.request.identifier
+        let userInfo = response.notification.request.content.userInfo
         
         if identifier == "dailyMoodReminder" {
             // Navigate to mood input
             // This would be handled by the app's navigation system
+        } else if identifier.starts(with: "invitation_") {
+            // Handle invitation notification tap
+            Task {
+                await PartnerManager.shared.checkForPendingInvitations()
+            }
+            // Navigate to Today view to show the invitation
+            NotificationCenter.default.post(name: Notification.Name("ShowInvitation"), object: nil)
         }
         
         completionHandler()

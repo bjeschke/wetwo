@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import Combine
 
 struct TodayView: View {
     @EnvironmentObject var moodManager: MoodManager
@@ -38,31 +39,78 @@ struct TodayView: View {
     @State private var showingProfilePhotoPicker = false
     @State private var profilePhoto: UIImage?
     
+    // Animation states
+    @State private var showHearts = false
+    @State private var bounceScale: CGFloat = 1.0
+    @State private var rotationAngle: Double = 0
+    
     var body: some View {
         NavigationView {
-            ScrollView {
-                VStack(spacing: 30) {
-                    // Header with greeting
-                    headerSection
-                    
-                    // Partner connection section (if not connected)
-                    if !partnerManager.isConnected {
-                        partnerConnectionSection
+            ZStack {
+                // Background gradient
+                DesignSystem.Gradients.backgroundGradient
+                    .ignoresSafeArea()
+                
+                // Floating hearts animation
+                if showHearts {
+                    ForEach(0..<5, id: \.self) { index in
+                        FloatingHeartView(delay: Double(index) * 0.2)
+                            .position(
+                                x: CGFloat.random(in: 50...UIScreen.main.bounds.width - 50),
+                                y: UIScreen.main.bounds.height - 100
+                            )
                     }
-                    
-                    // Mood input section
-                    moodInputSection
-                    
-                    Spacer(minLength: 100)
                 }
-                .padding(.horizontal, 20)
-                .padding(.top, 120)
+                
+                ScrollView {
+                    VStack(spacing: DesignSystem.Spacing.l) {
+                        // Header with greeting
+                        headerSection
+                            .scaleEffect(bounceScale)
+                            .animation(DesignSystem.Animation.springBouncy, value: bounceScale)
+                        
+                        // Pending invitation notification
+                        if partnerManager.hasPendingInvitation {
+                            invitationNotificationSection
+                                .transition(.asymmetric(
+                                    insertion: .scale.combined(with: .opacity),
+                                    removal: .scale.combined(with: .opacity)
+                                ))
+                        }
+                        
+                        // Partner connection section (if not connected and no pending invitation)
+                        if !partnerManager.isConnected && !partnerManager.hasPendingInvitation {
+                            partnerConnectionSection
+                                .transition(.asymmetric(
+                                    insertion: .move(edge: .leading).combined(with: .opacity),
+                                    removal: .move(edge: .trailing).combined(with: .opacity)
+                                ))
+                        }
+                        
+                        // Mood input section
+                        moodInputSection
+                            .rotation3DEffect(
+                                .degrees(rotationAngle),
+                                axis: (x: 0, y: 1, z: 0)
+                            )
+                        
+                        Spacer(minLength: DesignSystem.Spacing.xxl + DesignSystem.Spacing.xxl)
+                    }
+                    .padding(.horizontal, DesignSystem.Spacing.m)
+                    .padding(.top, DesignSystem.Spacing.l)
+                }
             }
-            .purpleTheme()
             .navigationBarHidden(true)
             .onAppear {
                 loadTodayMood()
                 loadProfilePhoto()
+                Task {
+                    await partnerManager.checkForPendingInvitations()
+                    // Ensure partner code is loaded from backend if not present
+                    if partnerManager.ownConnectionCode.isEmpty || partnerManager.ownConnectionCode == "Lädt..." {
+                        await partnerManager.refreshConnectionCodeFromBackend()
+                    }
+                }
             }
             .sheet(isPresented: $showingEventInput) {
                 EventInputView(eventLabel: $eventLabel) { selectedEvent in
@@ -95,33 +143,6 @@ struct TodayView: View {
     
     private var headerSection: some View {
         VStack(spacing: 15) {
-            // Firebase Token Display
-            if let token = appState.firebaseIdToken {
-                VStack(alignment: .leading, spacing: 5) {
-                    Text("🔑 Firebase ID Token:")
-                        .font(.caption)
-                        .fontWeight(.semibold)
-                        .foregroundColor(ColorTheme.accentPink)
-                    
-                    Text(String(token.prefix(50)) + "...")
-                        .font(.system(.caption2, design: .monospaced))
-                        .foregroundColor(ColorTheme.secondaryText)
-                        .lineLimit(2)
-                        .padding(8)
-                        .background(
-                            RoundedRectangle(cornerRadius: 8)
-                                .fill(ColorTheme.cardBackgroundSecondary)
-                        )
-                        .onTapGesture {
-                            UIPasteboard.general.string = token
-                        }
-                    
-                    Text("Tap to copy full token")
-                        .font(.caption2)
-                        .foregroundColor(ColorTheme.secondaryText.opacity(0.7))
-                }
-                .padding(.bottom, 10)
-            }
             
             // User profile section
             HStack(spacing: 15) {
@@ -131,41 +152,58 @@ struct TodayView: View {
                         Image(uiImage: profilePhoto)
                             .resizable()
                             .aspectRatio(contentMode: .fill)
-                            .frame(width: 60, height: 60)
+                            .frame(width: 70, height: 70)
                             .clipShape(Circle())
                             .overlay(
                                 Circle()
-                                    .stroke(ColorTheme.accentPink, lineWidth: 2)
+                                    .stroke(
+                                        DesignSystem.Gradients.primaryGradient,
+                                        lineWidth: 3
+                                    )
                             )
+                            .shadow(color: DesignSystem.Colors.primaryPink.opacity(0.3), radius: 10)
                     } else {
-                        Circle()
-                            .fill(ColorTheme.cardBackgroundSecondary)
-                            .frame(width: 60, height: 60)
-                            .overlay(
-                                VStack(spacing: 2) {
-                                    Image(systemName: "camera.fill")
-                                        .font(.title2)
-                                        .foregroundColor(ColorTheme.secondaryText)
-                                    
-                                    Text("Foto")
-                                        .font(.caption2)
-                                        .foregroundColor(ColorTheme.secondaryText)
-                                }
-                            )
-                            .overlay(
-                                Circle()
-                                    .stroke(ColorTheme.accentPink, lineWidth: 2)
-                            )
+                        ZStack {
+                            Circle()
+                                .fill(DesignSystem.Gradients.cardGradient)
+                                .frame(width: 70, height: 70)
+                            
+                            VStack(spacing: 2) {
+                                Image(systemName: "camera.fill")
+                                    .font(.title2)
+                                    .foregroundStyle(DesignSystem.Gradients.primaryGradient)
+                                
+                                Text("Foto")
+                                    .font(DesignSystem.Typography.caption)
+                                    .foregroundColor(DesignSystem.Colors.textSecondary)
+                            }
+                        }
+                        .overlay(
+                            Circle()
+                                .stroke(
+                                    DesignSystem.Gradients.primaryGradient,
+                                    lineWidth: 3
+                                )
+                        )
+                        .shadow(color: DesignSystem.Colors.primaryPink.opacity(0.2), radius: 8)
                     }
                 }
                 
                 // User greeting
                 VStack(alignment: .leading, spacing: 5) {
                     if let user = appState.currentUser {
-                        Text("Hello, \(user.name)! 💕")
-                            .font(.title3)
-                            .fontWeight(.semibold)
-                            .foregroundColor(ColorTheme.primaryText)
+                        HStack(spacing: 8) {
+                            Text("Hello, \(user.name)!")
+                                .font(DesignSystem.Typography.title2)
+                                .fontWeight(.bold)
+                                .foregroundStyle(
+                                    DesignSystem.Gradients.primaryGradient
+                                )
+                            
+                            Text("💕")
+                                .font(.title2)
+                                .pulsingHeart()
+                        }
                     }
                     
                     if authService.isAuthenticated {
@@ -175,8 +213,8 @@ struct TodayView: View {
                     }
                     
                     Text("Tippe auf das Foto um es zu ändern")
-                        .font(.caption)
-                        .foregroundColor(ColorTheme.secondaryText)
+                        .font(DesignSystem.Typography.caption)
+                        .foregroundColor(DesignSystem.Colors.textSecondary)
                 }
                 
                 Spacer()
@@ -219,8 +257,8 @@ struct TodayView: View {
                             .font(.body)
                             .fontWeight(.semibold)
                             .foregroundColor(ColorTheme.primaryText)
-                        
-                        Text("Partner-Code: \(partnerManager.ownConnectionCode)")
+
+                        Text("Partner verbunden ❤️")
                             .font(.caption)
                             .foregroundColor(ColorTheme.secondaryText)
                     }
@@ -235,8 +273,94 @@ struct TodayView: View {
                 }
             }
         }
-        .purpleCard()
-        .padding(.horizontal)
+        .padding(DesignSystem.Spacing.l)
+        .playfulCard()
+        .onAppear {
+            withAnimation(DesignSystem.Animation.springBouncy.delay(0.3)) {
+                bounceScale = 1.05
+            }
+            withAnimation(DesignSystem.Animation.springBouncy.delay(0.6)) {
+                bounceScale = 1.0
+            }
+        }
+    }
+    
+    private var invitationNotificationSection: some View {
+        VStack(spacing: 20) {
+            // Header
+            HStack {
+                Image(systemName: "envelope.badge.fill")
+                    .font(.title2)
+                    .foregroundColor(.blue)
+                    .symbolEffect(.bounce, value: partnerManager.hasPendingInvitation)
+                
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Neue Partner-Einladung!")
+                        .font(.headline)
+                        .foregroundColor(ColorTheme.primaryText)
+                    
+                    if let invitation = partnerManager.pendingInvitation {
+                        Text("Von: \(invitation.fromUser?.name ?? "Unbekannt")")
+                            .font(.subheadline)
+                            .foregroundColor(ColorTheme.secondaryText)
+                    }
+                }
+                
+                Spacer()
+            }
+            
+            // Action buttons
+            HStack(spacing: 15) {
+                Button(action: {
+                    Task {
+                        await partnerManager.rejectInvitation()
+                    }
+                }) {
+                    HStack {
+                        Image(systemName: "xmark.circle.fill")
+                        Text("Ablehnen")
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(Color.red.opacity(0.1))
+                    .foregroundColor(.red)
+                    .cornerRadius(12)
+                }
+                
+                Button(action: {
+                    Task {
+                        await partnerManager.acceptInvitation()
+                    }
+                }) {
+                    HStack {
+                        Image(systemName: "checkmark.circle.fill")
+                        Text("Annehmen")
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(Color.green.opacity(0.1))
+                    .foregroundColor(.green)
+                    .cornerRadius(12)
+                }
+            }
+        }
+        .padding()
+        .background(
+            RoundedRectangle(cornerRadius: 20)
+                .fill(Color(UIColor.systemBackground))
+                .shadow(color: Color.blue.opacity(0.3), radius: 10, x: 0, y: 5)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 20)
+                .stroke(
+                    LinearGradient(
+                        colors: [Color.blue, Color.purple],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    ),
+                    lineWidth: 2
+                )
+        )
     }
     
     private var partnerConnectionSection: some View {
@@ -245,11 +369,14 @@ struct TodayView: View {
             HStack {
                 Text("💕")
                     .font(.title2)
+                    .pulsingHeart()
                 
                 Text("Partner verbinden")
-                    .font(.title3)
+                    .font(DesignSystem.Typography.title2)
                     .fontWeight(.bold)
-                    .foregroundColor(ColorTheme.primaryText)
+                    .foregroundStyle(
+                        DesignSystem.Gradients.primaryGradient
+                    )
                 
                 Spacer()
             }
@@ -289,17 +416,17 @@ struct TodayView: View {
                     .disabled(partnerCodeInput.isEmpty || isConnecting)
                 }
             }
-            
+
             Divider()
                 .background(ColorTheme.secondaryText.opacity(0.3))
-            
-            // Own partner code
+
+            // Own partner code display
             VStack(spacing: 10) {
                 Text("Dein Partner-Code:")
                     .font(.body)
                     .foregroundColor(ColorTheme.secondaryText)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                
+
                 HStack {
                     Text(partnerManager.ownConnectionCode)
                         .font(.title2)
@@ -311,7 +438,7 @@ struct TodayView: View {
                             RoundedRectangle(cornerRadius: 10)
                                 .fill(ColorTheme.cardBackgroundSecondary)
                         )
-                    
+
                     Button(action: copyOwnCode) {
                         Image(systemName: "doc.on.doc")
                             .font(.title3)
@@ -319,8 +446,8 @@ struct TodayView: View {
                     }
                     .padding(.horizontal, 10)
                 }
-                
-                Text("Gib diesen Code deinem Partner, damit er dich verbinden kann")
+
+                Text("Gib diesen Code deinem Partner, damit er sich mit dir verbinden kann")
                     .font(.caption)
                     .foregroundColor(ColorTheme.secondaryText)
                     .multilineTextAlignment(.center)
@@ -334,15 +461,37 @@ struct TodayView: View {
         VStack(spacing: 25) {
             // Emoji mood slider
             VStack(spacing: 15) {
-                Text(selectedMood.emoji)
-                    .font(.system(size: 80))
-                    .scaleEffect(selectedMood == .veryHappy ? 1.2 : 1.0)
-                    .animation(.spring(response: 0.5, dampingFraction: 0.6), value: selectedMood)
+                ZStack {
+                    // Glow effect behind emoji
+                    Circle()
+                        .fill(
+                            RadialGradient(
+                                colors: [selectedMood.color.opacity(0.4), Color.clear],
+                                center: .center,
+                                startRadius: 10,
+                                endRadius: 60
+                            )
+                        )
+                        .frame(width: 120, height: 120)
+                        .blur(radius: 10)
+                    
+                    Text(selectedMood.emoji)
+                        .font(.system(size: 80))
+                        .scaleEffect(selectedMood == .veryHappy ? 1.3 : 1.0)
+                        .rotationEffect(.degrees(selectedMood == .veryHappy ? 10 : 0))
+                        .animation(DesignSystem.Animation.springBouncy, value: selectedMood)
+                }
                 
                 Text(selectedMood.description)
-                    .font(.title3)
-                    .fontWeight(.medium)
-                    .foregroundColor(selectedMood.color)
+                    .font(DesignSystem.Typography.title2)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: [selectedMood.color, selectedMood.color.opacity(0.7)],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
             }
             
             // Mood slider
@@ -355,16 +504,23 @@ struct TodayView: View {
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 10)
                                 .background(
-                                    RoundedRectangle(cornerRadius: 15)
-                                        .fill(selectedMood == mood ? mood.color.opacity(0.2) : Color.clear)
+                                    RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.medium)
+                                        .fill(selectedMood == mood ? mood.color.opacity(0.3) : Color.clear)
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.medium)
+                                                .stroke(selectedMood == mood ? mood.color : Color.clear, lineWidth: 2)
+                                        )
                                 )
+                                .scaleEffect(selectedMood == mood ? 1.1 : 1.0)
+                                .animation(DesignSystem.Animation.springBouncy, value: selectedMood)
                         }
                         .buttonStyle(PlainButtonStyle())
                     }
                 }
                 .background(
-                    RoundedRectangle(cornerRadius: 15)
-                        .fill(ColorTheme.cardBackgroundSecondary)
+                    RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.medium)
+                        .fill(DesignSystem.Colors.cardBackground)
+                        .shadow(color: DesignSystem.Colors.shadowColor, radius: 5, x: 0, y: 2)
                 )
             }
             
@@ -416,22 +572,54 @@ struct TodayView: View {
                     print("🔵 Task started")
                     await saveMoodEntry()
                     print("🟢 Task completed")
+                    
+                    // Trigger hearts animation
+                    withAnimation {
+                        showHearts = true
+                    }
+                    
+                    // Hide hearts after 3 seconds
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+                        withAnimation {
+                            showHearts = false
+                        }
+                    }
                 }
             }) {
-                let gradientColors = [selectedMood.color, selectedMood.color.opacity(0.7)]
-                let gradient = LinearGradient(colors: gradientColors, startPoint: .leading, endPoint: .trailing)
-                
-                Text("Stimmung speichern")
-                    .font(.title3)
-                    .fontWeight(.semibold)
-                    .foregroundColor(.white)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 50)
-                    .background(
-                        RoundedRectangle(cornerRadius: 25)
-                            .fill(gradient)
-                    )
-                    .shadow(color: selectedMood.color.opacity(0.3), radius: 10, x: 0, y: 5)
+                HStack {
+                    Image(systemName: "heart.fill")
+                        .font(.title3)
+                    
+                    Text("Stimmung speichern")
+                        .font(DesignSystem.Typography.headline)
+                        .fontWeight(.semibold)
+                }
+                .foregroundColor(.white)
+                .frame(maxWidth: .infinity)
+                .frame(height: 56)
+                .background(
+                    RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.round)
+                        .fill(
+                            LinearGradient(
+                                colors: [selectedMood.color, selectedMood.color.opacity(0.8)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.round)
+                                .fill(
+                                    LinearGradient(
+                                        colors: [Color.white.opacity(0.3), Color.clear],
+                                        startPoint: .top,
+                                        endPoint: .bottom
+                                    )
+                                )
+                                .frame(height: 28)
+                                .offset(y: -14)
+                        )
+                )
+                .shadow(color: selectedMood.color.opacity(0.4), radius: 15, x: 0, y: 8)
             }
         }
         .padding(25)

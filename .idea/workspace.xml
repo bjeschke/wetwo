@@ -17,78 +17,7 @@
     </configurations>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="9805b1d6-7a38-453b-895b-471060da8af4" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/GoogleService-Info.plist" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/API_DOCUMENTATION.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/CLOUDFLARE_R2_CONFIG.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/WeTwo.xcodeproj/project.pbxproj" beforeDir="false" afterPath="$PROJECT_DIR$/WeTwo.xcodeproj/project.pbxproj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/WeTwo.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved" beforeDir="false" afterPath="$PROJECT_DIR$/WeTwo.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/WeTwo.xcodeproj/xcuserdata/benjaminjeschke.xcuserdatad/xcschemes/WeTwo.xcscheme" beforeDir="false" afterPath="$PROJECT_DIR$/WeTwo.xcodeproj/xcuserdata/benjaminjeschke.xcuserdatad/xcschemes/WeTwo.xcscheme" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/WeTwo/AppTestReport.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/WeTwo/ComplianceDocumentation.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/WeTwo/Config/BackendConfig.swift" beforeDir="false" afterPath="$PROJECT_DIR$/WeTwo/Config/BackendConfig.swift" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/WeTwo/Config/SupabaseConfig.swift" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/WeTwo/Database/APPLE_SIGNIN_SETUP.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/WeTwo/Database/DEEP_LINK_SETUP.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/WeTwo/Database/EMAIL_CONFIRMATION_IMPLEMENTATION.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/WeTwo/Database/ENABLE_STORAGE_LATER.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/WeTwo/Database/PUSH_NOTIFICATION_SETUP.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/WeTwo/Database/ROBUST_STORAGE_SETUP.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/WeTwo/Database/STORAGE_SETUP_GUIDE.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/WeTwo/Database/SUPABASE_SETUP.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/WeTwo/Database/auto_profile_trigger.sql" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/WeTwo/Database/complete_schema_rebuild.sql" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/WeTwo/Database/complete_storage_setup.sql" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/WeTwo/Database/configure_email_confirmation_redirect.sql" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/WeTwo/Database/create_profile_photos_bucket.sql" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/WeTwo/Database/fix_storage_policies.sql" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/WeTwo/Database/storage_setup.sql" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/WeTwo/Database/supabase-edge-function-send-push-notification.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/WeTwo/Database/supabase_schema.sql" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/WeTwo/Database/update_love_messages_rls.sql" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/WeTwo/Managers/MemoryManager.swift" beforeDir="false" afterPath="$PROJECT_DIR$/WeTwo/Managers/MemoryManager.swift" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/WeTwo/Managers/MoodManager.swift" beforeDir="false" afterPath="$PROJECT_DIR$/WeTwo/Managers/MoodManager.swift" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/WeTwo/Managers/PartnerManager.swift" beforeDir="false" afterPath="$PROJECT_DIR$/WeTwo/Managers/PartnerManager.swift" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/WeTwo/Models/AppState.swift" beforeDir="false" afterPath="$PROJECT_DIR$/WeTwo/Models/AppState.swift" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/WeTwo/Models/LoveMessage.swift" beforeDir="false" afterPath="$PROJECT_DIR$/WeTwo/Models/LoveMessage.swift" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/WeTwo/Models/MemoryEntry.swift" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/WeTwo/Models/MoodEntry.swift" beforeDir="false" afterPath="$PROJECT_DIR$/WeTwo/Models/MoodEntry.swift" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/WeTwo/Models/User.swift" beforeDir="false" afterPath="$PROJECT_DIR$/WeTwo/Models/User.swift" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/WeTwo/Resources/Localizable.strings" beforeDir="false" afterPath="$PROJECT_DIR$/WeTwo/Resources/Localizable.strings" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/WeTwo/Resources/de.lproj/Localizable.strings" beforeDir="false" afterPath="$PROJECT_DIR$/WeTwo/Resources/de.lproj/Localizable.strings" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/WeTwo/Resources/en.lproj/Localizable.strings" beforeDir="false" afterPath="$PROJECT_DIR$/WeTwo/Resources/en.lproj/Localizable.strings" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/WeTwo/Resources/es.lproj/Localizable.strings" beforeDir="false" afterPath="$PROJECT_DIR$/WeTwo/Resources/es.lproj/Localizable.strings" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/WeTwo/Services/BackendService.swift" beforeDir="false" afterPath="$PROJECT_DIR$/WeTwo/Services/BackendService.swift" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/WeTwo/Services/DeepLinkHandler.swift" beforeDir="false" afterPath="$PROJECT_DIR$/WeTwo/Services/DeepLinkHandler.swift" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/WeTwo/Services/GPTService.swift" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/WeTwo/Services/NotificationService.swift" beforeDir="false" afterPath="$PROJECT_DIR$/WeTwo/Services/NotificationService.swift" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/WeTwo/Services/SecurityService.swift" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/WeTwo/Services/ServiceFactory.swift" beforeDir="false" afterPath="$PROJECT_DIR$/WeTwo/Services/ServiceFactory.swift" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/WeTwo/Services/SupabaseService.swift" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/WeTwo/Views/BackendTestView.swift" beforeDir="false" afterPath="$PROJECT_DIR$/WeTwo/Views/BackendTestView.swift" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/WeTwo/Views/Calendar/AddCalendarEntryView.swift" beforeDir="false" afterPath="$PROJECT_DIR$/WeTwo/Views/Calendar/AddCalendarEntryView.swift" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/WeTwo/Views/Calendar/CalendarView.swift" beforeDir="false" afterPath="$PROJECT_DIR$/WeTwo/Views/Calendar/CalendarView.swift" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/WeTwo/Views/DeepLinkTestView.swift" beforeDir="false" afterPath="$PROJECT_DIR$/WeTwo/Views/DeepLinkTestView.swift" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/WeTwo/Views/MainAppView.swift" beforeDir="false" afterPath="$PROJECT_DIR$/WeTwo/Views/MainAppView.swift" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/WeTwo/Views/Onboarding/EmailConfirmationView.swift" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/WeTwo/Views/Onboarding/LoginView.swift" beforeDir="false" afterPath="$PROJECT_DIR$/WeTwo/Views/Onboarding/LoginView.swift" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/WeTwo/Views/Onboarding/OnboardingView.swift" beforeDir="false" afterPath="$PROJECT_DIR$/WeTwo/Views/Onboarding/OnboardingView.swift" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/WeTwo/Views/Onboarding/RelationshipStatusView.swift" beforeDir="false" afterPath="$PROJECT_DIR$/WeTwo/Views/Onboarding/RelationshipStatusView.swift" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/WeTwo/Views/Onboarding/SignupView.swift" beforeDir="false" afterPath="$PROJECT_DIR$/WeTwo/Views/Onboarding/SignupView.swift" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/WeTwo/Views/Partner/PartnerConnectionView.swift" beforeDir="false" afterPath="$PROJECT_DIR$/WeTwo/Views/Partner/PartnerConnectionView.swift" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/WeTwo/Views/Profile/ProfileView.swift" beforeDir="false" afterPath="$PROJECT_DIR$/WeTwo/Views/Profile/ProfileView.swift" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/WeTwo/Views/Timeline/MemoryCard.swift" beforeDir="false" afterPath="$PROJECT_DIR$/WeTwo/Views/Timeline/MemoryCard.swift" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/WeTwo/Views/Timeline/MemoryDetailView.swift" beforeDir="false" afterPath="$PROJECT_DIR$/WeTwo/Views/Timeline/MemoryDetailView.swift" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/WeTwo/Views/Timeline/TimelineView.swift" beforeDir="false" afterPath="$PROJECT_DIR$/WeTwo/Views/Timeline/TimelineView.swift" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/WeTwo/Views/Today/EventInputView.swift" beforeDir="false" afterPath="$PROJECT_DIR$/WeTwo/Views/Today/EventInputView.swift" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/WeTwo/Views/Today/LoveMessageEditorView.swift" beforeDir="false" afterPath="$PROJECT_DIR$/WeTwo/Views/Today/LoveMessageEditorView.swift" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/WeTwo/Views/Today/PhotoPickerView.swift" beforeDir="false" afterPath="$PROJECT_DIR$/WeTwo/Views/Today/PhotoPickerView.swift" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/WeTwo/Views/Today/TodayView.swift" beforeDir="false" afterPath="$PROJECT_DIR$/WeTwo/Views/Today/TodayView.swift" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/WeTwo/WeTwoApp.swift" beforeDir="false" afterPath="$PROJECT_DIR$/WeTwo/WeTwoApp.swift" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/database_schema.sql" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/database_trigger.sql" beforeDir="false" />
-    </list>
+    <list default="true" id="9805b1d6-7a38-453b-895b-471060da8af4" name="Changes" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -98,7 +27,7 @@
     <option name="formatViaClangd" value="false" />
   </component>
   <component name="Git.Settings">
-    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/amavo_backend" />
   </component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 5
@@ -156,6 +85,12 @@
       <workItem from="1756886526984" duration="3922000" />
       <workItem from="1756891215147" duration="4422000" />
       <workItem from="1756929371596" duration="4576000" />
+      <workItem from="1756934099203" duration="2067000" />
+      <workItem from="1756971544458" duration="1213000" />
+      <workItem from="1757017802706" duration="4243000" />
+      <workItem from="1757514612668" duration="8424000" />
+      <workItem from="1757593325170" duration="1000" />
+      <workItem from="1757837651672" duration="3627000" />
     </task>
     <servers />
   </component>

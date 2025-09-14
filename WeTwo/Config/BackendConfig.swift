@@ -56,6 +56,7 @@ struct BackendConfig {
     static let profilesEndpoint = "/api/profiles"
     static let memoriesEndpoint = "/api/memories"
     static let partnershipsEndpoint = "/api/partnerships"
+    static let invitationsEndpoint = "/api/invitations"
     static let loveMessagesEndpoint = "/api/love-messages"
     static let moodEntriesEndpoint = "/api/mood-entries"
     static let storageEndpoint = "/api/storage"
@@ -125,6 +126,10 @@ struct BackendConfig {
     
     static func partnershipsURL() -> URL? {
         return url(for: partnershipsEndpoint)
+    }
+    
+    static func invitationsURL() -> URL? {
+        return url(for: invitationsEndpoint)
     }
     
     static func loveMessagesURL() -> URL? {

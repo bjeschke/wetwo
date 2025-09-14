@@ -39,9 +39,12 @@ class PartnerManager: ObservableObject, Sendable {
     @Published var partnershipStatus: PartnershipStatus = .notConnected
     @Published var partnerProfile: Profile?
     @Published var partnerProfilePhoto: UIImage?
+    @Published var pendingInvitation: BackendInvitation?
+    @Published var hasPendingInvitation: Bool = false
     
     private let userDefaults = UserDefaults.standard
     private let dataService = ServiceFactory.shared.getCurrentService()
+    private var invitationCheckTimer: Timer?
     
     private func getCurrentUserId() async -> String? {
         // Get Firebase Auth UID
@@ -56,20 +59,71 @@ class PartnerManager: ObservableObject, Sendable {
     
     private init() {
         loadPartnerData()
-        generateOwnConnectionCode()
+        loadOwnConnectionCode()
+        Task {
+            await checkForPendingInvitations()
+        }
+        startInvitationCheckTimer()
     }
     
-    func generateOwnConnectionCode() {
-        isGeneratingCode = true
-        
-        // Generate a unique 6-character code
-        let characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-        ownConnectionCode = String((0..<6).map { _ in characters.randomElement()! })
-        
-        // Generate QR code
-        generateQRCode()
-        
-        isGeneratingCode = false
+    deinit {
+        invitationCheckTimer?.invalidate()
+    }
+    
+    private func startInvitationCheckTimer() {
+        // Check for pending invitations every 30 seconds
+        invitationCheckTimer = Timer.scheduledTimer(withTimeInterval: 30.0, repeats: true) { _ in
+            Task {
+                await self.checkForPendingInvitations()
+            }
+        }
+    }
+    
+    func loadOwnConnectionCode() {
+        // Load partner code from backend (stored during signup)
+        if let storedCode = UserDefaults.standard.string(forKey: "userPartnerCode") {
+            ownConnectionCode = storedCode
+            print("✅ Loaded partner code from backend: \(storedCode)")
+            generateQRCode()
+        } else {
+            // Fetch from backend
+            ownConnectionCode = "Lädt..."
+            print("⚠️ No partner code found locally, fetching from backend")
+            Task {
+                await refreshConnectionCodeFromBackend()
+            }
+        }
+    }
+    
+    func refreshConnectionCodeFromBackend() async {
+        // Fetch the current user's partner code from backend
+        do {
+            let backendService = BackendService.shared
+            if let partnerCode = try await backendService.getUserPartnerCode() {
+                await MainActor.run {
+                    self.ownConnectionCode = partnerCode
+                    UserDefaults.standard.set(partnerCode, forKey: "userPartnerCode")
+                    self.generateQRCode()
+                    print("✅ Refreshed partner code from backend: \(partnerCode)")
+                }
+            } else {
+                print("⚠️ No partner code found in user profile")
+                // Fallback: try to get from partnerships if BackendService
+                if let backendService = dataService as? BackendService {
+                    let partnerships = try await backendService.getPartnerships()
+                    if let userPartnership = partnerships.first {
+                        await MainActor.run {
+                            self.ownConnectionCode = userPartnership.connection_code
+                            UserDefaults.standard.set(userPartnership.connection_code, forKey: "userPartnerCode")
+                            self.generateQRCode()
+                            print("✅ Refreshed partner code from partnerships: \(userPartnership.connection_code)")
+                        }
+                    }
+                }
+            }
+        } catch {
+            print("❌ Failed to refresh partner code from backend: \(error)")
+        }
     }
     
     private func generateQRCode() {
@@ -263,6 +317,75 @@ class PartnerManager: ObservableObject, Sendable {
             print("✅ Profile synchronized with partner")
         } catch {
             print("Error syncing profile with partner: \(error)")
+        }
+    }
+    
+    func checkForPendingInvitations() async {
+        do {
+            let backendService = BackendService.shared
+            let invitations = try await backendService.getPendingInvitations()
+            
+            if let firstInvitation = invitations.first {
+                await MainActor.run {
+                    self.pendingInvitation = firstInvitation
+                    self.hasPendingInvitation = true
+                    print("✅ Found pending invitation from: \(firstInvitation.fromUser?.name ?? "Unknown")")
+                }
+            } else {
+                await MainActor.run {
+                    self.pendingInvitation = nil
+                    self.hasPendingInvitation = false
+                }
+            }
+        } catch {
+            print("❌ Error checking for pending invitations: \(error)")
+        }
+    }
+    
+    func acceptInvitation() async {
+        guard let invitation = pendingInvitation else { return }
+        
+        do {
+            let backendService = BackendService.shared
+            let partnership = try await backendService.acceptInvitation(invitationId: invitation.id)
+            
+            print("✅ Invitation accepted, partnership created: \(partnership)")
+            
+            // Clear the pending invitation
+            await MainActor.run {
+                self.pendingInvitation = nil
+                self.hasPendingInvitation = false
+                self.isConnected = true
+                self.partnershipStatus = .connected
+            }
+            
+            // Reload partnership status
+            await loadPartnershipStatus()
+            
+            // Save partner data
+            savePartnerData()
+            
+        } catch {
+            print("❌ Error accepting invitation: \(error)")
+        }
+    }
+    
+    func rejectInvitation() async {
+        guard let invitation = pendingInvitation else { return }
+        
+        do {
+            let backendService = BackendService.shared
+            try await backendService.rejectInvitation(invitationId: invitation.id)
+            
+            print("✅ Invitation rejected")
+            
+            // Clear the pending invitation
+            await MainActor.run {
+                self.pendingInvitation = nil
+                self.hasPendingInvitation = false
+            }
+        } catch {
+            print("❌ Error rejecting invitation: \(error)")
         }
     }
     

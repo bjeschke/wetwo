@@ -50,65 +50,79 @@ struct MainTabView: View {
     @EnvironmentObject var partnerManager: PartnerManager
     @EnvironmentObject var notificationService: NotificationService
     
+    @State private var selectedTab = 0
+    
     var body: some View {
-        TabView {
-            TodayView()
-                .environmentObject(moodManager)
-                .environmentObject(partnerManager)
-                .environmentObject(appState)
-                .environmentObject(notificationService)
-                .tabItem {
-                    Image(systemName: "heart.fill")
-                    Text("Today")
-                }
+        ZStack {
+            // Animated background
+            AnimatedBackgroundView()
             
-            CalendarView()
-                .environmentObject(moodManager)
-                .environmentObject(partnerManager)
-                .environmentObject(appState)
-                .tabItem {
-                    Image(systemName: "calendar")
-                    Text("Kalender")
+            // Content
+            VStack(spacing: 0) {
+                // Tab content
+                Group {
+                    switch selectedTab {
+                    case 0:
+                        TodayView()
+                            .environmentObject(moodManager)
+                            .environmentObject(partnerManager)
+                            .environmentObject(appState)
+                            .environmentObject(notificationService)
+                    case 1:
+                        CalendarView()
+                            .environmentObject(moodManager)
+                            .environmentObject(partnerManager)
+                            .environmentObject(appState)
+                    case 2:
+                        TimelineView()
+                            .environmentObject(moodManager)
+                            .environmentObject(partnerManager)
+                            .environmentObject(appState)
+                            .environmentObject(memoryManager)
+                    case 3:
+                        ActivityView()
+                            .environmentObject(moodManager)
+                            .environmentObject(partnerManager)
+                            .environmentObject(appState)
+                    case 4:
+                        RemindersView()
+                            .environmentObject(notificationService)
+                            .environmentObject(appState)
+                    case 5:
+                        ProfileView()
+                            .environmentObject(appState)
+                            .environmentObject(partnerManager)
+                    default:
+                        TodayView()
+                            .environmentObject(moodManager)
+                            .environmentObject(partnerManager)
+                            .environmentObject(appState)
+                            .environmentObject(notificationService)
+                    }
                 }
-            
-            TimelineView()
-                .environmentObject(moodManager)
-                .environmentObject(partnerManager)
-                .environmentObject(appState)
-                .environmentObject(memoryManager)
-                .tabItem {
-                    Image(systemName: "clock")
-                    Text("Timeline")
-                }
-            
-            ActivityView()
-                .environmentObject(moodManager)
-                .environmentObject(partnerManager)
-                .environmentObject(appState)
-                .tabItem {
-                    Image(systemName: "gamecontroller")
-                    Text("Activity")
-                }
-            
-            RemindersView()
-                .environmentObject(notificationService)
-                .environmentObject(appState)
-                .tabItem {
-                    Image(systemName: "bell")
-                    Text("Erinnerungen")
-                }
-            
-            ProfileView()
-                .environmentObject(appState)
-                .environmentObject(partnerManager)
-                .tabItem {
-                    Image(systemName: "person.circle.fill")
-                    Text("Profile")
-                }
+                .transition(.asymmetric(
+                    insertion: .move(edge: .trailing).combined(with: .opacity),
+                    removal: .move(edge: .leading).combined(with: .opacity)
+                ))
+                
+                Spacer(minLength: 0)
+                
+                // Custom playful tab bar
+                PlayfulTabBar(
+                    selectedTab: $selectedTab,
+                    tabs: [
+                        (icon: "heart.fill", title: "Today"),
+                        (icon: "calendar", title: "Kalender"),
+                        (icon: "clock", title: "Timeline"),
+                        (icon: "gamecontroller", title: "Activity"),
+                        (icon: "bell", title: "Erinnerungen"),
+                        (icon: "person.circle.fill", title: "Profil")
+                    ]
+                )
+                .padding(.bottom, 10)
+            }
         }
-        .accentColor(ColorTheme.primaryPurple)
-        .toolbarBackground(Color.gray.opacity(0.1), for: .tabBar)
-        .toolbarBackground(.visible, for: .tabBar)
+        .ignoresSafeArea(.keyboard)
     }
 }
 

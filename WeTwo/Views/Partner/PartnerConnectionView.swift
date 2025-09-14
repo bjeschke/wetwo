@@ -31,11 +31,11 @@ struct PartnerConnectionView: View {
                 
                 // Connection options
                 VStack(spacing: 20) {
-                    // Generate code button
+                    // Show own code button
                     Button(action: generateConnectionCode) {
                         HStack {
                             Image(systemName: "qrcode")
-                            Text("Code generieren")
+                            Text("Mein Code anzeigen")
                         }
                         .frame(maxWidth: .infinity)
                         .padding()
@@ -63,14 +63,18 @@ struct PartnerConnectionView: View {
                     
                     // Enter code section
                     VStack(spacing: 15) {
-                        Text("Code eingeben")
+                        Text("Partner-Code eingeben")
                             .font(.headline)
                             .foregroundColor(ColorTheme.primaryText)
                         
-                        TextField("Partner-Code eingeben", text: $connectionCode)
+                        TextField("6-stelliger Code", text: $connectionCode)
                             .textFieldStyle(RoundedBorderTextFieldStyle())
-                            .textInputAutocapitalization(.never)
+                            .textInputAutocapitalization(.characters)
                             .disableAutocorrection(true)
+                            .onChange(of: connectionCode) { newValue in
+                                // Automatically convert to uppercase and limit to 6 characters
+                                connectionCode = String(newValue.uppercased().prefix(6))
+                            }
                         
                         Button(action: connectWithCode) {
                             HStack {
@@ -120,14 +124,27 @@ struct PartnerConnectionView: View {
     }
     
     private func generateConnectionCode() {
-        isConnecting = true
-        errorMessage = ""
-        
-        // Simulate generating a connection code
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-            connectionCode = String(format: "%06d", Int.random(in: 100000...999999))
+        // Show the user's own partner code from backend
+        if let storedCode = UserDefaults.standard.string(forKey: "userPartnerCode") {
+            connectionCode = storedCode
             showingQRCode = true
-            isConnecting = false
+        } else {
+            // Try to refresh from backend
+            isConnecting = true
+            errorMessage = ""
+            
+            Task {
+                await partnerManager.refreshConnectionCodeFromBackend()
+                await MainActor.run {
+                    connectionCode = partnerManager.ownConnectionCode
+                    if connectionCode != "PENDING" {
+                        showingQRCode = true
+                    } else {
+                        errorMessage = "Could not load your partner code. Please try again."
+                    }
+                    isConnecting = false
+                }
+            }
         }
     }
     
@@ -137,49 +154,25 @@ struct PartnerConnectionView: View {
         isConnecting = true
         errorMessage = ""
         
-        print("🔗 Attempting to connect with code: \(connectionCode)")
+        print("🔗 Attempting to connect with partner code: \(connectionCode)")
         
         Task {
             do {
-                // The backend expects partnerEmail
-                // In a real app, the connection code would map to a partner email
-                // For now, we use the entered code as the partner email if it contains @
-                let partnerEmail: String
-                if connectionCode.contains("@") {
-                    partnerEmail = connectionCode
-                } else {
-                    // For testing: map specific codes to test emails
-                    switch connectionCode {
-                    case "TEST1":
-                        partnerEmail = "partner2_1756932268@test.de"
-                    case "TEST2":
-                        partnerEmail = "partner1_1756932267@test.de"
-                    default:
-                        // If it's a numeric code, assume it's a test user ID
-                        partnerEmail = "test\(connectionCode)@test.de"
-                    }
-                }
-                
-                print("📧 Connecting with partner email: \(partnerEmail)")
-                
                 let backendService = BackendService.shared
                 
-                // Generate connection code for this partnership
-                let connectionCode = String((0..<6).map { _ in "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".randomElement()! })
+                // Send invitation using the partner's code
+                let partnership = try await backendService.sendInvitation(withCode: connectionCode)
                 
-                let partnership = try await backendService.createPartnership(
-                    partnerEmail: partnerEmail,
-                    message: "Let's connect!",
-                    connectionCode: connectionCode
-                )
+                print("✅ Partnership created successfully via invitation: \(partnership)")
                 
-                print("✅ Partnership created successfully: \(partnership)")
+                // Update partner manager with the new connection
+                await partnerManager.loadPartnershipStatus()
                 
                 await MainActor.run {
                     isConnecting = false
-                    errorMessage = "Partnership created! ID: \(partnership.id ?? 0)"
-                    // Don't dismiss yet so user can see the message
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                    errorMessage = "Erfolgreich verbunden!"
+                    // Dismiss after showing success message
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
                         dismiss()
                     }
                 }
@@ -190,9 +183,18 @@ struct PartnerConnectionView: View {
                     if let partnerError = error as? PartnerError {
                         errorMessage = partnerError.localizedDescription
                     } else if let backendError = error as? BackendError {
-                        errorMessage = backendError.localizedDescription
+                        switch backendError {
+                        case .partnerNotFound:
+                            errorMessage = "Ungültiger Partner-Code. Bitte überprüfen Sie den Code und versuchen Sie es erneut."
+                        case .invalidData:
+                            errorMessage = "Der eingegebene Code ist ungültig."
+                        case .alreadyConnected:
+                            errorMessage = "Sie sind bereits mit einem Partner verbunden."
+                        default:
+                            errorMessage = backendError.localizedDescription
+                        }
                     } else {
-                        errorMessage = "Connection failed: \(error.localizedDescription)"
+                        errorMessage = "Verbindung fehlgeschlagen: \(error.localizedDescription)"
                     }
                 }
             }

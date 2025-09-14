@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import Combine
 
 struct TimelineView: View {
     @EnvironmentObject var memoryManager: MemoryManager
@@ -14,22 +15,30 @@ struct TimelineView: View {
     @State private var showingAddMemory = false
     @State private var selectedMemory: Memory?
     @State private var showingMemoryDetail = false
+    @State private var animateCards = false
+    @State private var selectedFilter: String = "all"
     
     var body: some View {
         NavigationView {
-            ScrollView {
-                VStack(spacing: 0) {
-                    // Header with stats
-                    headerSection
-                    
-                    // Filter buttons
-                    filterSection
-                    
-                    // Timeline content
-                    timelineContent
+            ZStack {
+                // Animated background
+                DesignSystem.Gradients.backgroundGradient
+                    .ignoresSafeArea()
+                
+                ScrollView {
+                    VStack(spacing: 20) {
+                        // Header with stats
+                        headerSection
+                        
+                        // Filter buttons
+                        filterSection
+                        
+                        // Timeline content
+                        timelineContent
+                    }
+                    .padding(.top, 20)
                 }
             }
-            .purpleTheme()
             .navigationBarHidden(true)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
@@ -59,40 +68,55 @@ struct TimelineView: View {
         let stats = memoryManager.getMemoryStats()
         
         return VStack(spacing: 20) {
-            // Stats only
-            VStack(spacing: 10) {
+            // Title with animated emoji
+            HStack {
+                Text("Unsere Momente")
+                    .font(DesignSystem.Typography.largeTitle)
+                    .fontWeight(.bold)
+                    .foregroundStyle(
+                        DesignSystem.Gradients.primaryGradient
+                    )
+                
                 Text("📸")
-                    .font(.system(size: 50))
+                    .font(.system(size: 40))
+                    .rotationEffect(.degrees(animateCards ? -10 : 10))
+                    .animation(
+                        Animation.easeInOut(duration: 2.0)
+                            .repeatForever(autoreverses: true),
+                        value: animateCards
+                    )
             }
             
-            // Stats cards
-            HStack(spacing: 15) {
-                StatCard(
+            // Stats cards with playful design
+            HStack(spacing: 12) {
+                PlayfulStatCard(
                     title: NSLocalizedString("timeline_stats_total", comment: "Total memories"),
                     value: "\(stats.total)",
                     icon: "📅",
-                    color: .blue
+                    gradient: DesignSystem.Gradients.accentGradient
                 )
                 
-                StatCard(
+                PlayfulStatCard(
                     title: NSLocalizedString("timeline_stats_shared", comment: "Shared memories"),
                     value: "\(stats.shared)",
                     icon: "💕",
-                    color: .pink
+                    gradient: DesignSystem.Gradients.primaryGradient
                 )
                 
-                StatCard(
+                PlayfulStatCard(
                     title: NSLocalizedString("timeline_stats_average", comment: "Average mood"),
                     value: stats.averageMood.isFinite ? String(format: "%.1f", stats.averageMood) : "3.0",
                     icon: "😊",
-                    color: .orange
+                    gradient: DesignSystem.Gradients.secondaryGradient
                 )
             }
         }
-        .padding(25)
-        .purpleCard()
-        .padding(.horizontal, 20)
-        .padding(.top, 120)
+        .padding(DesignSystem.Spacing.l)
+        .playfulCard()
+        .padding(.horizontal, DesignSystem.Spacing.m)
+        .onAppear {
+            animateCards = true
+        }
     }
     
     private var filterSection: some View {

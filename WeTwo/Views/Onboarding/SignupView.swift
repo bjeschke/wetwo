@@ -240,6 +240,7 @@ struct SignupView: View {
                 
                 print("✅ Backend registration successful")
                 print("🔑 Firebase UID from backend: \(backendUser.firebaseUid ?? "none")")
+                print("🔗 Partner code from backend: \(backendUser.partnerCode ?? "none")")
                 
                 // Now sign in to Firebase with email/password
                 // The backend already created the Firebase user with the same credentials
@@ -260,6 +261,12 @@ struct SignupView: View {
                         email: email,
                         name: fullName
                     )
+                    
+                    // Store partner code from backend if available
+                    if let partnerCode = backendUser.partnerCode {
+                        UserDefaults.standard.set(partnerCode, forKey: "userPartnerCode")
+                        print("✅ Partner code stored: \(partnerCode)")
+                    }
                     
                     // Update app state with authenticated user
                     await MainActor.run {
